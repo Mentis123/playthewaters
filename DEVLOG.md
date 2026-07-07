@@ -675,3 +675,14 @@ Append after every milestone. Format:
 **Next:**
 - The human iPhone gate on the whole stack (v0.4-far-water + all of the above): tap-cadence reel feel, surge-shake amplitude, vignette onset, chime, coaching copy — all in TUNING, all awaiting thumbs.
 - Lighthouse run on a production deploy; record against 07_PERFORMANCE_BUDGET.
+
+## fix-mobile-splash-cycling (2026-07-07)
+*Follow-up to #24. The landing page kept flashing splash → credits ("Vibe Academy") → start → splash on mobile, and the game never actually started.*
+
+**Discovered:**
+- #24 moved the `/ → /game` forward from a client `SplashGate` to a React `redirect('/game')` inside `app/page.tsx`. But `/` is statically prerendered, and `redirect()` in a static route can't emit an HTTP redirect: the served document was a **307 with no `Location` header** and a hydrating `__next_error__` shell whose only redirect instruction lived in the client RSC payload (`NEXT_REDIRECT;replace;/game`). So the redirect only completed *after* React booted on the device.
+- On mobile — standalone PWA launched at `/`, service worker in play — the browser treats that 307-without-Location document as an incomplete navigation and re-enters `/`, which remounts `GameClient` and bounces it back to the splash. That is the cycle the player saw: splash → credits → start → (re-enter `/`) → splash, never settling.
+
+**Shipped:**
+- Replaced the boomerang with a real server-level redirect: `redirects()` in `next.config.mjs` maps `/ → /game` (307, `permanent: false`) before any React renders — verified `/` now returns `307` + `location: /game` with an empty body in both `next dev` and `next start`. Deleted the now-dead `src/app/page.tsx`.
+- Repro'd the fixed cold-start in a mobile Chromium harness: entering via `/` follows a single HTTP redirect to `/game`, reaches `scouting`, and stays put (no remount, no cycle). typecheck + lint + 48 unit tests green.

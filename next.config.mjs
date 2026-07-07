@@ -45,6 +45,26 @@ const nextConfig = {
     NEXT_PUBLIC_REEL_CANDIDATE_TAG: candidateTag,
     NEXT_PUBLIC_REEL_MILESTONE: currentMilestone(candidateTag)
   },
+  async redirects() {
+    // The landing splash is GameClient's (its "Tap to start" calls begin(), the
+    // user gesture that unlocks audio/haptics), so / forwards to /game — matching
+    // the PWA manifest start_url. This MUST be a config-level redirect, not a
+    // React `redirect('/game')` in app/page.tsx: a statically-prerendered page
+    // that calls redirect() emits a 307 with NO Location header and a hydrating
+    // error shell, so the redirect only completes after React boots on the
+    // client. On mobile (standalone PWA launched at /, service worker in play)
+    // that boomerang re-enters /, remounting GameClient and bouncing it back to
+    // the splash — the screen kept cycling splash → credits → start → splash.
+    // A config redirect is a real HTTP redirect with a Location header, resolved
+    // before any React renders.
+    return [
+      {
+        source: '/',
+        destination: '/game',
+        permanent: false
+      }
+    ];
+  },
   async headers() {
     return [
       {
