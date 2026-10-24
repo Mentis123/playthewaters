@@ -4,7 +4,7 @@ export type DevChecklistItem = {
 };
 
 export type DevChecklist = {
-  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank' | 'a3-habits' | 'a4-wall';
+  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank' | 'a3-habits' | 'a4-wall' | 'a5-lilypond';
   title: string;
   items: DevChecklistItem[];
 };
@@ -164,10 +164,25 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
       { id: 'a4-preview', text: 'Paste a catch link into a DM: the preview shows the fish, its name and size.' },
       { id: 'a4-rubric', text: 'Score docs/alpha/A4_RUBRIC.md (18 items, pass 15, all starred) and record it in section 5.' }
     ]
+  },
+  'a5-lilypond': {
+    milestone: 'a5-lilypond',
+    title: 'A5 lily pond and walk gate',
+    items: [
+      { id: 'a5-review', text: 'Run /ab on the iPhone (review mode): do the steps, answer the starred checks. Every one must be a yes.' },
+      { id: 'a5-walk', text: 'Walk home → lily pond → home three times: no stutter, never feels like loading.' },
+      { id: 'a5-legend', text: 'Use the legend shortcut on /ab: the tell, the take, the cost of a careless cast.' },
+      { id: 'a5-gate', text: 'Canon gate (2 tries): if water 2 and the walk fail twice, the shoreline stops at two waters.' },
+      { id: 'a5-rubric', text: 'Score docs/alpha/A5_RUBRIC.md (24 items, pass 20, all starred) and record it in section 6.' }
+    ]
   }
 };
 
 export function getChecklist(milestone: string): DevChecklist {
+  if (milestone === 'a5-lilypond') {
+    return checklists['a5-lilypond'];
+  }
+
   if (milestone === 'a4-wall') {
     return checklists['a4-wall'];
   }
