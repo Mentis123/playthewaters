@@ -1,0 +1,11 @@
+.next
+node_modules
+out
+coverage
+playwright-report
+test-results
+.env*.local
+*.tsbuildinfo
+
+# Claude Code local worktrees / job scratch
+.claude/

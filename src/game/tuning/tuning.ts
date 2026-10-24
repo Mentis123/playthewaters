@@ -1,0 +1,586 @@
+export const TUNING = {
+  seed: {
+    defaultSuffix: 'A'
+  },
+  session: {
+    idRadix: 36,
+    idSliceStart: 2,
+    idSliceEnd: 10
+  },
+  world: {
+    pondWidthM: 9,
+    pondHeightM: 12,
+    pondMarginRatio: 0.05,
+    waterY: 0,
+    fishDepthY: -0.08,
+    lureSurfaceY: 0.06,
+    lureSinkDepthY: -0.24,
+    cameraPosition: [0, 6.2, 7.8] as [number, number, number],
+    cameraTarget: [0, 0, 0] as [number, number, number],
+    cameraFov: 38,
+    rodTip: { x: 0.55, z: 3.05 },
+    rodButt: { x: 0, z: 4.6 },
+    rodTipY: 0.4,
+    rodBendMaxM: 0.12,
+    // Rod-in-hand (19_THE_FAR_WATER): butt pinned to the bottom-right corner,
+    // doubled in size, leaning toward the aim point as you choose a cast.
+    rodScreenButtXRatio: 0.95,
+    rodScreenButtBottomMarginPx: 36,
+    rodScreenButtBottomRatio: 0.012,
+    rodScreenStrokeWidthPx: 8,
+    rodScreenBowFraction: 0.04,
+    rodReelOffsetPx: 13,
+    rodReelScale: 2,
+    rodAimLeanFraction: 0.2,
+    lineSagAmplitudeY: 0.32,
+    lureStart: { x: 0, z: -3.45 },
+    fishStart: { x: -1.4, z: 1.35 },
+    fishWanderRadiusM: 5.5,
+    fishVisualWidthM: 0.9,
+    fishVisualHeightM: 0.28,
+    // Co-tuned with TUNING.visual.waterDeep/waterShallow: nudged 0.40 -> 0.46 to
+    // recover ~half the silhouette contrast the deepened water costs, so a fish
+    // still reads as a shadow you have to find — neither invisible nor a hard
+    // black blob. The deep/shallow multipliers below keep their depth-fade ratio.
+    fishCueOpacity: 0.46,
+    fishCommitOpacity: 0.66,
+    // Distance visibility (19_THE_FAR_WATER): a fish reads clearly in the near
+    // water and fades into the dark out toward the far shore — the murk you cast
+    // blind into, and the clarity you reel a hooked fish back into. Curve > 1 so
+    // the far half goes murky fast. (Supersedes the old deep/shallow fade, which
+    // made far fish *brighter* — backwards for the distance loop.)
+    fishFarVisibility: 0.3,
+    fishNearVisibility: 1.15,
+    fishFarVisibilityCurve: 1.6,
+    fishFadeMinMultiplier: 0.55,
+    fishFadeMaxMultiplier: 1.15,
+    fishFadeMinPeriodMs: 4200,
+    fishFadeMaxPeriodMs: 7800,
+    fishMaxVisible: 5,
+    falseCueOpacity: 0.24,
+    rippleHeightM: 0.012,
+    rippleSegments: 48,
+    waterSegments: 32,
+    fishableMinZ: -5.4,
+    fishableMaxZ: 1.8,
+    // A hooked fish must stay on screen while it fights (don't let the flee
+    // vector drag it off the visible water — pond half-width is 4.5m but the
+    // camera frustum only shows ~±3.2m). Bound the fight to this arena: the fish
+    // surges and pulls but is held inside the frame the player can see.
+    hookedArenaHalfWidthM: 2.6,
+    // The reveal (21_THE_REVEAL): a fish's SIZE is unreadable out in the dark and
+    // resolves to its true size only as it comes near — so a hooked fish grows
+    // into what it really is as you reel it in (and sometimes the big shadow turns
+    // out small). Beyond revealNoneZ → generic ambiguous size; nearer than
+    // revealFullZ → true species size; smoothstep between.
+    revealNoneZ: -3,
+    revealFullZ: 0.5,
+    revealGenericWidthM: 0.7,
+    revealGenericHeightM: 0.26,
+    // The generic "smudge" twin shown while a fish is far/unknown uses ONE neutral
+    // brightness instead of each species' own opacityMultiplier (0.78–1.08) — so a
+    // far shadow can't betray its species by brightness. Dampened a touch so the
+    // smudge isn't more spottable than the old per-species far shadow was.
+    revealGenericOpacityMultiplier: 0.9,
+    cameraLookAtLerp: 0.08
+  },
+  // Pond visual constants consumed by the WebGL scene (PondWater shader, fog,
+  // backdrop). Deliberately DECOUPLED from the --water-deep/--water-shallow
+  // :root CSS tokens, which still paint the loading screen, result card and
+  // tune page in the original teal — darkening the pond here must NOT darken
+  // those 2D surfaces. Lifted out of GameClient so the /dev gate can tune them.
+  visual: {
+    // Deepened ~halfway from the original #3d6068/#6a958f toward the art-bible
+    // #1a2b30/#2f4948 (08_ART_DIRECTION). Partway, not all the way: at the full
+    // art-bible depth a near-black fish silhouette vanishes. Co-tuned with
+    // world.fishCueOpacity (0.46) for a readable-but-mysterious shadow.
+    waterDeep: '#2b4750',
+    waterShallow: '#4a6f6a',
+    // The void around the pond and the distance fog, pushed toward ink so the
+    // water stops dissolving into a same-colour background. Both were #3d6068
+    // (identical to the old water) — which is exactly why they muddled together.
+    voidColor: '#101c20',
+    fogColor: '#101c20',
+    fogNear: 10,
+    fogFar: 18,
+    // Moonlit caustics: dimmer overall and collapsing under Focus so the busy
+    // light filaments stop competing with fish cues. Strength was a bare 0.5.
+    causticStrength: 0.32,
+    causticFocusMultiplier: 0.35,
+    // The moon rises slowly through the session "like time is really passing"
+    // (19_THE_FAR_WATER). A separate sprite in front of the treeline, not baked
+    // into the canopy, so it can animate. Starts low near the crowns at the same
+    // spot the old baked moon sat, and climbs into the sky over a few minutes.
+    moonX: -3,
+    moonZ: -6.4,
+    moonRadiusM: 0.62,
+    moonStartY: 0.45,
+    moonRiseMaxY: 1.35,
+    moonRiseMPerSec: 0.004,
+    // Treeline backdrop placement — lifted for /dev tuning. A shorter plane
+    // packs more of the full far shore (sky, crowns, moon, waterline) into the
+    // camera-fixed horizon strip instead of showing only a band of mid-foliage.
+    backdropY: 0.2,
+    backdropHeight: 2.8,
+    backdropTilt: 0.12,
+    treelineVisibleTop: 0.4
+  },
+  input: {
+    castPowerMin: 0.05,
+    castPowerMax: 1,
+    // Range now spans from just off the bank out to the far shore (19_THE_FAR_WATER).
+    castMaxRangeM: 9.5,
+    castVisibleHalfWidthM: 3.2,
+    castMinForwardM: 0.25,
+    // Accuracy falloff: a short cast lands true; a long cast scatters. The lure
+    // is offset from the aim point by a random vector (deterministic per gesture)
+    // whose radius grows from castSpreadNearM at the bank to castSpreadFarM at the
+    // far shore. Curve > 1 so close casts stay tight and only long reaches blow
+    // out. Near is near-zero (an exact landing point); far is a wide gamble zone.
+    // castSpreadFarM is the ceiling at reachT=1; the longest cast the pond allows
+    // only reaches reachT ~0.92-0.98, so the felt far ring tops out near ~1.45m.
+    // The aim reticle renders this exact radius as a perspective ellipse on the
+    // water, so what you see is the real landing zone (19_THE_FAR_WATER).
+    castSpreadNearM: 0.04,
+    castSpreadFarM: 1.65,
+    castSpreadCurve: 1.8,
+    castFlightTimeMin: 0.5,
+    castFlightTimeMax: 1.2,
+    castArcHeightM: 1.35,
+    dragPowerPixels: 240,
+    aimPreviewDots: 11,
+    aimPreviewDotMinScale: 0.42,
+    aimPreviewDotMaxScale: 1,
+    aimPreviewLiftPx: 96,
+    aimPreviewPowerPx: 180,
+    lowerScreenStartRatio: 0.42,
+    tapMoveTolerancePx: 10,
+    rodTouchRadiusPx: 64,
+    rodControlScreenPixels: 150,
+    rodControlMaxOffsetM: 0.72,
+    rodControlReturnRate: 7,
+    rodControlLurePullMps: 1.15,
+    rodControlLureAccel: 8,
+    rodControlLureDamping: 2.5,
+    rodControlLureMinSpeedMps: 0.02,
+    rodControlTensionGain: 0.72,
+    focusHoldMs: 1800,
+    focusDurationMs: 1800,
+    focusCooldownMs: 4000,
+    focusGlareReduction: 0.6,
+    focusWaterSpeedMultiplier: 0.7,
+    // Tap-to-reel (replaces hold-to-reel). Each tap on a hooked fish fires one reel
+    // pulse: a short window during which the existing reel pull (updateHookedContact-
+    // Point) and the tension rise (updateFight) run, plus an instant tension burst.
+    // Between taps the pulse expires and tension bleeds off — cadence is the skill.
+    // tapReelPulseMs is how long one tap keeps the line coming in; keep it short so a
+    // single tap is a discrete chunk of line, not a sustained hold. tapReelMinIntervalMs
+    // debounces a physical double-fire (one finger tap = one pulse).
+    tapReelPulseMs: 180,
+    tapReelMinIntervalMs: 60,
+    // Instant chunk of line (m) yanked in on the tap itself, on top of the pulse-window
+    // pull, so a tap reads as an immediate jerk of the fish toward the rod (visual snap
+    // of feedback). Clamped to the remaining distance in reelTap so it never overshoots.
+    tapReelImpulse: 0.16
+  },
+  line: {
+    lineSegments: 10,
+    lineConstraintIterations: 4,
+    lineGravity: 0.3,
+    lineDamping: 0.98,
+    lineSlackColour: '#d8d4c2',
+    lineTautColour: '#e8c878',
+    lineSnapColour: '#c84848',
+    lineSlackWidthPx: 1.2,
+    lineTautWidthPx: 2,
+    lineSnapWidthPx: 2.5,
+    lineHookWidthBoostPx: 1.3,
+    lineVisualTautStart: 0.58,
+    lineVisualTautFull: 0.9,
+    lineSlackGravityMultiplier: 1.55,
+    rodBendMaxDeg: 30
+  },
+  lure: {
+    lureSinkRate: 0.4,
+    lureWobbleAmplitude: 0.05,
+    lureTwitchImpulse: 0.3,
+    lureRadiusM: 0.09,
+    lureFlashDurationMs: 180,
+    lureTwitchDistanceM: 0.34,
+    lureTwitchSidewaysRatio: 0.5,
+    lureTwitchDurationMs: 180,
+    lureBiteTugDurationMs: 620,
+    lureBiteTugAmplitudeM: 0.12,
+    lureBiteTugPulses: 4,
+    lureHookJerkDistanceM: 0.42,
+    rippleRadiusOnImpactM: 0.55,
+    rippleRadiusOnTwitchM: 0.28,
+    twitchPanicThresholdMs: 250,
+    twitchOptimalGapMinMs: 800,
+    twitchOptimalGapMaxMs: 2000
+  },
+  fish: {
+    fishNoticeRadius: 2,
+    fishFearRadius: 0.4,
+    // Per-frame velocity damping for fish movement, normalized to a 60Hz frame
+    // (applied as pow(damping, dt * 60) so the feel is identical at 120Hz).
+    // Previously this borrowed TUNING.line.lineDamping — its own constant now so
+    // tuning the fishing line can't silently change how fish swim.
+    velocityDamping: 0.98,
+    biteWindowMs: 600,
+    fishStaminaDrainRate: 0.1,
+    personalityScalar: 0.18,
+    wanderSpeedMps: 0.28,
+    noticeDurationMs: 700,
+    approachSpeedMps: 0.78,
+    inspectDurationMs: 1150,
+    commitDurationMs: 520,
+    biteNoHookMs: 900,
+    fleeDurationMs: 1400,
+    hookedPullSpeedMps: 0.8,
+    reelContactPullMps: 1.15,
+    hookedInitialStamina: 1,
+    biteDistanceM: 0.38,
+    inspectOrbitRadiusM: 0.44,
+    cueRealEveryMs: 3600,
+    cueFalseMinMs: 2000,
+    cueFalseMaxMs: 6000,
+    cueRippleDurationMs: 1700,
+    cueShadowDurationMs: 6200,
+    cueGlideAmplitudeM: 0.42,
+    cueNoiseCount: 2,
+    cueFlashDurationMultiplier: 0.32,
+    cueSurfaceRiseDurationMultiplier: 0.42,
+    cueLongDurationMultiplier: 0.62,
+    cueRealPeakOpacity: 0.62,
+    cueFalsePeakOpacity: 0.22,
+    cueSiltOpacityMultiplier: 0.78,
+    cueBubbleTrailCount: 4,
+    // The reveal, completed (21_THE_REVEAL): below this resolve amount a fish's
+    // cue reads as identity-free movement at a neutral radius (no species or size
+    // tell); at/above it the species' own cue + radius show. Decor fish out in the
+    // water emit their own cues on this interval so the whole pond feels alive —
+    // every shadow is a real fish you could cast at, not just one.
+    cueSpeciesRevealThreshold: 0.5,
+    // The smallest species cue radius (== moon_minnow). A far cue is deliberately
+    // the smallest size, never mid-range — so it can't whisper "this one's big";
+    // the surprise always resolves UPWARD as the fish nears ("bigger than I'd
+    // hoped"). A neutral-but-centred radius would itself leak size (21_THE_REVEAL).
+    genericCueRadiusM: 0.16,
+    decorCueMinMs: 3800,
+    decorCueMaxMs: 8200,
+    staminaLandThreshold: 0.1,
+    earlyHookStates: ['approach', 'inspect', 'commit'] as const,
+    catchMinSizeScore: 0.35,
+    catchMaxSizeScore: 0.94,
+    personalityModulation: 0.42,
+    personalityHesitation: 0.45,
+    fightSurgeRageBoost: 0.62,
+    rageDecayPerSecond: 0.55,
+    rageBaseline: 0.25,
+    fishFacingMinSpeed: 0.04,
+    fishFacingTurnRate: 5.5,
+    species: {
+      bronze_carp: {
+        spawnWeight: 28,
+        widthM: 0.95,
+        heightM: 0.38,
+        opacityMultiplier: 0.95,
+        noticeRadiusMultiplier: 0.95,
+        fearRadiusMultiplier: 0.8,
+        commitThresholdMultiplier: 1.12,
+        wanderSpeedMultiplier: 0.78,
+        approachSpeedMultiplier: 0.75,
+        inspectDurationMultiplier: 0.95,
+        commitDurationMultiplier: 1.18,
+        biteWindowMultiplier: 1.18,
+        staminaDrainMultiplier: 1.05,
+        hookedPullMultiplier: 0.82,
+        cueEveryMultiplier: 0.95,
+        primaryCueRadiusM: 0.22,
+        surgeIntervalMinMs: 2100,
+        surgeIntervalMaxMs: 4000,
+        surgeTensionSpike: 0.18,
+        surgeAudioIntensity: 0.55
+      },
+      moss_bass: {
+        spawnWeight: 26,
+        widthM: 0.9,
+        heightM: 0.3,
+        opacityMultiplier: 1,
+        noticeRadiusMultiplier: 1.08,
+        fearRadiusMultiplier: 1,
+        commitThresholdMultiplier: 1,
+        wanderSpeedMultiplier: 1,
+        approachSpeedMultiplier: 1,
+        inspectDurationMultiplier: 1.18,
+        commitDurationMultiplier: 1,
+        biteWindowMultiplier: 1,
+        staminaDrainMultiplier: 1,
+        hookedPullMultiplier: 1,
+        cueEveryMultiplier: 1,
+        primaryCueRadiusM: 0.18,
+        surgeIntervalMinMs: 1700,
+        surgeIntervalMaxMs: 3200,
+        surgeTensionSpike: 0.22,
+        surgeAudioIntensity: 0.6
+      },
+      moon_minnow: {
+        spawnWeight: 22,
+        widthM: 0.44,
+        heightM: 0.14,
+        opacityMultiplier: 1.08,
+        noticeRadiusMultiplier: 1.22,
+        fearRadiusMultiplier: 1.25,
+        commitThresholdMultiplier: 0.72,
+        wanderSpeedMultiplier: 1.6,
+        approachSpeedMultiplier: 1.55,
+        inspectDurationMultiplier: 0.52,
+        commitDurationMultiplier: 0.58,
+        biteWindowMultiplier: 0.62,
+        staminaDrainMultiplier: 1.22,
+        hookedPullMultiplier: 0.9,
+        cueEveryMultiplier: 0.72,
+        primaryCueRadiusM: 0.16,
+        surgeIntervalMinMs: 600,
+        surgeIntervalMaxMs: 1400,
+        surgeTensionSpike: 0.08,
+        surgeAudioIntensity: 0.32
+      },
+      old_kingfish: {
+        spawnWeight: 8,
+        widthM: 1.48,
+        heightM: 0.46,
+        opacityMultiplier: 0.78,
+        noticeRadiusMultiplier: 0.82,
+        fearRadiusMultiplier: 0.65,
+        commitThresholdMultiplier: 1.45,
+        wanderSpeedMultiplier: 0.55,
+        approachSpeedMultiplier: 0.62,
+        inspectDurationMultiplier: 2.1,
+        commitDurationMultiplier: 1.35,
+        biteWindowMultiplier: 0.86,
+        staminaDrainMultiplier: 0.66,
+        hookedPullMultiplier: 1.38,
+        cueEveryMultiplier: 1.55,
+        primaryCueRadiusM: 0.42,
+        surgeIntervalMinMs: 3600,
+        surgeIntervalMaxMs: 5500,
+        surgeTensionSpike: 0.34,
+        surgeAudioIntensity: 0.85
+      },
+      reed_pike: {
+        spawnWeight: 16,
+        widthM: 1.16,
+        heightM: 0.18,
+        opacityMultiplier: 0.9,
+        noticeRadiusMultiplier: 1.15,
+        fearRadiusMultiplier: 1.35,
+        commitThresholdMultiplier: 0.78,
+        wanderSpeedMultiplier: 1.22,
+        approachSpeedMultiplier: 1.48,
+        inspectDurationMultiplier: 0.68,
+        commitDurationMultiplier: 0.48,
+        biteWindowMultiplier: 0.78,
+        staminaDrainMultiplier: 0.82,
+        hookedPullMultiplier: 1.28,
+        cueEveryMultiplier: 0.82,
+        primaryCueRadiusM: 0.34,
+        surgeIntervalMinMs: 950,
+        surgeIntervalMaxMs: 1900,
+        surgeTensionSpike: 0.26,
+        surgeAudioIntensity: 0.7
+      }
+    }
+  },
+  tension: {
+    lineSnapThreshold: 0.92,
+    lineSlackEscapeThreshold: 0.05,
+    slackEscapeWindowMs: 1500,
+    hookedInitialTension: 0.35,
+    tensionRiseRate: 0.6,
+    tensionFallRate: 0.4,
+    tensionReelBoost: 0.32,
+    tensionBurstRate: 0.22,
+    tensionSlackFallRate: 0.42,
+    // Tap-to-reel tension model. Each tap adds tensionPerTap instantly (the jolt of
+    // cranking the handle); between taps tension falls at tensionTapDecayRate so a
+    // pause lets the line bleed off before it snaps. During a tap's pulse window
+    // tension still climbs continuously (the held-reel rise in updateFight), so
+    // sustained rapid tapping stacks bursts on top of the rise and drives toward the
+    // snap threshold — exactly the cadence skill (tap to gain line, pause to recover).
+    tensionPerTap: 0.11,
+    tensionTapDecayRate: 0.9,
+    tensionSafeHold: 0.48,
+    tensionSweetSpotMin: 0.35,
+    tensionSweetSpotMax: 0.68,
+    nearSnapThreshold: 0.85,
+    splashHighTension: 0.7
+  },
+  // Pre-cast gear (22_THE_GEAR): two rods + three lures as sidegrades that deepen
+  // the distance gamble — NOT an upgrade ladder. Every DEFAULT-gear field is 1.0,
+  // so default play is byte-for-byte today's validated feel; the iPhone gate judges
+  // only the deltas. Rods: rangeMult scales how far a full cast throws; accuracyMult
+  // scales the landing-spread (smaller = tighter); lineStrengthMult scales the snap
+  // thresholds (smaller = snaps easier). Lures: attractMult/fearMult scale the fish
+  // notice/fear radii (the two AI levers that decide how cast inaccuracy cashes out);
+  // sinkMult/twitchMult are presentation feel. Canon: 22_THE_GEAR.
+  gear: {
+    defaultRodId: 'long',
+    defaultLureId: 'natural',
+    rods: {
+      // The long rod (default): reaches the far dark, today's exact feel.
+      long: { rangeMult: 1, accuracyMult: 1, lineStrengthMult: 1 },
+      // The short rod: can't reach the dark, lands near-exact, fights on a tight
+      // margin (snaps easier). A deliberate renunciation of the long gamble.
+      short: { rangeMult: 0.6, accuracyMult: 0.5, lineStrengthMult: 0.82 }
+    },
+    lures: {
+      // The natural lure (default): balanced draw and nerve, today's exact feel.
+      natural: { attractMult: 1, fearMult: 1, sinkMult: 1, twitchMult: 1 },
+      // The loud lure: big draw (rescues a loose far cast) paid for with a big fear
+      // radius (spooks easily — twitchy to handle).
+      popper: { attractMult: 1.6, fearMult: 1.5, sinkMult: 0.6, twitchMult: 1.3 },
+      // The quiet lure: won't spook even worked close (small fear) but draws only
+      // from nearby (small attraction) — demands you place it true.
+      sinker: { attractMult: 0.7, fearMult: 0.6, sinkMult: 1.5, twitchMult: 0.85 }
+    }
+  },
+  timing: {
+    msPerSecond: 1000,
+    // Ceiling on a single simulation step. A long frame (tab switch back, GC
+    // pause) otherwise delivers one huge dt that can tunnel straight through a
+    // bite window or snap the line in a single step.
+    maxFrameDtSeconds: 0.05,
+    tapFadeMs: 600,
+    wordmarkFadeMs: 800,
+    resultTextDelayMs: 800,
+    resultTextFadeMs: 400,
+    resultButtonDelayMs: 200,
+    resultDismissLockMs: 1000,
+    resultAutoDismissMs: 6000,
+    missedPromptMs: 1200,
+    escapePromptMs: 1000,
+    snapSilenceMs: 1500,
+    snapAnimationMs: 1500,
+    hookJerkMs: 180,
+    debugSampleMs: 1000,
+    debugFiveSecondMs: 5000
+  },
+  performance: {
+    fpsFloor: 30,
+    fpsRecovery: 55,
+    // Ceiling on a single frame's measured fps (ProMotion is 120). Must sit
+    // above fpsRecovery or recovery can never trigger.
+    fpsSampleCap: 120,
+    degradeHoldMs: 5000,
+    recoverHoldMs: 10000,
+    pixelRatioCap: 2,
+    pixelRatioMin: 1,
+    pixelRatioStep: 0.5,
+    particleBaseCount: 16,
+    particleReducedMultiplier: 0.5,
+    lowMotionMultiplier: 0.3,
+    // Ripple/cue meshes are pushed into React state as cues fire and were only
+    // ever cleared on a fresh cast. Within one cast cycle (idle scouting fires a
+    // false cue every cueFalseMin..Max ms forever) they accumulated without
+    // bound — draw calls and triangles climbed monotonically (measured 15->63
+    // draw calls over 60s idle, breaching the <50 budget at ~40s). Sweep expired
+    // ripples on this cadence so each ripple's mesh/geometry/material unmounts
+    // once it has fully faded. Cheap throttle: at most a few sweeps per second,
+    // and only when something actually expired (no needless re-render churn).
+    rippleSweepIntervalMs: 400,
+    // Grace past durationMs before a ripple is reaped. A ripple's opacity reaches
+    // 0 exactly at durationMs (WaterRipple: (1 - progress) * peak), so anything
+    // older is already invisible. Keep a small margin so a sweep never pops a
+    // ripple a frame before it finishes its last visible frame.
+    rippleSweepGraceMs: 120
+  },
+  audio: {
+    masterGain: 0.7,
+    ambientGain: 0.46,
+    sfxGain: 1,
+    musicGain: 0,
+    beginConfirmHz: 220,
+    beginConfirmMs: 90,
+    beginConfirmGain: 0.24,
+    whooshMs: 200,
+    plopMs: 80,
+    twitchMs: 40,
+    nibbleTickMs: 30,
+    nibbleGapMs: 58,
+    hookMs: 180,
+    snapMs: 200,
+    catchMs: 800,
+    splashMs: 260,
+    escapeMs: 340,
+    lineZipMinTension: 0.4,
+    lineZipFrequencyHz: 200,
+    reelClickMinIntervalMs: 70,
+    reelClickMaxIntervalMs: 220,
+    reelClickGain: 0.11,
+    reelClickFilterStartHz: 900,
+    reelClickFilterEndHz: 700,
+    lineStrainMinTension: 0.78,
+    lineStrainGain: 0.16,
+    lineStrainPitchRise: 1,
+    rodLoadTickMinTension: 0.35,
+    rodLoadTickGain: 0.045,
+    ambientFilterHz: 200,
+    ambientBufferSeconds: 1,
+    ambientNoiseStep: 0.12,
+    ambientNoiseDamping: 0.96,
+    impactSplashIntensity: 0.32,
+    missedSplashIntensity: 0.42,
+    struggleSplashIntensity: 0.7,
+    thrumFrequencyHz: 60,
+    thrumGain: 0.1
+  },
+  haptics: {
+    tapBegin: [10],
+    nibbleTick: [15],
+    hookset: [20, 40, 20],
+    tensionPulse: [30],
+    // One crisp tick per reel tap — immediate "the crank caught" feedback.
+    reelTap: [12],
+    lineSnap: [80],
+    catch: [10, 30, 10, 30, 60],
+    // A personal best deserves a longer, celebratory pattern than a plain
+    // catch — three rising pulses into a held one.
+    personalBest: [15, 40, 15, 40, 15, 40, 110],
+    missed: [10],
+    escape: [15, 15],
+    fishSurge: [25, 35, 20],
+    tensionRepeatMs: 200
+  },
+  ui: {
+    debugDefaultDev: true,
+    debugPanelMaxRows: 14,
+    landscapeMinAspect: 1.05,
+    minTouchTargetPx: 44,
+    safeOverlayOpacity: 0.72,
+    resultMaxWidthPx: 360,
+    lineSvgPaddingPx: 8,
+    worldProjectScale: 44,
+    worldProjectOffsetXRatio: 0.5,
+    worldProjectOffsetYRatio: 0.66,
+    hookJerkScreenPx: 22,
+    reelHintTensionWarn: 0.72,
+    // Fight drama (11_FAILURE_AESTHETICS adjacent — losing should LOOM first):
+    // a fish surge nudges the camera for surgeShakeMs, and a red vignette
+    // breathes in from the screen edges as tension closes on the snap line,
+    // starting at dangerVignetteStartRatio of the effective near-snap warning.
+    surgeShakeMs: 280,
+    surgeShakeAmplitudeM: 0.05,
+    // A snap is the loudest moment in the game (11_FAILURE_AESTHETICS): the
+    // longer window overdrives the same decay curve (remaining/surgeShakeMs
+    // exceeds 1 at first), so the snap jolt starts harder than any surge.
+    snapShakeMs: 460,
+    dangerVignetteStartRatio: 0.9,
+    // First-session coaching: the twitch hint dismisses itself after this long
+    // so the water never stays captioned.
+    coachHintAutoHideMs: 5200
+  }
+} as const;
+
+export type Tuning = typeof TUNING;

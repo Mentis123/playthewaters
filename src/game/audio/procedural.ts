@@ -1,0 +1,311 @@
+import { TUNING } from '@/game/tuning/tuning';
+
+type AudioContextCtor = typeof AudioContext;
+
+function clampGain(gain: number): number {
+  return Math.min(1, Math.max(0, gain));
+}
+
+export class ProceduralAudio {
+  private ctx: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private ambient: GainNode | null = null;
+  private sfx: GainNode | null = null;
+  private lineZip: { osc: OscillatorNode; gain: GainNode } | null = null;
+  private ambientSource: AudioBufferSourceNode | null = null;
+  private reelTimer: number | null = null;
+  private reelLoopTension = 0;
+  private muted = false;
+
+  // Player sound preference (settings strip). Ramped, not snapped, so toggling
+  // mid-ambience doesn't click; survives unlock() because unlock re-reads it.
+  setMuted(muted: boolean) {
+    this.muted = muted;
+    if (this.ctx && this.master) {
+      this.master.gain.setTargetAtTime(
+        muted ? 0 : clampGain(TUNING.audio.masterGain),
+        this.ctx.currentTime,
+        0.04
+      );
+    }
+  }
+
+  isMuted(): boolean {
+    return this.muted;
+  }
+
+  async unlock() {
+    if (!this.ctx) {
+      const Ctor = (window.AudioContext || (window as typeof window & { webkitAudioContext?: AudioContextCtor }).webkitAudioContext) as AudioContextCtor;
+      this.ctx = new Ctor();
+      // iOS: without this the ring/silent switch mutes Web Audio while HTML
+      // audio keeps playing, so a phone on silent hears nothing at all.
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+      if (session) {
+        try {
+          session.type = 'playback';
+        } catch {
+          // Older WebKit exposes the object but rejects the write.
+        }
+      }
+      this.master = this.ctx.createGain();
+      this.ambient = this.ctx.createGain();
+      this.sfx = this.ctx.createGain();
+      // Clamp tuning-supplied gains so a tuning typo can't drive a bus past
+      // unity and clip the output.
+      this.master.gain.value = this.muted ? 0 : clampGain(TUNING.audio.masterGain);
+      this.ambient.gain.value = clampGain(TUNING.audio.ambientGain);
+      this.sfx.gain.value = clampGain(TUNING.audio.sfxGain);
+      this.ambient.connect(this.master);
+      this.sfx.connect(this.master);
+      this.master.connect(this.ctx.destination);
+      this.startAmbient();
+    }
+
+    await this.ctx.resume();
+  }
+
+  // Tab backgrounded: park the context so the ambient loop stops burning
+  // battery and yields the audio session (iOS) back to whatever else plays.
+  async suspend() {
+    if (this.ctx && this.ctx.state === 'running') {
+      await this.ctx.suspend().catch(() => undefined);
+    }
+  }
+
+  async resume() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      await this.ctx.resume().catch(() => undefined);
+    }
+  }
+
+  // Full teardown for unmount: stop loops and sources, close the context.
+  // The instance is reusable afterwards — unlock() rebuilds from scratch.
+  dispose() {
+    this.stopLoops();
+    if (this.ambientSource) {
+      try {
+        this.ambientSource.stop();
+      } catch {
+        // already stopped
+      }
+      this.ambientSource = null;
+    }
+    if (this.ctx) {
+      void this.ctx.close().catch(() => undefined);
+    }
+    this.ctx = null;
+    this.master = null;
+    this.ambient = null;
+    this.sfx = null;
+  }
+
+  beginConfirm() {
+    this.tone(TUNING.audio.beginConfirmHz, TUNING.audio.beginConfirmHz, TUNING.audio.beginConfirmMs, 'sine', TUNING.audio.beginConfirmGain);
+  }
+
+  castWhoosh(power: number) {
+    this.noiseBurst(TUNING.audio.whooshMs, TUNING.audio.sfxGain * power, 'lowpass', 2000, 500);
+  }
+
+  lurePlop(velocity: number) {
+    this.tone(180 + velocity * 80, 90, TUNING.audio.plopMs, 'sine', TUNING.audio.sfxGain);
+    this.noiseBurst(TUNING.audio.plopMs, TUNING.audio.sfxGain * 0.35, 'lowpass', 900, 220);
+  }
+
+  lureTwitch() {
+    this.noiseBurst(TUNING.audio.twitchMs, TUNING.audio.sfxGain * 0.28, 'bandpass', 1400, 1200);
+  }
+
+  nibbleTick() {
+    this.tone(50, 50, TUNING.audio.nibbleTickMs, 'triangle', TUNING.audio.sfxGain * 0.8);
+    window.setTimeout(() => {
+      this.tone(50, 50, TUNING.audio.nibbleTickMs, 'triangle', TUNING.audio.sfxGain * 0.55);
+    }, TUNING.audio.nibbleGapMs);
+  }
+
+  hooksetThunk() {
+    this.tone(80, 44, TUNING.audio.hookMs, 'sine', TUNING.audio.sfxGain);
+    this.noiseBurst(TUNING.audio.twitchMs, TUNING.audio.sfxGain * 0.55, 'lowpass', 1200, 260);
+  }
+
+  fishSplash(intensity: number) {
+    this.noiseBurst(TUNING.audio.splashMs, TUNING.audio.sfxGain * intensity, 'lowpass', 1500, 260);
+  }
+
+  lineSnap() {
+    this.tone(800, 200, TUNING.audio.snapMs, 'sawtooth', TUNING.audio.sfxGain);
+  }
+
+  catchChime() {
+    // Rising G4 -> B4 -> D5 arpeggio (was two simultaneous notes): the win
+    // resolves upward, in step with the result card's staged reveal.
+    this.tone(392, 392, TUNING.audio.catchMs, 'sine', TUNING.audio.sfxGain * 0.42);
+    window.setTimeout(() => {
+      this.tone(494, 494, TUNING.audio.catchMs, 'sine', TUNING.audio.sfxGain * 0.34);
+    }, 90);
+    window.setTimeout(() => {
+      this.tone(587, 587, TUNING.audio.catchMs * 1.4, 'sine', TUNING.audio.sfxGain * 0.3);
+    }, 185);
+  }
+
+  escapeSplash() {
+    this.noiseBurst(TUNING.audio.escapeMs, TUNING.audio.sfxGain * 0.62, 'lowpass', 1000, 180);
+  }
+
+  updateLoops(tension: number, reeling: boolean, rodLoading = false) {
+    if (!this.ctx || !this.sfx) {
+      return;
+    }
+
+    this.reelLoopTension = tension;
+
+    if (tension > TUNING.audio.lineStrainMinTension) {
+      if (!this.lineZip) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = TUNING.audio.lineZipFrequencyHz;
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(this.sfx);
+        osc.start();
+        this.lineZip = { osc, gain };
+      }
+      this.lineZip.osc.frequency.setTargetAtTime(TUNING.audio.lineZipFrequencyHz * (1 + tension * TUNING.audio.lineStrainPitchRise), this.ctx.currentTime, 0.03);
+      this.lineZip.gain.gain.setTargetAtTime((tension - TUNING.audio.lineStrainMinTension) * TUNING.audio.lineStrainGain, this.ctx.currentTime, 0.04);
+    } else if (this.lineZip) {
+      this.lineZip.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.03);
+    }
+
+    const shouldClick = reeling && (!rodLoading || tension >= TUNING.audio.rodLoadTickMinTension);
+
+    if (shouldClick && this.reelTimer === null) {
+      this.reelClickLoop();
+    }
+
+    if (!shouldClick && this.reelTimer !== null) {
+      window.clearTimeout(this.reelTimer);
+      this.reelTimer = null;
+    }
+  }
+
+  stopLoops() {
+    if (this.reelTimer !== null) {
+      window.clearTimeout(this.reelTimer);
+      this.reelTimer = null;
+    }
+    if (this.lineZip) {
+      this.lineZip.osc.stop();
+      this.lineZip = null;
+    }
+  }
+
+  // One discrete reel click for a single tap-to-reel pulse. Same crank-click timbre
+  // as the click loop, scaled by the last-seen tension so a tighter line clicks louder.
+  reelTick() {
+    const tensionFactor = Math.min(1, Math.max(0, this.reelLoopTension));
+    this.noiseBurst(
+      TUNING.audio.twitchMs,
+      TUNING.audio.reelClickGain + tensionFactor * TUNING.audio.rodLoadTickGain,
+      'bandpass',
+      TUNING.audio.reelClickFilterStartHz,
+      TUNING.audio.reelClickFilterEndHz
+    );
+  }
+
+  private reelClickLoop() {
+    const tensionFactor = Math.min(1, Math.max(0, this.reelLoopTension));
+    this.noiseBurst(
+      TUNING.audio.twitchMs,
+      TUNING.audio.reelClickGain + tensionFactor * TUNING.audio.rodLoadTickGain,
+      'bandpass',
+      TUNING.audio.reelClickFilterStartHz,
+      TUNING.audio.reelClickFilterEndHz
+    );
+    const interval = TUNING.audio.reelClickMaxIntervalMs - (TUNING.audio.reelClickMaxIntervalMs - TUNING.audio.reelClickMinIntervalMs) * tensionFactor;
+    this.reelTimer = window.setTimeout(() => this.reelClickLoop(), interval);
+  }
+
+  private startAmbient() {
+    if (!this.ctx || !this.ambient) {
+      return;
+    }
+
+    const buffer = this.ctx.createBuffer(
+      1,
+      this.ctx.sampleRate * TUNING.audio.ambientBufferSeconds,
+      this.ctx.sampleRate
+    );
+    const data = buffer.getChannelData(0);
+    let last = 0;
+
+    for (let index = 0; index < data.length; index += 1) {
+      last = (last + (Math.random() * 2 - 1) * TUNING.audio.ambientNoiseStep) * TUNING.audio.ambientNoiseDamping;
+      data[index] = last;
+    }
+
+    const source = this.ctx.createBufferSource();
+    const filter = this.ctx.createBiquadFilter();
+    source.buffer = buffer;
+    source.loop = true;
+    filter.type = 'lowpass';
+    filter.frequency.value = TUNING.audio.ambientFilterHz;
+    source.connect(filter);
+    filter.connect(this.ambient);
+    source.start();
+    // Held so dispose() can stop the loop — an unstopped looping source keeps
+    // playing (and pins its buffer) for the life of the context.
+    this.ambientSource = source;
+  }
+
+  private tone(startHz: number, endHz: number, durationMs: number, type: OscillatorType, volume: number) {
+    if (!this.ctx || !this.sfx) {
+      return;
+    }
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const now = this.ctx.currentTime;
+    const duration = durationMs / TUNING.timing.msPerSecond;
+    osc.type = type;
+    osc.frequency.setValueAtTime(startHz, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(endHz, 1), now + duration);
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.connect(gain);
+    gain.connect(this.sfx);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  private noiseBurst(durationMs: number, volume: number, filterType: BiquadFilterType, startHz: number, endHz: number) {
+    if (!this.ctx || !this.sfx) {
+      return;
+    }
+
+    const duration = durationMs / TUNING.timing.msPerSecond;
+    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let index = 0; index < data.length; index += 1) {
+      data[index] = Math.random() * 2 - 1;
+    }
+
+    const source = this.ctx.createBufferSource();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    const now = this.ctx.currentTime;
+    source.buffer = buffer;
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(startHz, now);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(endHz, 1), now + duration);
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfx);
+    source.start(now);
+    source.stop(now + duration);
+  }
+}
