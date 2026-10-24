@@ -26,7 +26,7 @@ import { XRAY_COLORS } from '@/components/game/scene/XRay';
 import { WallBoard } from '@/components/game/WallBoard';
 import { arrivalLine, decodeCatchLink } from '@/game/share/catchLink';
 import { SPECIES_STORY_LABELS, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
-import { keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, wallLines, type Keeper } from '@/game/wall/wall';
+import { endVisit, formatWeight, keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, touchVisit, wallLines, weightGrams, type Keeper } from '@/game/wall/wall';
 import { DebugHud } from '@/components/game/DebugHud';
 import { GameScene } from '@/components/game/GameScene';
 import { GearSelect } from '@/components/game/GearSelect';
@@ -240,6 +240,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
 
   const leavePond = useCallback(() => {
     track({ type: 'session_end' });
+    endVisit();
     void audio.current.suspend();
     if (document.fullscreenElement) {
       void document.exitFullscreen?.().catch(() => undefined);
@@ -328,7 +329,8 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     const orientation = screen.orientation as (ScreenOrientation & { lock?: (orientation: 'portrait') => Promise<void> }) | undefined;
     void orientation?.lock?.('portrait').catch(() => undefined);
     vibrate(TUNING.haptics.tapBegin);
-    visitIdRef.current = sessionStore.startSession(seed).id;
+    // The visit outlives a reload or a new tab (wall.ts touchVisit).
+    visitIdRef.current = touchVisit(sessionStore.startSession(seed).id);
     track({ type: 'session_start' });
     if (runtime.current.ghost) runtime.current.ghost.fadeFrom = performance.now();
     runtime.current.state = { kind: 'scouting', sinceMs: performance.now() };
@@ -458,20 +460,23 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       water: 'home'
     };
   }, []);
-  const keepCatch = useCallback(() => {
+  // Writes the wall and returns what went back; the card then confirms it
+  // ("On the wall ✓") and the player chooses Keep fishing or See the wall.
+  const keepCatch = useCallback((): { replacedName: string | null } => {
     const result = runtime.current.state.kind === 'result' ? runtime.current.state.catch : undefined;
     const keeper = result ? keeperFromResult(result) : null;
-    if (keeper) {
-      const { wall, replaced } = keepFish(loadWall(), keeper);
-      saveWall(wall);
-      setWallHighlight(keeper.catchId);
-      showPondNote(replaced
-        ? `On the wall. Your ${SPECIES_STORY_LABELS[replaced.species]} went back in.`
-        : 'On the wall.');
-      vibrate(TUNING.haptics.catch);
-    }
+    if (!keeper) return { replacedName: null };
+    if (visitIdRef.current) touchVisit(visitIdRef.current);
+    const { wall, replaced } = keepFish(loadWall(), keeper);
+    saveWall(wall);
+    setWallHighlight(keeper.catchId);
+    vibrate(TUNING.haptics.catch);
+    return { replacedName: replaced ? SPECIES_STORY_LABELS[replaced.species] : null };
+  }, [keeperFromResult]);
+  const keptThenWall = useCallback(() => {
     resetCast();
-  }, [keeperFromResult, resetCast, showPondNote]);
+    setWallOpen(true);
+  }, [resetCast]);
   const releaseCatch = useCallback(() => {
     const result = runtime.current.state.kind === 'result' ? runtime.current.state.catch : undefined;
     const keeper = result ? keeperFromResult(result) : null;
@@ -482,11 +487,12 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     addRipple(at, TUNING.wall.releaseRippleM, false);
     showPondNote('Let go.');
   }, [keeperFromResult, resetCast, showPondNote]);
-  // What a Keep would do, said before it is pressed: this visit's keeper.
-  const keepNote = useMemo(() => {
+  // The fish already kept this visit: a Keep then asks before swapping.
+  const currentKeeper = useMemo(() => {
     if (gameState.kind !== 'result' || gameState.outcome !== 'catch' || !visitIdRef.current) return null;
     const current = keeperOfVisit(loadWall(), visitIdRef.current);
-    return current ? `You kept a ${SPECIES_STORY_LABELS[current.species]} this visit. Keeping this one puts it back.` : null;
+    if (!current || current.catchId === gameState.catch?.catchId) return null;
+    return { name: SPECIES_STORY_LABELS[current.species], weight: formatWeight(weightGrams(current.species, current.sizeScore)) };
   }, [gameState]);
   const wallData = useMemo(() => (wallOpen ? wallLines(loadWall()) : []), [wallOpen]);
 
@@ -1217,7 +1223,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
             <span className="arrival-kicker">The Waters · a fishing game</span>
             <p className="arrival-line">{arrivalLine(arrival)}</p>
             <p className="arrival-sub">
-              It&apos;s the same pond with the same fish. The dark shape in the water is where it bit. Can you catch one too?
+              It&apos;s the same pond with the same fish. The gold ring on the water marks where it bit. Can you catch one too?
             </p>
             <button type="button" className="arrival-go" data-testid="arrival-go" onClick={begin}>
               Start fishing
@@ -1316,7 +1322,8 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
           onCastAgain={resetCast}
           onKeep={keepCatch}
           onRelease={releaseCatch}
-          keepNote={keepNote}
+          currentKeeper={currentKeeper}
+          onOpenWall={keptThenWall}
           journalLink={{ label: 'The wall →', href: '/wall' }}
         />
       ) : null}

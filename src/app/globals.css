@@ -1910,3 +1910,10 @@ code {
   opacity: 1;
   transition: opacity 0.3s ease;
 }
+/* A4.1: keep confirmation and the swap question, on the catch card. */
+.result-kept, .result-confirm { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 330px; }
+.result-kept-title { margin: 0; font-family: Georgia, serif; font-size: 1.35rem; color: rgba(222, 190, 110, 1); }
+.result-kept-sub, .result-confirm-sub { margin: 0 0 8px; font-size: 0.9rem; color: rgba(232, 238, 243, 0.86); }
+.result-confirm-title { margin: 0; font-family: Georgia, serif; font-size: 1.15rem; }
+.result-actions--stack { flex-direction: column; align-items: stretch; width: 100%; }
+.result-actions--stack button { width: 100%; min-height: 46px; }
