@@ -40,7 +40,9 @@ async function fileHash(path) {
 // the first screen, where the runtime cache picks it up on first view anyway.
 // Precache stays lean (fast install on cell connections); offline-after-first-
 // visit behaviour is unchanged.
-const PRECACHE_EXCLUDE = new Set(['/images/reel-mobile-splash.png']);
+// The treeline master PNG (2.3MB) is kept as the art source; the game loads
+// its WebP (public/assets/textures/treeline-01.webp, ~420KB).
+const PRECACHE_EXCLUDE = new Set(['/images/reel-mobile-splash.png', '/assets/textures/treeline-01.png']);
 
 async function collectAssetUrls() {
   const roots = [

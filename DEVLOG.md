@@ -852,3 +852,22 @@ Validation: decoded all 14 output files, checked formats and exact dimensions, c
 - The `/ab` e2e test waited on the review page's sample link before reading it (a race, not a product bug).
 
 Checks: 83 unit tests (visit: survives a reload, expires, rejects a clock that ran backwards). 15/15 phone-profile e2e, including keep → confirmed → reload → second keep asks → swap confirmed.
+
+## art wired in (2026-10-24)
+*The art agent delivered all ten prompts (PR #1). Four are wired in now; the six water cards wait for their chapters.*
+
+- **Icon:** the manifest and `apple-touch-icon` now point at the painted PNGs (192, 512, maskable 512, 180). iOS ignores SVG home-screen icons, so the game used to install with a blank icon.
+- **Title screen:** the painted splash is the title background, with the dusk gradient underneath while it loads. The title and tagline sit in the painted sky above the treeline (checked at iPhone 13 and SE sizes).
+- **Link preview:** `public/og-title.jpg` is the painted shoreline with "The Waters" set over its dark left side.
+  - It is rendered once with next/og and saved as a 154 KB JPEG. The live route made a 1.1 MB PNG, which some chat apps drop.
+  - Catch links keep their own fish preview.
+- **Far treeline:** the painting (as `treeline-01.webp`, 420 KB; the 2.3 MB PNG master is kept and left out of the service-worker precache) replaces both drawn rows.
+  - The swap happens only once the image has decoded, so the first frame never waits on it. `?treeline=code` is the old one; `/ab` links both at dusk.
+  - **First wiring went into the wrong component:** A2 and later draw `LayeredTreeline` (AlphaBank.tsx), and `AlphaTreeline` is the A1 baseline's. The art-vs-code captures were identical, which is how it showed. The A1 baseline is untouched.
+  - **Tuning, by capture at all four lights:**
+    - At 62% of the strip height, the lower half of the painting sat under the water line and the trees read tiny.
+    - At 100% they read near.
+    - 82% is it.
+    - The light's multiplier is applied twice to the painting: it is evenly lit and much brighter than the drawn rows, so with a single multiplier it glowed at night. Now it reads as painted by day and as silhouettes at dusk and night.
+
+Checks: 83 unit, 15 phone-profile e2e, no page errors.

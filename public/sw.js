@@ -2,7 +2,7 @@
 /* eslint-disable */
 'use strict';
 
-const CACHE_VERSION = 'fb1a61637133';
+const CACHE_VERSION = '2c54f4587132';
 const CACHE_NAME = 'reel-precache-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'reel-runtime-' + CACHE_VERSION;
 const PRECACHE_URLS = [
@@ -15,11 +15,13 @@ const PRECACHE_URLS = [
   "/assets/sprites/fish_generic.webp",
   "/assets/sprites/lure_default.webp",
   "/assets/textures/dock_planks.webp",
+  "/assets/textures/treeline-01.webp",
   "/assets/textures/water_normal.webp",
   "/assets/ui/wordmark.svg",
   "/game",
   "/icon-maskable.svg",
   "/icon.svg",
+  "/images/the-waters-splash.webp",
   "/manifest.webmanifest"
 ];
 

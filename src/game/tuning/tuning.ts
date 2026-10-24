@@ -123,6 +123,10 @@ export const TUNING = {
     backdropY: 0.2,
     backdropHeight: 2.8,
     backdropTilt: 0.12,
+    // A2 art pass: the commissioned far treeline (2048x512, transparent sky).
+    // heightFraction: how much of the backdrop strip the painting fills, from
+    // the bottom; aspect: the painting's width over height.
+    treelineArt: { src: '/assets/textures/treeline-01.webp', heightFraction: 0.82, aspect: 4 },
     treelineVisibleTop: 0.4
   },
   input: {

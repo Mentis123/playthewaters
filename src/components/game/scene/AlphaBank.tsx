@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -315,6 +315,44 @@ function mixInto(out: Rgb, a: Rgb, b: Rgb, t: number): Rgb {
   return out;
 }
 
+// Art pass (public/art/PROMPTS.md `treeline-01`): the commissioned painting
+// replaces both drawn rows (it already has a hazy back row and a darker front
+// one); `?treeline=code` keeps the drawn pair. Swapped in only once DECODED (a
+// texture assigned before its image lands draws blank), so the drawn rows hold
+// until then and the first frame never waits on the image.
+function useTreelineArt(onReady: (texture: THREE.Texture) => void) {
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (new URLSearchParams(window.location.search).get('treeline') === 'code') return undefined;
+    let cancelled = false;
+    let loaded: THREE.Texture | null = null;
+    new THREE.TextureLoader().load(TUNING.visual.treelineArt.src, (texture) => {
+      if (cancelled) {
+        texture.dispose();
+        return;
+      }
+      loaded = texture;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      // The painting fills its strip top to bottom; the drawn rows sat in the
+      // lower part of the backdrop. Repeat past the top (clamped to the
+      // painting's transparent top row) so the trees stand about as tall as
+      // before, and tile sideways at the painting's own aspect.
+      const { heightFraction, aspect } = TUNING.visual.treelineArt;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(18 / (TUNING.visual.backdropHeight * heightFraction * aspect), 1 / heightFraction);
+      texture.anisotropy = 4;
+      onReady(texture);
+    });
+    return () => {
+      cancelled = true;
+      loaded?.dispose();
+    };
+    // onReady is stable for the component's life (refs only).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
+
 // Two painted layers: a hazier back row pulled toward the fog colour (aerial
 // perspective) and a darker front row. The moon draws between sky and trees.
 export function LayeredTreeline({ light }: { light: LightRef }) {
@@ -322,6 +360,16 @@ export function LayeredTreeline({ light }: { light: LightRef }) {
   const front = useMemo(() => createTreelineLayer('front'), []);
   const backRef = useRef<THREE.MeshBasicMaterial>(null);
   const frontRef = useRef<THREE.MeshBasicMaterial>(null);
+  const backMeshRef = useRef<THREE.Mesh>(null);
+  const artRef = useRef(false);
+  useTreelineArt((texture) => {
+    artRef.current = true;
+    if (frontRef.current) {
+      frontRef.current.map = texture;
+      frontRef.current.needsUpdate = true;
+    }
+    if (backMeshRef.current) backMeshRef.current.visible = false;
+  });
   const scratch = useRef<Rgb>([0, 0, 0]);
   const white = useMemo<Rgb>(() => [1, 1, 1], []);
 
@@ -329,7 +377,14 @@ export function LayeredTreeline({ light }: { light: LightRef }) {
     const sample = light.current;
     if (frontRef.current) {
       const t = sample.treeline;
-      frontRef.current.color.setRGB(t[0], t[1], t[2], THREE.SRGBColorSpace);
+      if (artRef.current) {
+        // The painting is evenly lit and much brighter than the drawn rows, so
+        // the light's multiplier is applied twice: as painted by day, and
+        // falling away faster as the light goes (dusk, night).
+        frontRef.current.color.setRGB(t[0] * t[0], t[1] * t[1], t[2] * t[2], THREE.SRGBColorSpace);
+      } else {
+        frontRef.current.color.setRGB(t[0], t[1], t[2], THREE.SRGBColorSpace);
+      }
     }
     if (backRef.current) {
       // Fog colour is a colour, the tint a multiplier: lift the fog toward
@@ -343,7 +398,7 @@ export function LayeredTreeline({ light }: { light: LightRef }) {
   const z = -(TUNING.world.pondHeightM * 0.5) - 0.5;
   return (
     <>
-      <mesh position={[0, TUNING.visual.backdropY + 0.05, z - 0.05]} rotation={[TUNING.visual.backdropTilt, 0, 0]} renderOrder={-1.5}>
+      <mesh ref={backMeshRef} position={[0, TUNING.visual.backdropY + 0.05, z - 0.05]} rotation={[TUNING.visual.backdropTilt, 0, 0]} renderOrder={-1.5}>
         <planeGeometry args={[18, TUNING.visual.backdropHeight]} />
         <meshBasicMaterial ref={backRef} map={back} transparent depthWrite={false} fog={false} />
       </mesh>

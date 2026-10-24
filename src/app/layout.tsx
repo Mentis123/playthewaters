@@ -12,14 +12,29 @@ export const metadata: Metadata = {
   description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
   manifest: '/manifest.webmanifest',
   applicationName: 'The Waters',
+  // The site's link preview: the painted shoreline (public/art/PROMPTS.md
+  // `og`) with the title set over its dark left side, saved once as a JPEG
+  // (public/og-title.jpg, ~150 KB; chat apps drop large previews). Catch links
+  // have their own (src/app/c/[code]/opengraph-image.tsx).
+  openGraph: {
+    title: 'The Waters',
+    description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
+    siteName: 'The Waters',
+    images: [{ url: '/og-title.jpg', width: 1200, height: 630, alt: 'The Waters: six waters, one shore' }]
+  },
+  twitter: { card: 'summary_large_image', images: ['/og-title.jpg'] },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'The Waters'
   },
+  // Art pass: iOS ignores SVG home-screen icons, so the painted PNGs lead.
   icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/icon.svg' }]
+    icon: [
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon.svg', type: 'image/svg+xml' }
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }]
   }
 };
 

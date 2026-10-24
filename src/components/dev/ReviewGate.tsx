@@ -119,6 +119,24 @@ export function ReviewGate() {
         </div>
       </section>
 
+      <section className="ab-round" data-testid="review-art">
+        <h2>New art (merged 24 Oct)</h2>
+        <p className="ab-lede">
+          The title screen, the home-screen icon (add to home screen again to see it) and the link preview are the new paintings.
+          The far trees on the pond are the new painted treeline; compare it with the old drawn one at dusk:
+        </p>
+        <div className="ab-ponds">
+          <div className="ab-pond">
+            <a className="ab-open" href="/game?light=dusk" target="_blank" rel="noopener" data-testid="review-art-new">
+              Painted trees (new)
+            </a>
+            <a className="ab-open" href="/game?light=dusk&treeline=code" target="_blank" rel="noopener">
+              Drawn trees (old)
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section className="ab-round" data-testid="review-checks">
         <h2>Starred checks</h2>
         {REVIEW.checks.map((check) => (

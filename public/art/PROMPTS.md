@@ -52,4 +52,4 @@ One card per water, for the site and for the moment each water is discovered. **
 
 ## Status
 
-The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all are `wanted`.
+The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all ten are `delivered`. Wired in: `icon`, `og` (as `public/og-title.jpg` with the title set over it), `splash`, `treeline-01` (as a WebP). Waiting for their chapters: the six water cards.

@@ -91,8 +91,11 @@ code {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  /* The dusk light (23_ALPHA_CANON §3): zenith to horizon, then the far water. */
+  /* Art pass: the painted title screen (public/art/PROMPTS.md `splash`), over
+     the dusk gradient it replaced (still the fallback while it loads). */
   background:
+    linear-gradient(180deg, rgba(10, 14, 22, 0.25) 0%, transparent 40%),
+    url('/images/the-waters-splash.webp') center / cover no-repeat,
     radial-gradient(ellipse 70% 22% at 62% 46%, rgba(255, 176, 122, 0.32), transparent 70%),
     linear-gradient(180deg, #34405f 0%, #6a5a6e 30%, #e0875b 47%, #3a3236 50%, #263840 64%, #1b2328 100%);
 }
@@ -105,15 +108,17 @@ code {
   letter-spacing: 0.01em;
   color: #f3e6d4;
   text-shadow: 0 2px 24px rgba(10, 14, 18, 0.55);
-  transform: translateY(-14vh);
+  /* In the painted sky, above the treeline (the splash art leaves it clear). */
+  transform: translateY(-35vh);
 }
 
 .splash-title-tag {
   font-size: 13px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(243, 230, 212, 0.72);
-  transform: translateY(-14vh);
+  color: rgba(243, 230, 212, 0.86);
+  text-shadow: 0 1px 10px rgba(10, 14, 18, 0.6);
+  transform: translateY(-38vh);
 }
 
 .splash-title-image {
