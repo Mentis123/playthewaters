@@ -877,3 +877,60 @@ Checks: 83 unit, 15 phone-profile e2e, no page errors.
 Delivered legend-01, lilypads, treeline-02, old-sinker and bench-wood using built-in imagegen. The ancient carp follows the existing trophy plates; the lily-pond shore uses the owner reference photo. Files follow the exact paths, dimensions and formats in public/art/prompts.json, with delivery author and date recorded. Four cutouts retain alpha; bench wood is opaque. WebP exports use quality 85 with full alpha quality.
 
 Validation: all five files decoded and passed size, format and transparency checks. The 2x2 lily sheet has clear central dividers (two resampling pixels at alpha 1/255, no visible overlap). Inspected cutouts against game-colour backgrounds; revised treeline edges for a more continuous repeat. Assets only: game wiring, in-game tint and scale, chapter comparison and phone approval remain with the game agent and owner. No gameplay candidate or full milestone validation claimed. Prompts remain documented in public/art/PROMPTS.md.
+
+## v1.4-lilypond (2026-10-24)
+*A4 passed ("A4 passed"). A5 per canon §2/§4/§5/§10: water 2 and the walk. Rubric committed first (`docs/alpha/A5_RUBRIC.md`; it holds the legend's conditions and is never served).*
+
+**Shipped:**
+- **A water is data.**
+  - `src/game/waters/waters.ts` holds, per water: species weights, homes, pad islands, reed islands, body colours, clarity, reflection and the legend's lights.
+  - Spawning, homes and the water shader read it. The home pond's rng streams and shader output are unchanged; old seeds and links regrow the same fish.
+  - Clarity is now a uniform. Another water's colours are the light's home colours scaled by (its colour / home day colour), so all four lights still move it.
+- **The walk.**
+  - At the home pond's left edge, a worn path of stepping stones leads off with a breathing warm light through the trees; the lily pond has one at its right edge.
+  - Tapping it runs a 3.6 s camera walk: out along the bank toward the path, a soft veil, the next water grown, in from the other side. No menu.
+  - The water you are at is remembered (`thewaters.shore.v1`). Arriving counts a visit (the legend contract counts visits, never the clock).
+  - The first arrival shows `02-lily-pond.webp` with "the lily pond", once.
+- **The lily pond.**
+  - Brown, half the home pond's clarity, 45% of its sky reflection, no bank stones (photo 04 is grass and reeds).
+  - Five drifting pad islands (79 pads, one instanced draw, re-matrixed per frame without allocation) and two reed islands.
+  - Fish under a pad vanish: sprite, smudge and in-water shadow, eased.
+  - A cast onto a pad snags. The lure sits on the pad and fish ignore it; any tap frees it with a splash that spooks nearby fish, and nothing is lost.
+  - Fish: bass, pike, minnows and carp, no kingfish.
+- **The old sinking lure** (home pond find).
+  - A brass glint under the near bank, for a moment every 4.2 s. Cast onto it: "Not a fish. An old sinking lure, tangled in line under the bank."
+  - Once found, it rests on a bank stone. Tap to tie it on, tap again or pick any strip lure to take it off. Never in the strip; while tied, no strip lure shows as chosen.
+  - It sinks deeper than any other lure.
+  - The home pond grows a "NO SINKING LURES" sign.
+  - On the wall it is marked by its lure and never displaces a line made without it.
+- **The bench** (lily pond): tap it for a weathered plank with one carved line, the only written rumour.
+- **The legend, Old Mossback.**
+  - Present on odd lily visits from the third, at dawn and dusk.
+  - Surfaces every 2–4 min with a thump, a splash, a wide ring and a dark back.
+  - Takes only the old sinking lure, still for 12 s, within 1.6 m. While that lure lies in its water, other fish keep away.
+  - A cast landing within 0.7 m sends it off with a bow wave for the rest of the visit.
+  - Always its full size (89 lb 15 oz, the heaviest fish in its water).
+  - Its link and preview say "something very big" with no name, art or silhouette, only the ring where it was hooked.
+  - Released, its wall line is drawn in the second colour.
+- **Links and the wall carry the water.** An optional `w` field; A4 links still open the home pond.
+- **`/ab`** is in review mode for A5: steps, the home and lily links, a legend shortcut (`?water=lily&legend=1&sinker=1&light=dawn`, first surfacing at 15 s), and ten starred checks.
+- **Art pending** (prompts 11–15): each is gated in `src/game/art/delivered.ts` so a missing file is never requested. Code stand-ins until then.
+
+**Found by checking, not by looking:**
+- **The rubric's legend numbers made it uncatchable:** take within 1.2 m but spook within 1.5 m. Now 1.6 / 0.7, with a unit test that take > spook + 0.3.
+- **The first probe saw a moss bass take the old lure at 12 s,** the same moment the legend would: the primary fish was already on its way. Now other fish keep clear of that lure in the legend's water.
+- **The weights were backwards:** a big moss bass weighs 49 lb, against the bench's "31 lb" legend. The legend is now the heaviest fish in its water (90 lb on the bench).
+- **On a portrait phone the view is only about ±2 m at mid-pond** (a raycast of the camera frustum). The first pad layout sat half off-screen; everything is placed inside it now.
+- **The bench and the found lure first sat against the lure buttons** (bottom left); moved onto the bank edge.
+- **`/dev` logged a 404 on every production visit** (it asked a dev-only endpoint for the LAN address). It no longer asks in production; the shell spec had started failing on it.
+
+**Checks:** 91 unit tests (waters, legend, visits, catchability, sinker lines, A4 links), 20 phone-profile e2e (new `a5-lily.spec`: walk there and back, remembered, card once; pad snag and free; both finds; strip never shows the old lure and untying works; legend: present, takes the old lure, a cast on top spooks it; lily link opens the lily pond).
+
+Planted defects, each caught:
+- A pad that does not snag fails the snag test.
+- A walk that stays at the same water fails the walk test.
+- A legend that takes a moving lure, or appears on an even visit, fails the unit tests.
+
+Budget at the lily pond: 37–54 draws, 2.0–2.8k triangles. No console or page errors.
+
+**Not testable here:** the feel of the walk on a phone (canon gate: two failures stop the shoreline at two waters), and whether the legend's tell reads as unmistakable on glass.

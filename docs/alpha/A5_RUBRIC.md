@@ -87,4 +87,4 @@ Water 2 and the way to it, on the same engine as the home pond (canon §2: a wat
 
 | Date | Build | Gate try | Owner review | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|
-| | | 1 of 2 | | / 24 | | |
+| 24 Oct 2026 | v1.4-lilypond-candidate | 1 of 2 | pending at `/ab` | / 24 | | pending. Build notes: legend radii corrected to take 1.6 / spook 0.7 (the §2 numbers made it uncatchable); bench line now 90 LB; bench on the left bank (the right was the path); see DEVLOG v1.4. |

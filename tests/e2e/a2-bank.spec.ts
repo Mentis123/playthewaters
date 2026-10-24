@@ -67,7 +67,7 @@ test('/ab says what is being reviewed and what to try', async ({ page }) => {
   if (await page.getByTestId('review-checks').count()) {
     const sample = page.getByTestId('review-sample-link');
     await sample.waitFor();
-    expect(await sample.getAttribute('href')).toMatch(/^\/c\//);
+    expect(await sample.getAttribute('href')).toMatch(/^\/(c\/|game)/);
     await expect(page.getByTestId('review-checks')).toBeVisible();
   } else {
     const hrefs = await page.locator('a.ab-open').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''));

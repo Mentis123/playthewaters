@@ -28,6 +28,10 @@ export function DevGate({ checklist }: DevGateProps) {
     setMounted(true);
 
     async function loadDevInfo() {
+      // The LAN address only exists in development; production answers 404 by
+      // design (api/dev-info), which logged a console error on every /dev
+      // visit. Skip the request there and use the page's own address.
+      if (process.env.NODE_ENV !== 'development') throw new Error('production');
       const response = await fetch('/api/dev-info', { cache: 'no-store' });
       const info = (await response.json()) as DevInfoResponse;
       if (!ignore) {

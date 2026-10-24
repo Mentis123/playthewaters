@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 import { updateFish } from '@/game/fish/fishStateMachine';
-import { cueForReveal, speciesTuning, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
+import { cueForReveal, isLegend, speciesTuning, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
 import { lureMods } from '@/game/gear/gear';
 import { clamp, lerp, lerpVec } from '@/game/math/vec';
 import { createId, useSessionStore } from '@/game/persistence/sessionStore';
@@ -46,15 +46,20 @@ import { createLightSample, phaseOf, startPhaseForVisit } from '@/game/light/pon
 import { feedingAmount, habitCueIntervalMultiplier, stillNeededMs, stillRingAmount } from '@/game/fish/habits';
 import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
 import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/game/scene/silhouettes';
+import { Bench, CarriedSinker, LegendSwirl, LilyPads, ReedIslands, ShorePath, SinkerGlint, SinkerSign } from '@/components/game/scene/Shore';
+import { legendAtLight, legendSpookedBy, legendTakes, surfaceGap } from '@/game/waters/legend';
+import { padCoverAt, WATERS } from '@/game/waters/waters';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
-import type { SceneProps, ScreenPoint } from '@/components/game/types';
+import type { Runtime, SceneProps, ScreenPoint } from '@/components/game/types';
+import type { FishSnapshot } from '@/game/fish/fishStateMachine';
+import type { Vec2 } from '@/game/math/vec';
 
 const ASSETS = {
   waterNormal: '/assets/textures/water_normal.webp',
   lureDefault: '/assets/sprites/lure_default.webp'
 } as const;
 
-export function GameScene({ started, runtime, audio, setOverlay, setRipples, ripples, setRodOffset, setPixelRatio, onResult, onRestoringChange, onFocusActiveChange, arrivalPhase }: SceneProps) {
+export function GameScene({ started, runtime, audio, setOverlay, setRipples, ripples, setRodOffset, setPixelRatio, onResult, onRestoringChange, onFocusActiveChange, arrivalPhase, water = 'home', foundSinker = false, sinkerTied = false }: SceneProps) {
   const fishRefs = useRef<Array<THREE.Mesh | null>>(
     Array.from({ length: TUNING.world.fishMaxVisible }, () => null)
   );
@@ -98,6 +103,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
   );
   const { camera, gl, size } = useThree();
   const cameraShakenRef = useRef(false);
+  const walkingRef = useRef(false);
   const reducedMotionRef = useRef(false);
   useEffect(() => {
     reducedMotionRef.current =
@@ -207,7 +213,9 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       const species = speciesTuning(ghost.species);
       mesh.scale.set(species.widthM, species.heightM, 1);
     }
-    mesh.visible = true;
+    // A legend's link shows where it was hooked and nothing else (canon §4):
+    // the ring, never its shape.
+    mesh.visible = !isLegend(ghost.species);
     mesh.position.set(ghost.pos.x, TUNING.world.fishDepthY, ghost.pos.z);
     const breath = 0.78 + 0.22 * Math.sin(now * 0.001 * Math.PI * 2 * TUNING.link.ghostPulseHz);
     material.opacity = TUNING.link.ghostOpacity * breath * fade;
@@ -219,6 +227,106 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       marker.position.set(ghost.pos.x, TUNING.world.waterY + 0.015, ghost.pos.z);
       marker.scale.setScalar(TUNING.link.markerRadiusM * (0.7 + 0.5 * t));
       (marker.material as THREE.MeshBasicMaterial).opacity = TUNING.link.markerOpacity * (1 - t * 0.7) * fade;
+    }
+  }
+
+  // ---------------------------------------------------------------- A5
+  const waterDef = WATERS[water];
+  const padHideRef = useRef<number[]>(Array.from({ length: TUNING.world.fishMaxVisible }, () => 1));
+  function padVisibility(slot: number, fish: FishSnapshot, dt: number): number {
+    if (waterDef.pads.length === 0) return 1;
+    const covered = fish.state.kind !== 'hooked'
+      && padCoverAt(waterDef, fish.position.x, fish.position.z, performance.now() / 1000, TUNING.pads.hideGrowM) >= 0;
+    const hide = padHideRef.current;
+    hide[slot] += ((covered ? 0 : 1) - hide[slot]) * Math.min(1, dt * 5);
+    return hide[slot];
+  }
+
+  // Where a cast landed, along the shore: the old sinking lure under the home
+  // bank, the legend's water, a lily pad. Only the current chapter's look.
+  function landOnShore(current: Runtime, target: Vec2, now: number): 'found' | 'snag' | 'water' {
+    if (!current.habits) return 'water';
+    if (current.water === 'home' && !foundSinker) {
+      const spot = TUNING.find.sinker;
+      if (Math.hypot(target.x - spot.x, target.z - spot.z) <= spot.hookRadiusM) return 'found';
+    }
+    const legend = current.legend;
+    if (legend && current.water === 'lily') {
+      const d = Math.hypot(target.x - current.legendPos.x, target.z - current.legendPos.z);
+      if (legendSpookedBy(d, legend, legendAtLight(waterDef, lightRef.current.name))) {
+        legend.spooked = true;
+        // A bow wave off toward the far dark: it is gone for this visit.
+        audio.current.fishSplash(TUNING.audio.impactSplashIntensity * 1.4);
+        const from = current.legendPos;
+        setRipples((value) => [
+          ...value,
+          ...[0, 1, 2, 3].map((k) => ({
+            id: createId(),
+            pos: { x: from.x + k * 0.25, z: from.z - k * 0.45 },
+            radius: 0.9 - k * 0.12,
+            createdAt: now + k * 140,
+            durationMs: TUNING.fish.cueRippleDurationMs * 1.4,
+            falseCue: false,
+            cue: 'wake' as const
+          }))
+        ]);
+      }
+    }
+    if (padCoverAt(waterDef, target.x, target.z, now / 1000, TUNING.pads.snagGrowM) >= 0) return 'snag';
+    return 'water';
+  }
+
+  // Other fish keep clear of the old sinking lure lying in the legend's water
+  // (it came up for the one on the bottom; nothing else dares).
+  function legendGuardsLure(current: Runtime): boolean {
+    const legend = current.legend;
+    if (!legend || !legend.present || legend.spooked || current.water !== 'lily') return false;
+    if (current.lureId !== 'old_sinker' || current.fish.instance.species === 'old_mossback') return false;
+    if (!legendAtLight(waterDef, lightRef.current.name)) return false;
+    return Math.hypot(current.lurePos.x - current.legendPos.x, current.lurePos.z - current.legendPos.z) <= TUNING.legend.takeRadiusM;
+  }
+
+  // The lily pond's legend (docs/alpha/A5_RUBRIC.md §2): it surfaces now and
+  // then with a deep sound, drifts about its pads, and takes only the old
+  // sinking lure lying dead still beside it. Never explained.
+  function updateLegend(current: Runtime, now: number, stillMs: number) {
+    const legend = current.legend;
+    if (!legend || !current.habits || current.water !== 'lily' || legend.spooked) return;
+    if (!legendAtLight(waterDef, lightRef.current.name)) return;
+    const home = TUNING.legend.home;
+    const w = now * 0.00004;
+    current.legendPos.x = home.x + Math.sin(w * 3.1) * TUNING.legend.roamM;
+    current.legendPos.z = home.z + Math.sin(w * 2.3 + 1) * TUNING.legend.roamM * 0.6;
+    if (now > legend.nextSurfaceAt && current.state.kind !== 'hooked') {
+      legend.surfacingUntil = now + TUNING.legend.surfaceShowMs;
+      legend.nextSurfaceAt = now + surfaceGap(current.rng);
+      audio.current.hooksetThunk();
+      audio.current.fishSplash(TUNING.audio.impactSplashIntensity * 1.3);
+      setRipples((value) => [
+        ...value,
+        {
+          id: createId(),
+          pos: { x: current.legendPos.x, z: current.legendPos.z },
+          radius: 1.1,
+          createdAt: now,
+          durationMs: TUNING.fish.cueRippleDurationMs * 1.6,
+          falseCue: false,
+          cue: 'ripple'
+        }
+      ]);
+    }
+    if (current.state.kind !== 'lure_idle' || current.snagged) return;
+    if (current.fish.instance.species === 'old_mossback') return;
+    const distance = Math.hypot(current.lurePos.x - current.legendPos.x, current.lurePos.z - current.legendPos.z);
+    if (legendTakes({ lureId: current.lureId, stillMs, distance, atLight: true, state: legend })) {
+      // It comes up under the lure: the primary fish becomes the legend.
+      current.fish = {
+        position: { x: current.legendPos.x, z: current.legendPos.z },
+        velocity: { x: 0, z: 0 },
+        instance: { species: 'old_mossback', personality: 0.6, home: 'pads_right' },
+        state: { kind: 'commit', lurePos: { ...current.lurePos }, biteEtaMs: 1400, sinceMs: now }
+      };
+      legend.surfacingUntil = now + TUNING.legend.surfaceShowMs * 0.6;
     }
   }
 
@@ -252,6 +360,26 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       onFocusActiveChange(nextFocusActive);
     }
 
+    // Camera: the composed rest position, plus the A5 walk along the bank
+    // (out of one water toward the path, then into the next from the other
+    // side; docs/alpha/A5_RUBRIC.md), plus the surge shake. Allocation-free.
+    const rest = TUNING.world.cameraPosition;
+    let baseX = rest[0];
+    let baseY = rest[1];
+    let baseZ = rest[2];
+    const walk = current.walk;
+    let walking = false;
+    if (walk) {
+      const k = clamp((now - walk.startAt) / (TUNING.walk.durationMs * 0.5), 0, 1);
+      const e = k * k * (3 - 2 * k);
+      const off = walk.phase === 'out' ? e : 1 - e;
+      const side = walk.phase === 'out' ? walk.dir : -walk.dir;
+      baseX += side * off * 3.2;
+      baseY -= off * 0.9;
+      baseZ -= off * 0.8;
+      walking = true;
+      if (walk.phase === 'in' && k >= 1) current.walk = null;
+    }
     // Surge camera shake: a fish surge (updateFight) jolts the camera for
     // surgeShakeMs — a decaying lateral tremor so the spike lands physically,
     // not just in the tension bar. Position-only (no re-lookAt): the slight
@@ -261,14 +389,21 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       const decay = shakeRemaining / TUNING.ui.surgeShakeMs;
       const amp = TUNING.ui.surgeShakeAmplitudeM * decay * decay;
       camera.position.set(
-        TUNING.world.cameraPosition[0] + Math.sin(now * 0.085) * amp,
-        TUNING.world.cameraPosition[1] + Math.cos(now * 0.117) * amp * 0.6,
-        TUNING.world.cameraPosition[2]
+        baseX + Math.sin(now * 0.085) * amp,
+        baseY + Math.cos(now * 0.117) * amp * 0.6,
+        baseZ
       );
       cameraShakenRef.current = true;
-    } else if (cameraShakenRef.current) {
+    } else if (cameraShakenRef.current || walking || walkingRef.current) {
       cameraShakenRef.current = false;
-      camera.position.set(...TUNING.world.cameraPosition);
+      camera.position.set(baseX, baseY, baseZ);
+    }
+    if (walking || walkingRef.current) {
+      // Look a little ahead along the bank while walking; back to the
+      // composed target once the walk ends.
+      const target = TUNING.world.cameraTarget;
+      camera.lookAt(target[0] + (baseX - rest[0]) * 1.25, target[1], target[2] + (baseZ - rest[2]) * 0.5);
+      walkingRef.current = walking;
     }
 
     if (gameState.kind === 'result') {
@@ -282,6 +417,25 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       setLureState('casting');
 
       if (t >= 1) {
+        // A5: what the lure landed on before anything else reads the landing:
+        // the old sinking lure under the home bank (a find), the legend's
+        // water (a careless cast costs the visit), a lily pad (a snag).
+        const shoreLanding = landOnShore(current, gameState.target, now);
+        if (shoreLanding === 'found') {
+          current.lureVisible = false;
+          current.state = { kind: 'found', what: 'sinker', shownAt: now };
+          audio.current.lurePlop(gameState.power);
+          vibrate(TUNING.haptics.hookset);
+          setGameState(current.state);
+        } else if (shoreLanding === 'snag') {
+          current.snagged = true;
+          current.lureLandedAt = now;
+          current.state = { kind: 'lure_idle', lurePos: gameState.target, sinceMs: now, lastTwitchAt: current.lastTwitchAt };
+          current.lureY = TUNING.world.lureSurfaceY;
+          audio.current.lurePlop(gameState.power * 0.4);
+          vibrate(TUNING.haptics.nibbleTick);
+          setGameState(current.state);
+        } else {
         // Whichever fish is nearest where the lure just splashed becomes the
         // catchable one — so casting at any visible fish (not just the single
         // privileged primary) makes that fish turn toward the splash and engage.
@@ -327,9 +481,17 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           }
         ]);
         setGameState(current.state);
+        }
       }
     } else if (gameState.kind === 'lure_idle' || gameState.kind === 'rod_control') {
-      current.lureY = Math.max(TUNING.world.lureSinkDepthY, current.lureY - TUNING.lure.lureSinkRate * lureMods(current.lureId).sinkMult * dt);
+      if (current.snagged) {
+        // On a pad: it sits there until a tap pulls it free (GameClient).
+        current.lureY = TUNING.world.lureSurfaceY;
+      } else {
+        // The old sinking lure goes to the bottom (deeper than the others).
+        const floor = current.lureId === 'old_sinker' ? TUNING.world.lureSinkDepthY * 1.8 : TUNING.world.lureSinkDepthY;
+        current.lureY = Math.max(floor, current.lureY - TUNING.lure.lureSinkRate * lureMods(current.lureId).sinkMult * dt);
+      }
       updateRodControl(current, dt);
       if (gameState.kind === 'rod_control') {
         // Keep the runtime's own state fresh, but don't push it through the
@@ -475,16 +637,17 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     current.fish = updateFish({
       nowMs: now,
       dt,
-      lurePos: current.lureVisible ? current.lurePos : null,
+      lurePos: current.lureVisible && !current.snagged && !legendGuardsLure(current) ? current.lurePos : null,
       lureMoved: now < current.lureMovedUntil,
       hooked: current.state.kind === 'hooked',
       rng: current.rng,
       // The equipped lure draws/spooks only the player's primary fish.
       lureAttractMult: equippedLure.attractMult,
       lureFearMult: equippedLure.fearMult,
-      habit: current.habits ? { feeding: feedingAmount(current.fish.instance.species, phase), stillMs } : undefined
+      habit: current.habits ? { feeding: feedingAmount(current.fish.instance.species, phase), stillMs, water: current.water } : undefined
     }, current.fish);
     updateHookedContactPoint(current, dt);
+    updateLegend(current, now, stillMs);
 
     // A3.1: a fish circling a lure that is not still enough nudges at it, so
     // the player can see that something wants it and is waiting.
@@ -558,7 +721,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         // Decor fish ignore the lure entirely — neutral gear (no draw/spook).
         lureAttractMult: 1,
         lureFearMult: 1,
-        habit: current.habits ? { feeding: feedingAmount(decor.snapshot.instance.species, phase), stillMs: 0 } : undefined
+        habit: current.habits ? { feeding: feedingAmount(decor.snapshot.instance.species, phase), stillMs: 0, water: current.water } : undefined
       }, decor.snapshot);
 
       // Alive pond: every fish — not just the catchable one — leaves the odd cue
@@ -637,7 +800,9 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       const fade = isPrimary
         ? fishFadeMultiplier(now, current.fishFadePhase, current.fishFadePeriodMs)
         : fishFadeMultiplier(now, current.decorFish[i - 1].fadePhase, current.decorFish[i - 1].fadePeriodMs);
-      const distanceVis = fishDistanceVisibility(snapshot.position);
+      // A5: a fish under a lily pad shows nothing at all (sprite, smudge and
+      // in-water shadow all read distanceVis).
+      const distanceVis = fishDistanceVisibility(snapshot.position) * padVisibility(i, snapshot, dt);
       // Crossfade species silhouette (visible only as it resolves near) against
       // the generic smudge twin (visible only while far/unknown), driven by the
       // same reveal amount as the size lerp — so shape, size AND identity all
@@ -839,14 +1004,40 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <AlphaSky light={lightRef} />
           <Moon runtime={runtime} light={lightRef} />
           <LayeredTreeline light={lightRef} />
-          <AlphaWater runtime={runtime} light={lightRef} normalMap={waterNormalTexture} fishWater={fishWaterRef} shore />
+          <AlphaWater runtime={runtime} light={lightRef} normalMap={waterNormalTexture} fishWater={fishWaterRef} shore={water === 'home'} waterId={lookSetup.look === 'alpha' ? water : 'home'} />
           <FarMist runtime={runtime} light={lightRef} />
           <WaterRipples ripples={ripples} />
           <SideReeds runtime={runtime} />
           <BankGround light={lightRef} />
-          <BankStones />
+          {/* Photo 04's bank is grass and reeds, not stones. */}
+          {water === 'home' || lookSetup.look !== 'alpha' ? <BankStones /> : null}
           <BankWeeds runtime={runtime} />
           <Midges runtime={runtime} light={lightRef} />
+          {lookSetup.look === 'alpha' ? (
+            // A5: the shore (docs/alpha/A5_RUBRIC.md). Baselines draw none of it.
+            water === 'lily' ? (
+              <>
+                <LilyPads runtime={runtime} light={lightRef} water={water} />
+                <ReedIslands runtime={runtime} water={water} />
+                <Bench runtime={runtime} />
+                <ShorePath runtime={runtime} side="right" />
+                <LegendSwirl runtime={runtime} />
+                {foundSinker ? <CarriedSinker runtime={runtime} tied={sinkerTied} /> : null}
+              </>
+            ) : (
+              <>
+                <ShorePath runtime={runtime} side="left" />
+                {foundSinker ? (
+                  <>
+                    <SinkerSign />
+                    <CarriedSinker runtime={runtime} tied={sinkerTied} />
+                  </>
+                ) : (
+                  <SinkerGlint />
+                )}
+              </>
+            )
+          ) : null}
           {lookSetup.xray ? <XRayLayer runtime={runtime} light={lightRef} /> : null}
         </>
       )}

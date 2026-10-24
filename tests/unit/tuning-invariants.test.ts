@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { SPECIES_IDS, speciesTuning } from '../../src/game/fish/species';
+import { isLegend, SPECIES_IDS, speciesTuning } from '../../src/game/fish/species';
 import { TUNING } from '../../src/game/tuning/tuning';
 
 // Invariants the simulation assumes but nothing previously enforced — a tuning
@@ -30,7 +30,9 @@ test('fish constants are sane', () => {
 test('per-species multipliers are positive and weights well-formed', () => {
   for (const id of SPECIES_IDS) {
     const s = speciesTuning(id);
-    assert.ok(s.spawnWeight > 0, `${id} spawnWeight`);
+    // Legends spawn only by condition (weight 0); everything else by weight.
+    if (isLegend(id)) assert.equal(s.spawnWeight, 0, `${id} is a legend`);
+    else assert.ok(s.spawnWeight > 0, `${id} spawnWeight`);
     assert.ok(s.widthM > 0 && s.heightM > 0, `${id} dimensions`);
     assert.ok(s.wanderSpeedMultiplier > 0, `${id} wander speed`);
     assert.ok(s.approachSpeedMultiplier > 0, `${id} approach speed`);

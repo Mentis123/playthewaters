@@ -15,7 +15,9 @@ export function generateMetadata({ params }: Props): Metadata {
   const link = decodeCatchLink(params.code);
   if (!link) return { title: 'The Waters', robots: { index: false } };
   const name = SPECIES_STORY_LABELS[link.species];
-  const title = `A ${trophyLengthCm(link.species, link.sizeScore)} cm ${name}, ${lightWord(link.phase)}`;
+  const title = link.species === 'old_mossback'
+    ? `Something very big, ${lightWord(link.phase)}`
+    : `A ${trophyLengthCm(link.species, link.sizeScore)} cm ${name}, ${lightWord(link.phase)}`;
   const description = 'Caught on The Waters, a fishing game. Tap to fish the same pond.';
   return {
     title: `${title} · The Waters`,

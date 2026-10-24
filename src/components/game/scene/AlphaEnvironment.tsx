@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { advancePhase, celestialDirection, sampleLightInto, type LightSample, type Rgb } from '@/game/light/pondLight';
 import { storePhase } from '@/game/persistence/lightStore';
 import { TUNING } from '@/game/tuning/tuning';
+import { WATERS, type WaterId } from '@/game/waters/waters';
 import { createTreelineTexture } from '@/components/game/scene/textures';
 import type { Runtime } from '@/components/game/types';
 
@@ -253,7 +254,8 @@ export function AlphaWater({
   light,
   normalMap,
   fishWater,
-  shore = false
+  shore = false,
+  waterId = 'home'
 }: {
   runtime: React.MutableRefObject<Runtime>;
   light: LightRef;
@@ -261,8 +263,40 @@ export function AlphaWater({
   fishWater: React.MutableRefObject<THREE.Vector4[]>;
   // A2: darken the water toward the stones (the wet edge). Off for `?look=a1`.
   shore?: boolean;
+  // A5: which water. Another water's body colours are the home pond's light
+  // colours scaled by (its colour / the home pond's day colour), so every
+  // light still shifts it; its clarity scales how far you can see in.
+  waterId?: WaterId;
 }) {
   const W = TUNING.water;
+  const tint = useMemo(() => {
+    if (waterId === 'home') return null;
+    const def = WATERS[waterId].water;
+    const day = TUNING.light.keys.day;
+    const hex = (h: string): Rgb => {
+      const v = parseInt(h.slice(1), 16);
+      return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+    };
+    const ratio = (a: string, b: string): Rgb => {
+      const x = hex(a);
+      const y = hex(b);
+      return [x[0] / y[0], x[1] / y[1], x[2] / y[2]];
+    };
+    return {
+      shallow: ratio(def.shallow, day.waterShallow),
+      deep: ratio(def.deep, day.waterDeep),
+      far: ratio(def.far, day.waterFar)
+    };
+  }, [waterId]);
+  const tintScratch = useRef<Rgb>([0, 0, 0]);
+  const tinted = (c: Rgb, r: Rgb | undefined): Rgb => {
+    if (!r) return c;
+    const out = tintScratch.current;
+    out[0] = Math.min(1, c[0] * r[0]);
+    out[1] = Math.min(1, c[1] * r[1]);
+    out[2] = Math.min(1, c[2] * r[2]);
+    return out;
+  };
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uFocus: { value: 0 },
@@ -283,8 +317,9 @@ export function AlphaWater({
     uGlareReduction: { value: TUNING.input.focusGlareReduction },
     uCausticFocusMul: { value: TUNING.visual.causticFocusMultiplier },
     uFish: { value: fishWater.current },
-    uShore: { value: shore ? 1 : 0 }
-  }), [normalMap, fishWater, shore]);
+    uShore: { value: shore ? 1 : 0 },
+    uClarityDeep: { value: W.clarityDeepAt * (waterId === 'home' ? 1 : WATERS[waterId].water.clarity) }
+  }), [normalMap, fishWater, shore, waterId, W.clarityDeepAt]);
   const dirRef = useRef<Rgb>([0, 0, 0]);
   const treeBase = useMemo(() => {
     const value = parseInt(W.treelineReflectBase.slice(1), 16);
@@ -294,9 +329,9 @@ export function AlphaWater({
 
   useFrame((_, dt) => {
     const sample = light.current;
-    setSrgb(uniforms.uShallow.value, sample.waterShallow);
-    setSrgb(uniforms.uDeep.value, sample.waterDeep);
-    setSrgb(uniforms.uFar.value, sample.waterFar);
+    setSrgb(uniforms.uShallow.value, tinted(sample.waterShallow, tint?.shallow));
+    setSrgb(uniforms.uDeep.value, tinted(sample.waterDeep, tint?.deep));
+    setSrgb(uniforms.uFar.value, tinted(sample.waterFar, tint?.far));
     setSrgb(uniforms.uZenith.value, sample.skyZenith);
     setSrgb(uniforms.uHorizon.value, sample.skyHorizon);
     const tree = treeScratch.current;
@@ -311,7 +346,7 @@ export function AlphaWater({
     uniforms.uGlint.value = sample.glint;
     uniforms.uSheen.value = sample.sheen;
     uniforms.uCaustic.value = sample.caustic;
-    uniforms.uReflect.value = sample.reflect;
+    uniforms.uReflect.value = sample.reflect * (waterId === 'home' ? 1 : WATERS[waterId].water.reflect);
 
     if (runtime.current.pondFrozen) return;
     const focused = performance.now() < runtime.current.focusUntil;
@@ -358,6 +393,7 @@ export function AlphaWater({
           uniform float uCausticFocusMul;
           uniform vec4 uFish[FISH_SLOTS];
           uniform float uShore;
+          uniform float uClarityDeep;
           varying vec2 vUv;
           varying vec3 vWorld;
 
@@ -417,7 +453,7 @@ export function AlphaWater({
             refl += uSunColor * uSunVis * pow(sd, 6.0) * 0.18 * (1.0 - treeMask);
 
             // Body: clear near, deep mid, dark far (the gamble zone).
-            float clarity = pow(clamp(dist / ${W.clarityDeepAt.toFixed(3)}, 0.0, 1.0), ${W.clarityCurve.toFixed(3)});
+            float clarity = pow(clamp(dist / uClarityDeep, 0.0, 1.0), ${W.clarityCurve.toFixed(3)});
             vec3 body = mix(uShallow, uDeep, clarity);
             body = mix(body, uFar, smoothstep(${W.farDarkStart.toFixed(3)}, 1.0, dist) * ${W.farDarkStrength.toFixed(3)});
 

@@ -45,7 +45,7 @@ const NOISE_GLSL = `
 `;
 
 // One clock for every swaying thing, held still while the pond is frozen.
-function useBankClock(runtime: RuntimeRef) {
+export function useBankClock(runtime: RuntimeRef) {
   const clock = useMemo(() => ({ value: 0 }), []);
   useFrame((_, dt) => {
     if (!runtime.current.pondFrozen) clock.value += Math.min(dt, TUNING.timing.maxFrameDtSeconds);
@@ -150,7 +150,7 @@ export function BankStones() {
 
 // ---------------------------------------------------------------- weeds and reeds
 
-function createBladeTuft(blades: number, seed: string, width: number): THREE.BufferGeometry {
+export function createBladeTuft(blades: number, seed: string, width: number): THREE.BufferGeometry {
   // A tuft of single-triangle blades fanned from one root, unit height,
   // with a dark-base / light-tip vertex colour gradient.
   const rng = seededRandom(seed);
@@ -174,7 +174,7 @@ function createBladeTuft(blades: number, seed: string, width: number): THREE.Buf
   return geometry;
 }
 
-function swayMaterial(clock: { value: number }, amplitude: number, key: string): THREE.MeshStandardMaterial {
+export function swayMaterial(clock: { value: number }, amplitude: number, key: string): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uBankTime = clock;

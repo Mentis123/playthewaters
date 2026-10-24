@@ -3,6 +3,7 @@ import { trophyLengthCm } from '@/game/fish/trophy';
 import { isLureId, type LureId } from '@/game/gear/gear';
 import { nearestLight, type LightName } from '@/game/light/pondLight';
 import { TUNING } from '@/game/tuning/tuning';
+import { isWaterId, type WaterId } from '@/game/waters/waters';
 
 // A4 the link (23_ALPHA_CANON §6.1, docs/alpha/A4_RUBRIC.md). A catch card is
 // a link that regrows the sender's pond: the seed and spawn give the same fish,
@@ -18,6 +19,7 @@ export type CatchLink = {
   hook: { x: number; z: number }; // metres, pond space
   lure: LureId;
   kept?: boolean;
+  water?: WaterId;
 };
 
 const VERSION = 1;
@@ -26,7 +28,8 @@ const MAX_SPAWN = 100_000;
 // Hook points are inside the pond; anything outside this box is not a hook point.
 const HOOK_LIMIT_CM = Math.round(Math.max(TUNING.world.pondWidthM, TUNING.world.pondHeightM) * 100);
 
-type Wire = { v: number; s: string; i: number; p: number; f: string; z: number; x: number; y: number; l: string; k?: number };
+// `w` (A5): the water; absent means the home pond, so A4 links still open.
+type Wire = { v: number; s: string; i: number; p: number; f: string; z: number; x: number; y: number; l: string; k?: number; w?: string };
 
 function toBase64Url(text: string): string {
   return btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -55,6 +58,7 @@ export function encodeCatchLink(link: CatchLink): string {
     l: link.lure
   };
   if (link.kept !== undefined) wire.k = link.kept ? 1 : 0;
+  if (link.water && link.water !== 'home') wire.w = link.water;
   return toBase64Url(JSON.stringify(wire));
 }
 
@@ -81,6 +85,7 @@ export function decodeCatchLink(code: string | null | undefined): CatchLink | nu
   if (!isInt(wire.x, -HOOK_LIMIT_CM, HOOK_LIMIT_CM) || !isInt(wire.y, -HOOK_LIMIT_CM, HOOK_LIMIT_CM)) return null;
   if (typeof wire.l !== 'string' || !isLureId(wire.l)) return null;
   if (wire.k !== undefined && wire.k !== 0 && wire.k !== 1) return null;
+  if (wire.w !== undefined && !isWaterId(wire.w)) return null;
   return {
     seed: wire.s,
     spawnIndex: wire.i as number,
@@ -89,7 +94,8 @@ export function decodeCatchLink(code: string | null | undefined): CatchLink | nu
     sizeScore: (wire.z as number) / 1000,
     hook: { x: (wire.x as number) / 100, z: (wire.y as number) / 100 },
     lure: wire.l,
-    kept: wire.k === undefined ? undefined : wire.k === 1
+    kept: wire.k === undefined ? undefined : wire.k === 1,
+    water: wire.w === undefined ? 'home' : (wire.w as WaterId)
   };
 }
 
@@ -111,6 +117,8 @@ const LIGHT_WORDS: Record<LightName, string> = {
 export function arrivalLine(link: CatchLink): string {
   const length = trophyLengthCm(link.species, link.sizeScore);
   const name = SPECIES_STORY_LABELS[link.species];
+  // A legend's link says where, never what (canon §4).
+  if (link.species === 'old_mossback') return `Your friend caught something very big in this pond, ${LIGHT_WORDS[nearestLight(link.phase)]}.`;
   return `Your friend caught a ${length} cm ${name} in this pond, ${LIGHT_WORDS[nearestLight(link.phase)]}.`;
 }
 

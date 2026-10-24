@@ -32,13 +32,13 @@ export function WallBoard({
           {lines.map((line) => (
             <li
               key={line.species}
-              className={`wall-line${line.legend ? ' wall-line--legend' : ''}${highlight === line.catchId ? ' wall-line--new' : ''}`}
+              className={`wall-line${line.legend && line.released ? ' wall-line--legend' : ''}${highlight === line.catchId ? ' wall-line--new' : ''}`}
               data-testid="wall-line"
             >
               <span className="wall-name">{line.name}</span>
               <span className="wall-weight">{line.weight}</span>
               <span className="wall-meta">
-                {line.lengthCm} cm · {line.water} · {LIGHT_LABELS[line.light]} · {isLureId(line.lure) ? LURE_LABELS[line.lure].toLowerCase() : 'lure'}
+                {line.legend && line.released ? 'let go · ' : ''}{line.lengthCm} cm · {line.water} · {LIGHT_LABELS[line.light]} · {isLureId(line.lure) ? LURE_LABELS[line.lure].toLowerCase() : 'lure'}
               </span>
             </li>
           ))}

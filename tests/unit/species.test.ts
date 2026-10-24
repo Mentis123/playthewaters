@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import {
+import { isLegend,
   createFishInstance,
   cueForReveal,
   GENERIC_CUE_KINDS,
@@ -25,7 +25,7 @@ test('weighted spawn distribution tracks the tuning weights', () => {
   }
 
   const totalWeight = SPECIES_IDS.reduce((sum, id) => sum + speciesTuning(id).spawnWeight, 0);
-  for (const id of SPECIES_IDS) {
+  for (const id of SPECIES_IDS.filter((x) => !isLegend(x))) {
     const expected = (speciesTuning(id).spawnWeight / totalWeight) * samples;
     const actual = counts.get(id) ?? 0;
     // ±25% relative tolerance is generous for 10k samples but immune to flake;
@@ -44,7 +44,7 @@ test('every species is reachable from the spawn roll', () => {
   for (let i = 0; i < 5_000; i += 1) {
     seen.add(createFishInstance(rng).species);
   }
-  for (const id of SPECIES_IDS) {
+  for (const id of SPECIES_IDS.filter((x) => !isLegend(x))) {
     assert.ok(seen.has(id), `${id} never spawned in 5000 rolls`);
   }
 });

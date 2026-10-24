@@ -9,7 +9,8 @@ import { TUNING } from '@/game/tuning/tuning';
 // none exist before A5, so `legend` is carried and nothing draws it yet.
 // The pure part (everything but load/save) takes and returns plain data.
 
-export type WaterId = 'home';
+import { WATERS, type WaterId } from '@/game/waters/waters';
+export type { WaterId };
 
 export type Keeper = {
   catchId: string;
@@ -38,9 +39,11 @@ export type WallLine = {
   at: number;
   catchId: string;
   legend: boolean;
+  // A legend let go: its line is drawn in the second colour (canon §4.4).
+  released: boolean;
 };
 
-export const WATER_NAMES: Record<WaterId, string> = { home: 'the home pond' };
+export const WATER_NAMES: Record<WaterId, string> = { home: WATERS.home.name, lily: WATERS.lily.name };
 
 export function emptyWall(): WallData {
   return { schemaVersion: 1, keepers: [] };
@@ -85,12 +88,22 @@ export function keeperOfVisit(wall: WallData, visitId: string): Keeper | null {
 
 // The heaviest kept fish of each species, heaviest first.
 export function wallLines(wall: WallData): WallLine[] {
-  const best = new Map<SpeciesId, { keeper: Keeper; grams: number }>();
+  // One line per species: the heaviest kept. A5: a catch on the old sinking
+  // lure never displaces one made without it (canon §5: "no line of their
+  // own"), and is marked by its lure. A legend let go keeps its own line, in
+  // the second colour; a legend kept outranks it.
+  type Best = { keeper: Keeper; grams: number; rank: number };
+  const rankOf = (k: Keeper) => (k.released ? 0 : k.lure === 'old_sinker' && !k.legend ? 1 : 2);
+  const best = new Map<SpeciesId, Best>();
   for (const keeper of wall.keepers) {
-    if (keeper.released || !(SPECIES_IDS as string[]).includes(keeper.species)) continue;
+    if (!(SPECIES_IDS as string[]).includes(keeper.species)) continue;
+    if (keeper.released && !keeper.legend) continue;
     const grams = weightGrams(keeper.species, keeper.sizeScore);
+    const rank = rankOf(keeper);
     const current = best.get(keeper.species);
-    if (!current || grams > current.grams) best.set(keeper.species, { keeper, grams });
+    if (!current || rank > current.rank || (rank === current.rank && grams > current.grams)) {
+      best.set(keeper.species, { keeper, grams, rank });
+    }
   }
   return [...best.values()]
     .sort((x, y) => y.grams - x.grams)
@@ -105,7 +118,8 @@ export function wallLines(wall: WallData): WallLine[] {
       lure: keeper.lure,
       at: keeper.at,
       catchId: keeper.catchId,
-      legend: !!keeper.legend
+      legend: !!keeper.legend,
+      released: !!keeper.released
     }));
 }
 

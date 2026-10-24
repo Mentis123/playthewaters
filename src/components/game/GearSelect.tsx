@@ -1,6 +1,6 @@
 'use client';
 
-import { LURE_IDS, LURE_LABELS, ROD_IDS, ROD_LABELS, type LureId, type RodId } from '@/game/gear/gear';
+import { STRIP_LURE_IDS, LURE_LABELS, ROD_IDS, ROD_LABELS, type LureId, type RodId } from '@/game/gear/gear';
 import type { GearSelection } from '@/game/persistence/gearStore';
 
 function rodGlyph(id: RodId) {
@@ -99,7 +99,7 @@ export function GearSelect({
         ))}
       </div>
       <div className="gear-row" role="group" aria-label="Lure">
-        {LURE_IDS.map((id) => (
+        {STRIP_LURE_IDS.map((id) => (
           <button
             key={id}
             type="button"

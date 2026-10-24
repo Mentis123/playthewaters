@@ -7,10 +7,14 @@ function currentCandidateTag() {
   // only falls back to it outside Next): bump it with each chapter, or /dev
   // shows the wrong gate and playtest answers carry the wrong version. Found
   // 24 Oct 2026: it still said v0.4 through A1, A2 and A3.
-  return 'v1.3-wall-candidate';
+  return 'v1.4-lilypond-candidate';
 }
 
 function currentMilestone(tag) {
+  if (tag.startsWith('v1.4-') || tag.startsWith('v1.4.')) {
+    return 'a5-lilypond';
+  }
+
   if (tag.startsWith('v1.3-') || tag.startsWith('v1.3.')) {
     return 'a4-wall';
   }

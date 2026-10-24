@@ -56,6 +56,17 @@ export type Runtime = {
   // visitor sees where the sender's fish was hooked (fadeFrom = when it began
   // to fade, null while it holds).
   lightPhase: number;
+  // A5: which water this runtime is (species, homes, pads read from WATERS).
+  water: import('@/game/waters/waters').WaterId;
+  // A5: screen positions of the tappable shore things (written by the scene
+  // every frame from the live camera; null when absent), the legend this
+  // visit (shared across respawns), where it is, and the camera walk.
+  targets: { path: ScreenPoint | null; bench: ScreenPoint | null; sinker: ScreenPoint | null };
+  legend: import('@/game/waters/legend').LegendState | null;
+  legendPos: Vec2;
+  walk: { phase: 'out' | 'in'; startAt: number; dir: -1 | 1 } | null;
+  // The cast landed on a lily pad: the lure sits on it until tapped free.
+  snagged: boolean;
   hookPos: Vec2 | null;
   ghost: { species: SpeciesId; pos: Vec2; fadeFrom: number | null } | null;
   line: VerletLine;
@@ -160,4 +171,8 @@ export type SceneProps = {
   onFocusActiveChange: (active: boolean) => void;
   // A4: a link visitor starts at the sender's light (still drifting).
   arrivalPhase?: number;
+  // A5: which water is drawn, and the old sinking lure (found / tied on).
+  water?: import('@/game/waters/waters').WaterId;
+  foundSinker?: boolean;
+  sinkerTied?: boolean;
 };

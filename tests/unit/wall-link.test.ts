@@ -29,7 +29,8 @@ const LINK: CatchLink = {
   sizeScore: 0.734,
   hook: { x: -1.27, z: -3.4 },
   lure: 'popper',
-  kept: true
+  kept: true,
+  water: 'lily'
 };
 
 test('a catch link round-trips every field', () => {
@@ -38,6 +39,13 @@ test('a catch link round-trips every field', () => {
   const path = catchLinkPath(LINK);
   assert.ok(path.startsWith('/c/'));
   assert.ok(path.length < 200, `link is short enough to DM (${path.length})`);
+});
+
+test('an A4 link (no water) still opens the home pond', () => {
+  const { water: _water, ...a4 } = LINK;
+  void _water;
+  assert.equal(decodeCatchLink(encodeCatchLink(a4))?.water, 'home');
+  assert.ok(!encodeCatchLink({ ...LINK, water: 'home' }).includes(encodeCatchLink(LINK)), 'home adds no field');
 });
 
 test('kept is optional and survives as undefined', () => {
@@ -69,7 +77,8 @@ test('a bad, truncated or hostile code is not a link, and never throws', () => {
     forge({ ...wire, x: 99999 }),
     forge({ ...wire, l: 'dynamite' }),
     forge({ ...wire, k: 2 }),
-    forge({ ...wire, i: '3' })
+    forge({ ...wire, i: '3' }),
+    forge({ ...wire, w: 'moat' })
   ];
   for (const code of cases) {
     assert.equal(decodeCatchLink(code), null, `rejected: ${String(code).slice(0, 40)}`);
@@ -114,7 +123,9 @@ test('letting go undoes a keep of the same fish, and otherwise writes nothing', 
   // A released legend is written, in its own colour (A5+).
   wall = releaseFish(wall, { ...keeper('L', 'v1', 0.5), legend: true });
   assert.equal(wall.keepers[0].released, true);
-  assert.equal(wallLines(wall).length, 0, 'released legends are not drawn as keeper lines yet');
+  const lines = wallLines(wall);
+  assert.equal(lines.length, 1, 'a released legend keeps its own line');
+  assert.equal(lines[0].released, true);
 });
 
 test('the wall shows the heaviest kept fish of each species, heaviest first', () => {
@@ -157,4 +168,12 @@ test('a visit survives a reload, and ends after time away', async () => {
   assert.equal(resolveVisit({ id: 'old', lastActive: now - 60_000 }, now, 'new').id, 'old');
   assert.equal(resolveVisit({ id: 'old', lastActive: now - TUNING.wall.visitIdleMs - 1 }, now, 'new').id, 'new');
   assert.equal(resolveVisit({ id: 'old', lastActive: now + 60_000 }, now, 'new').id, 'new', 'a clock that ran backwards starts fresh');
+});
+
+test('a catch on the old sinking lure never displaces a line made without it', () => {
+  let wall = keepFish(emptyWall(), keeper('plain', 'v1', 0.2)).wall;
+  wall = keepFish(wall, { ...keeper('sunk', 'v2', 0.95), lure: 'old_sinker' }).wall;
+  assert.equal(wallLines(wall)[0].catchId, 'plain', 'the heavier sinker catch does not take the line');
+  const only = keepFish(emptyWall(), { ...keeper('sunk', 'v2', 0.95), lure: 'old_sinker' }).wall;
+  assert.equal(wallLines(only)[0].lure, 'old_sinker', 'alone, it shows, marked by its lure');
 });

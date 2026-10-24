@@ -23,8 +23,13 @@ export const ROD_LABELS: Record<RodId, string> = {
 export const LURE_LABELS: Record<LureId, string> = {
   natural: 'Natural',
   popper: 'Popper',
-  sinker: 'Sinker'
+  sinker: 'Sinker',
+  old_sinker: 'Old sinking lure'
 };
+
+// The glyph strip's lures (22_THE_GEAR: three). The old sinking lure is found,
+// not chosen, and never appears in the strip (23_ALPHA_CANON §5).
+export const STRIP_LURE_IDS = LURE_IDS.filter((id) => id !== 'old_sinker');
 
 export function isRodId(id: string): id is RodId {
   return (ROD_IDS as string[]).includes(id);

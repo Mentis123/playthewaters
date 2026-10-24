@@ -2,24 +2,32 @@ import { clamp, distance, type Vec2 } from '@/game/math/vec';
 import { LIGHT_NAMES, wrapPhase, type LightName } from '@/game/light/pondLight';
 import { TUNING } from '@/game/tuning/tuning';
 import type { SpeciesId } from '@/game/fish/species';
+import { WATERS, type WaterId } from '@/game/waters/waters';
 
 // A3 — habits (23_ALPHA_CANON §4). The home pond made learnable: where each
 // fish lives, when it feeds, what a careless cast does to it, and which fish
 // want a still lure. Pure data and arithmetic: no React, no three.js.
 
-export type HomeId = keyof typeof TUNING.habits.homes;
+// A home id: the home pond's (TUNING.habits.homes) or another water's
+// (WATERS[id].homes, A5). Fish carry the id; the water resolves it.
+export type HomeId = string;
 export type Home = { id: HomeId; x: number; z: number; radius: number };
 
 const H = TUNING.habits;
+const HOME_HOMES = H.homes as Record<string, { x: number; z: number; radius: number }>;
 
-export function homeOf(id: HomeId): Home {
-  const home = H.homes[id];
+export function homesOf(water: WaterId = 'home'): Record<string, { x: number; z: number; radius: number }> {
+  return water === 'home' ? HOME_HOMES : WATERS[water].homes;
+}
+
+export function homeOf(id: HomeId, water: WaterId = 'home'): Home {
+  const home = homesOf(water)[id] ?? HOME_HOMES[id] ?? HOME_HOMES.open;
   return { id, x: home.x, z: home.z, radius: home.radius };
 }
 
 // A species' home, chosen from its preference list (repeats weight it).
-export function homeFor(species: SpeciesId, rng: () => number): HomeId {
-  const options = H.speciesHomes[species] as readonly HomeId[];
+export function homeFor(species: SpeciesId, rng: () => number, water: WaterId = 'home'): HomeId {
+  const options = (water === 'home' ? H.speciesHomes[species] : WATERS[water].speciesHomes[species] ?? ['open']) as readonly HomeId[];
   return options[Math.min(options.length - 1, Math.floor(rng() * options.length))];
 }
 
