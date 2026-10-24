@@ -73,17 +73,23 @@ test('keep, a swap in the same visit, let go, and the wall', async ({ page }) =>
 
   await caught(page);
   await page.getByTestId('result-keep').tap();
-  await expect(page.getByTestId('pond-note')).toHaveText('On the wall.');
+  await expect(page.getByTestId('result-kept')).toContainText('On the wall');
   let wall = await page.evaluate(() => (window as unknown as { __watersDebug: Debug }).__watersDebug.wall());
   expect(wall).toHaveLength(1);
   expect(wall[0].weight).toMatch(/lb|oz/);
+  await page.getByTestId('result-cast-on').tap();
 
+  // A second Keep in the same visit asks first, and survives a reload.
+  await page.reload();
+  await page.getByTestId('arrival-go').tap();
   await caught(page);
-  await expect(page.locator('.result-keep-note')).toContainText('this visit');
   await page.getByTestId('result-keep').tap();
-  await expect(page.getByTestId('pond-note')).toContainText('went back in');
+  await expect(page.getByTestId('result-confirm')).toContainText('one fish per visit');
+  await page.getByTestId('result-confirm-swap').tap();
+  await expect(page.getByTestId('result-kept')).toContainText('went back in the water');
   wall = await page.evaluate(() => (window as unknown as { __watersDebug: Debug }).__watersDebug.wall());
   expect(wall).toHaveLength(1);
+  await page.getByTestId('result-cast-on').tap();
 
   await caught(page);
   await page.getByTestId('result-release').tap();

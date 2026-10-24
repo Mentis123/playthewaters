@@ -835,3 +835,14 @@ Planted defects, each caught:
 Headless cold open (SwiftShader, no network throttle): first frame at 503–883 ms.
 
 **Not testable here:** the < 2 s gate on a real phone over a real network; the iMessage / WhatsApp preview rendering; the share sheet on iOS.
+
+## v1.3.1-wall (2026-10-24), owner's first phone pass on A4
+*"No spot seen?" and "when I go to keep a second it doesn't ask about letting the other go and give me a confirmation."*
+
+- **The spot is marked.** A gold ring keeps opening on the water around the silhouette (`TUNING.link.markerRadiusM`, `markerOpacity`). The silhouette is darker (0.55 → 0.7). The card says "The gold ring on the water marks where it bit." Before this, the silhouette was the only marker, and it looked like any other fish shadow.
+- **Keep is confirmed on the card.** It shows "On the wall ✓" (plus "Your Bronze Carp went back in the water" after a swap), then Keep fishing or See the wall. Before, it jumped straight back to fishing with a three-second note at the top of the pond.
+- **A second Keep asks first:** "You can keep one fish per visit. You're already keeping a Bronze Carp (30 lb 3 oz). Keep this Reed Pike instead, and let the Bronze Carp go?" → [Keep the Reed Pike] / [Keep my Bronze Carp, let this go]. The small grey warning line is gone.
+- **A visit survives a reload or a new tab.** It ends when you leave the pond (leave glyph) or after 30 minutes away (`resolveVisit`, `thewaters.visit.v1`). Before, each page load was a new visit, so opening the game again skipped the question.
+- The `/ab` e2e test waited on the review page's sample link before reading it (a race, not a product bug).
+
+Checks: 83 unit tests (visit: survives a reload, expires, rejects a clock that ran backwards). 15/15 phone-profile e2e, including keep → confirmed → reload → second keep asks → swap confirmed.

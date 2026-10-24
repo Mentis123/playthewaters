@@ -766,15 +766,21 @@ export const TUNING = {
       old_kingfish: { a: 0.0186, b: 2.9 },
       reed_pike: { a: 0.0049, b: 3.1 }
     },
-    // The keeper swap note on the catch card shows for this long.
+    // The note on the pond after keep / let go shows for this long.
     swapNoteMs: 3200,
+    // A visit ends after this long away (or when you leave the pond).
+    visitIdleMs: 30 * 60 * 1000,
     // A released fish's ripple at the bank.
     releaseRippleM: 0.6
   },
   // A4 the link: the arrival silhouette where the sender hooked the fish.
   link: {
     maxCodeChars: 400,
-    ghostOpacity: 0.55,
+    ghostOpacity: 0.7,
+    // A gold ring on the water around the spot, so a stranger sees which dark
+    // shape is THE spot (owner, 24 Oct 2026: "No spot seen?").
+    markerRadiusM: 0.75,
+    markerOpacity: 0.85,
     ghostPulseHz: 0.5,
     // After "Start fishing" the silhouette fades over this long.
     ghostFadeMs: 9000

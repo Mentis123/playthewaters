@@ -149,3 +149,12 @@ test('a corrupt wall loads as empty, a good one survives', () => {
   assert.deepEqual(migrateWall(JSON.parse(JSON.stringify(good))), good);
   assert.equal(migrateWall({ schemaVersion: 1, keepers: [{ catchId: 'x' }] }).keepers.length, 0);
 });
+
+test('a visit survives a reload, and ends after time away', async () => {
+  const { resolveVisit } = await import('../../src/game/wall/wall');
+  const now = 1_000_000_000;
+  assert.equal(resolveVisit(null, now, 'new').id, 'new');
+  assert.equal(resolveVisit({ id: 'old', lastActive: now - 60_000 }, now, 'new').id, 'old');
+  assert.equal(resolveVisit({ id: 'old', lastActive: now - TUNING.wall.visitIdleMs - 1 }, now, 'new').id, 'new');
+  assert.equal(resolveVisit({ id: 'old', lastActive: now + 60_000 }, now, 'new').id, 'new', 'a clock that ran backwards starts fresh');
+});

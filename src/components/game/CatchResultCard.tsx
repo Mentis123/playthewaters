@@ -95,11 +95,12 @@ type CatchResultCardProps = {
   className?: string;
   inline?: boolean;
   // A4 keep or release: when given, a catch is answered with Keep / Let go
-  // (both go back to fishing) instead of "Cast again".
-  onKeep?: () => void;
+  // instead of "Cast again". onKeep writes the wall and says what went back.
+  onKeep?: () => { replacedName: string | null };
   onRelease?: () => void;
-  // Shown under the choice when keeping would swap this visit's keeper.
-  keepNote?: string | null;
+  // The fish already kept this visit, if any: a Keep must confirm the swap.
+  currentKeeper?: { name: string; weight: string } | null;
+  onOpenWall?: () => void;
 };
 
 export function CatchResultCard({
@@ -114,8 +115,18 @@ export function CatchResultCard({
   inline = false,
   onKeep,
   onRelease,
-  keepNote
+  currentKeeper,
+  onOpenWall
 }: CatchResultCardProps) {
+  // choose → (confirm a swap) → kept. Owner, 24 Oct 2026: a second Keep must
+  // ask about letting the other go, and keeping must be confirmed.
+  const [fate, setFate] = useState<'choose' | 'confirm' | 'kept'>('choose');
+  const [replacedName, setReplacedName] = useState<string | null>(null);
+  const doKeep = () => {
+    if (!onKeep) return;
+    setReplacedName(onKeep().replacedName);
+    setFate('kept');
+  };
   const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
   const classes = ['result-card', inline ? 'result-card--inline' : '', className].filter(Boolean).join(' ');
 
@@ -181,8 +192,38 @@ export function CatchResultCard({
       ) : (
         <p className="result-miss-text">{storyText}</p>
       )}
-      {showTrophy && onKeep && onRelease ? (
-        <>
+      {showTrophy && onKeep && onRelease && result ? (
+        fate === 'kept' ? (
+          <div className="result-kept" data-testid="result-kept" role="status">
+            <p className="result-kept-title">On the wall ✓</p>
+            {replacedName ? <p className="result-kept-sub">Your {replacedName} went back in the water.</p> : null}
+            <div className="result-actions">
+              <button type="button" className="result-keep" data-testid="result-cast-on" onPointerDown={stop} onClick={() => onCastAgain?.()}>
+                Keep fishing
+              </button>
+              {onOpenWall ? (
+                <button type="button" className="result-release" data-testid="result-see-wall" onPointerDown={stop} onClick={onOpenWall}>
+                  See the wall
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : fate === 'confirm' && currentKeeper ? (
+          <div className="result-confirm" data-testid="result-confirm" role="alertdialog" aria-label="Swap your keeper">
+            <p className="result-confirm-title">You can keep one fish per visit.</p>
+            <p className="result-confirm-sub">
+              You&apos;re already keeping a {currentKeeper.name} ({currentKeeper.weight}). Keep this {speciesLabel(result.species)} instead, and let the {currentKeeper.name} go?
+            </p>
+            <div className="result-actions result-actions--stack">
+              <button type="button" className="result-keep" data-testid="result-confirm-swap" onPointerDown={stop} onClick={doKeep}>
+                Keep the {speciesLabel(result.species)}
+              </button>
+              <button type="button" className="result-release" data-testid="result-confirm-cancel" onPointerDown={stop} onClick={onRelease}>
+                Keep my {currentKeeper.name}, let this go
+              </button>
+            </div>
+          </div>
+        ) : (
           <div className="result-actions result-actions--fate">
             <button
               type="button"
@@ -191,7 +232,9 @@ export function CatchResultCard({
               disabled={!dismissReady}
               onPointerDown={stop}
               onClick={() => {
-                if (dismissReady) onKeep();
+                if (!dismissReady) return;
+                if (currentKeeper) setFate('confirm');
+                else doKeep();
               }}
             >
               Keep
@@ -209,8 +252,7 @@ export function CatchResultCard({
               Let go
             </button>
           </div>
-          {keepNote ? <p className="result-keep-note">{keepNote}</p> : null}
-        </>
+        )
       ) : null}
       <div className="result-actions">
         {showTrophy && onKeep && onRelease ? null : (

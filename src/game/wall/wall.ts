@@ -145,3 +145,45 @@ export function saveWall(wall: WallData): void {
     console.warn('[wall] localStorage unavailable; keeper not saved.');
   }
 }
+
+// --- the visit (one keeper per visit) ---
+// A visit survives a reload or a new tab: it ends when you leave the pond with
+// the leave glyph, or after `TUNING.wall.visitIdleMs` away. Owner, 24 Oct 2026:
+// a second Keep "doesn't ask about letting the other go", partly because a new
+// page load used to start a new visit.
+
+export type VisitRecord = { id: string; lastActive: number };
+
+export function resolveVisit(stored: VisitRecord | null, now: number, newId: string): VisitRecord {
+  if (stored && typeof stored.id === 'string' && Number.isFinite(stored.lastActive)
+    && now - stored.lastActive >= 0 && now - stored.lastActive < TUNING.wall.visitIdleMs) {
+    return { id: stored.id, lastActive: now };
+  }
+  return { id: newId, lastActive: now };
+}
+
+const VISIT_KEY = 'thewaters.visit.v1';
+
+export function touchVisit(newId: string): string {
+  let stored: VisitRecord | null = null;
+  try {
+    stored = JSON.parse(window.localStorage.getItem(VISIT_KEY) ?? 'null') as VisitRecord | null;
+  } catch {
+    stored = null;
+  }
+  const visit = resolveVisit(stored, Date.now(), newId);
+  try {
+    window.localStorage.setItem(VISIT_KEY, JSON.stringify(visit));
+  } catch {
+    // Private mode: the visit lasts this page load.
+  }
+  return visit.id;
+}
+
+export function endVisit(): void {
+  try {
+    window.localStorage.removeItem(VISIT_KEY);
+  } catch {
+    // ignore
+  }
+}

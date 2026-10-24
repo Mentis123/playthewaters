@@ -180,18 +180,22 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
   // A4 arrival silhouette: where the sender's fish was hooked. Holds (with a
   // slow breath) until the visitor starts fishing, then fades out.
   const ghostRef = useRef<THREE.Mesh>(null);
+  const markerRef = useRef<THREE.Mesh>(null);
   const ghostSpeciesRef = useRef<string | null>(null);
   function updateGhost(now: number) {
     const mesh = ghostRef.current;
     const ghost = runtime.current.ghost;
+    const marker = markerRef.current;
     if (!mesh) return;
     if (!ghost) {
       mesh.visible = false;
+      if (marker) marker.visible = false;
       return;
     }
     const fade = ghost.fadeFrom === null ? 1 : 1 - (now - ghost.fadeFrom) / TUNING.link.ghostFadeMs;
     if (fade <= 0) {
       mesh.visible = false;
+      if (marker) marker.visible = false;
       runtime.current.ghost = null;
       return;
     }
@@ -207,6 +211,15 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     mesh.position.set(ghost.pos.x, TUNING.world.fishDepthY, ghost.pos.z);
     const breath = 0.78 + 0.22 * Math.sin(now * 0.001 * Math.PI * 2 * TUNING.link.ghostPulseHz);
     material.opacity = TUNING.link.ghostOpacity * breath * fade;
+    if (marker) {
+      // A slow ring that keeps opening outward from the spot, like a ripple
+      // that never stops: THE spot, among all the dark shapes.
+      const t = (now * 0.001 * TUNING.link.ghostPulseHz) % 1;
+      marker.visible = true;
+      marker.position.set(ghost.pos.x, TUNING.world.waterY + 0.015, ghost.pos.z);
+      marker.scale.setScalar(TUNING.link.markerRadiusM * (0.7 + 0.5 * t));
+      (marker.material as THREE.MeshBasicMaterial).opacity = TUNING.link.markerOpacity * (1 - t * 0.7) * fade;
+    }
   }
 
   useFrame((_, rawDt) => {
@@ -870,6 +883,10 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       <mesh ref={ghostRef} visible={false} renderOrder={1} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color="#0b1112" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh ref={markerRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.86, 1, 64]} />
+        <meshBasicMaterial color="#e2bf6a" transparent opacity={0} depthWrite={false} depthTest={false} side={THREE.DoubleSide} />
       </mesh>
       <mesh ref={stillRingRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[TUNING.lure.lureRadiusM * 2.4, TUNING.lure.lureRadiusM * 3.3, 48]} />

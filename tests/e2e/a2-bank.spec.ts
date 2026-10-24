@@ -63,8 +63,10 @@ test('/ab says what is being reviewed and what to try', async ({ page }) => {
   expect(await brief.locator('li').count()).toBeGreaterThan(1);
   // /ab is a blind pair for a look chapter and a guided review for a
   // feature chapter (AGENTS.md /ab rule); check whichever is live.
-  const sample = page.getByTestId('review-sample-link');
-  if (await sample.count()) {
+  // The review page fills its sample link after mount: wait for it.
+  if (await page.getByTestId('review-checks').count()) {
+    const sample = page.getByTestId('review-sample-link');
+    await sample.waitFor();
     expect(await sample.getAttribute('href')).toMatch(/^\/c\//);
     await expect(page.getByTestId('review-checks')).toBeVisible();
   } else {
