@@ -35,6 +35,10 @@ import {
   visualLineTensionFor
 } from '@/components/game/runtime';
 import { Backdrop, Foreshore, Moon, PondWater, Reeds } from '@/components/game/scene/Environment';
+import { AlphaSky, AlphaTreeline, AlphaWater, LightDriver } from '@/components/game/scene/AlphaEnvironment';
+import { AB_STORAGE_KEY, readLightOverride, readLook, resolveAbSearch } from '@/game/light/look';
+import { createLightSample, phaseOf, startPhaseForVisit } from '@/game/light/pondLight';
+import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
 import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/game/scene/silhouettes';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
 import type { SceneProps, ScreenPoint } from '@/components/game/types';
@@ -55,6 +59,30 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     Array.from({ length: TUNING.world.fishMaxVisible }, () => null)
   );
   const lureRef = useRef<THREE.Mesh>(null);
+  // A1 look and light (23_ALPHA_CANON §3, §7). `?look=classic` renders the
+  // v0.4 scene verbatim as the blind-gate baseline; `?light=` pins the light.
+  const lookSetup = useMemo(() => {
+    const rawSearch = typeof window === 'undefined' ? '' : window.location.search;
+    const search = resolveAbSearch(rawSearch, () => {
+      try {
+        return window.localStorage.getItem(AB_STORAGE_KEY);
+      } catch {
+        return null;
+      }
+    });
+    const look = readLook(search);
+    const override = readLightOverride(search);
+    let initialPhase = override ? phaseOf(override) : startPhaseForVisit(getStoredPhase(), Math.random);
+    if (!override && look === 'alpha') storePhase(initialPhase);
+    return { look, frozen: override !== null, initialPhase };
+  }, []);
+  const lightRef = useRef(createLightSample());
+  // Per-fish (x, z, radius, strength) for the water shader: fish drawn into the
+  // water as well as on top of it. Written in the fish loop below, read by
+  // AlphaWater as a uniform array (same Vector4 objects, no per-frame alloc).
+  const fishWaterRef = useRef<THREE.Vector4[]>(
+    Array.from({ length: TUNING.world.fishMaxVisible }, () => new THREE.Vector4(0, 0, 0.3, 0))
+  );
   const { camera, gl, size } = useThree();
   const cameraShakenRef = useRef(false);
   const reducedMotionRef = useRef(false);
@@ -425,6 +453,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
 
     for (let i = 0; i < TUNING.world.fishMaxVisible; i++) {
       const mesh = fishRefs.current[i];
+      const fishWater = fishWaterRef.current[i];
+      fishWater.w = 0;
       if (!mesh) {
         const orphanTwin = fishGenericRefs.current[i];
         if (orphanTwin) {
@@ -488,6 +518,14 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         // than the old per-species far shadow did.
         twinMaterial.opacity = TUNING.world.fishCueOpacity * TUNING.world.revealGenericOpacityMultiplier * distanceVis * fade * (1 - reveal);
       }
+      // The water above the fish carries the same visibility the sprite does,
+      // so the in-water darkening hides in the dark exactly as the shadow does.
+      fishWater.set(
+        snapshot.position.x,
+        snapshot.position.z,
+        fishScaleX * TUNING.water.fishShadowRadiusMul,
+        Math.min(1, (baseOpacity * distanceVis * fade) / TUNING.world.fishCommitOpacity)
+      );
       material.color.set(snapshot.state.kind === 'commit' || snapshot.state.kind === 'bite' ? '#202323' : '#111718');
 
       const speed = Math.hypot(snapshot.velocity.x, snapshot.velocity.z);
@@ -620,14 +658,29 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     <>
       <color attach="background" args={[TUNING.visual.voidColor]} />
       <fog attach="fog" args={[TUNING.visual.fogColor, TUNING.visual.fogNear, TUNING.visual.fogFar]} />
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[2.4, 5, 3]} intensity={1.35} />
-      <Backdrop />
-      <Moon runtime={runtime} />
-      <PondWater runtime={runtime} normalMap={waterNormalTexture} />
-      <WaterRipples ripples={ripples} />
-      <Reeds runtime={runtime} />
-      <Foreshore />
+      {lookSetup.look === 'classic' ? (
+        <>
+          <ambientLight intensity={0.9} />
+          <directionalLight position={[2.4, 5, 3]} intensity={1.35} />
+          <Backdrop />
+          <Moon runtime={runtime} />
+          <PondWater runtime={runtime} normalMap={waterNormalTexture} />
+          <WaterRipples ripples={ripples} />
+          <Reeds runtime={runtime} />
+          <Foreshore />
+        </>
+      ) : (
+        <>
+          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} />
+          <AlphaSky light={lightRef} />
+          <Moon runtime={runtime} light={lightRef} />
+          <AlphaTreeline light={lightRef} />
+          <AlphaWater runtime={runtime} light={lightRef} normalMap={waterNormalTexture} fishWater={fishWaterRef} />
+          <WaterRipples ripples={ripples} />
+          <Reeds runtime={runtime} />
+          <Foreshore light={lightRef} />
+        </>
+      )}
       {Array.from({ length: TUNING.world.fishMaxVisible }, (_, i) => (
         <mesh
           key={i}

@@ -6,14 +6,14 @@ import { PwaUpdatePrompt } from '@/components/pwa/PwaUpdatePrompt';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Reel Mobile',
-  description: 'A mobile-first browser fishing feel experiment.',
+  title: 'The Waters',
+  description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
   manifest: '/manifest.webmanifest',
-  applicationName: 'Reel Mobile',
+  applicationName: 'The Waters',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Reel Mobile'
+    title: 'The Waters'
   },
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#3d6068'
+  themeColor: '#1b2328'
 };
 
 type RootLayoutProps = {

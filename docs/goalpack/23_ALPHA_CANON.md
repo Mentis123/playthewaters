@@ -7,7 +7,7 @@
 ## 0. Status and authority
 
 - **Phase:** ALPHA. The MVP (`v0.4-far-water-candidate` through the gear chapter) is complete as a prototype and is the baseline every alpha chapter is A/B'd against.
-- **Owner decisions in force (24 Oct 2026):** six waters on one shoreline (§2); one drifting light per visit (§3); the banned lure as a found object (§5); pond of the day (§6); an ending as a last line on the wall (§6.2); the name is under research (§9), working title stays *Reel Mobile*.
+- **Owner decisions in force (24 Oct 2026):** six waters on one shoreline (§2); one drifting light per visit (§3); the banned lure as a found object (§5); pond of the day (§6); an ending as a last line on the wall (§6.2); the name is **The Waters** (§9).
 - **Still in force, unchanged:** the paragraph (`00`); the iPhone human gate and the five-strangers playtest (`16`); the agent tag policy (`13`: candidates only, never approved, never delete, never force-push); ultracode self-verification for machine-checkable concerns (`18`); zero per-frame allocation; the far-water kernel (`19`), the reveal (`21`), and the two-rod/three-lure gear (`22`) as the base of play.
 - **Amended by this file:** `14_DO_NOT_BUILD` (§8 lists every line touched), `22_THE_GEAR` guardrail "no fourth lure" (§5), `08_ART_DIRECTION` camera and palette (§7), `13_CHECKPOINTS` tag names (§10).
 
@@ -144,7 +144,7 @@ Doctrine amendment: `08_ART_DIRECTION` "the world ends 20 metres past the far re
 
 ## 9. The name
 
-Working title: **Reel Mobile**. The owner's leading candidate for the alpha is **"The Waters"**. Research on collisions, trademarks, domains and how it reads is in `docs/rebuild/03_THE_NAME.md` (pending at the time of this file; the owner decides from it). Until decided, the alpha site at `adamrappaport.vercel.app/alpha` says *Reel Mobile rebuild*.
+**Decided 24 Oct 2026 by the owner: _The Waters_** (tag line *six waters, one shore*). Research in `docs/rebuild/03_THE_NAME.md`. Site: **https://playthewaters.vercel.app**, built from the private repo `Mentis123/playthewaters` (Reel Mobile's full history merged in). The old `/alpha` page on the personal site is retired. Storage keys keep their `reelmobile.*` prefix so no player loses their journal. A trademark search (classes 9 and 41) is still owed before the name goes on anything printed.
 
 ---
 

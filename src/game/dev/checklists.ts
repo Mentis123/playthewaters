@@ -4,7 +4,7 @@ export type DevChecklistItem = {
 };
 
 export type DevChecklist = {
-  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water';
+  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light';
   title: string;
   items: DevChecklistItem[];
 };
@@ -14,7 +14,7 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
     milestone: 'm0',
     title: 'M0 shell gate',
     items: [
-      { id: 'home-loads', text: 'Laptop loads / and shows Reel Mobile with Tap to begin.' },
+      { id: 'home-loads', text: 'Laptop loads / and shows The Waters with Tap to begin.' },
       { id: 'game-loads', text: 'Mobile loads /game via the QR code.' },
       { id: 'dev-qr', text: '/dev shows local network URL, QR code, and current candidate tag.' },
       { id: 'routes', text: '/game and /tune routes exist without errors.' },
@@ -112,10 +112,28 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
       { id: 'no-dock', text: 'Is the dock gone and the scene still coherent (no floating gap where it was)?' },
       { id: 'loop-preserved', text: 'Do twitch, bite, hook, fight, failures, result, the deeper water + reframed backdrop, /dev and /tune all still hold?' }
     ]
+  },
+  'a1-light': {
+    milestone: 'a1-light',
+    title: 'A1 light and water gate',
+    items: [
+      { id: 'a1-blind', text: 'Run /ab on the iPhone: two rounds, pick a pond each round. The new water must win BOTH (threshold set before the build).' },
+      { id: 'a1-near-far', text: 'Near water lighter and readable, far water dark, at every light (?light=dawn|day|dusk|night).' },
+      { id: 'a1-fish', text: 'A near fish shadow is findable at all four lights; a far one reads only as movement.' },
+      { id: 'a1-drift', text: 'Ten minutes without ?light=: the light visibly drifts and never jumps.' },
+      { id: 'a1-return', text: 'Leave and come back: the visit starts at a different light.' },
+      { id: 'a1-feel', text: 'Cast, bite, fight and reveal feel exactly as before.' },
+      { id: 'a1-phone', text: 'Sharp image, bite tick on the iPhone, sound with the silent switch on, no heat after 10 minutes.' },
+      { id: 'a1-rubric', text: 'Score docs/alpha/A1_RUBRIC.md (26 items, pass 22, all starred) and record the result in its section 4.' }
+    ]
   }
 };
 
 export function getChecklist(milestone: string): DevChecklist {
+  if (milestone === 'a1-light') {
+    return checklists['a1-light'];
+  }
+
   if (milestone === 'far-water') {
     return checklists['far-water'];
   }

@@ -23,7 +23,7 @@ async function openRoute(context: BrowserContext, path: string) {
 test('M0 shell routes load', async ({ context }) => {
   const home = await openRoute(context, '/');
   const homePage = home.page;
-  await expect(homePage.getByRole('img', { name: 'Reel Mobile' })).toBeVisible();
+  await expect(homePage.getByRole('img', { name: 'The Waters' })).toBeVisible();
   await expect(homePage.getByText('Tap to continue')).toBeVisible();
   expect(home.errors).toEqual([]);
   await homePage.close();

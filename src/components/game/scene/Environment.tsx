@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { seededRandom } from '@/game/math/vec';
 import { TUNING } from '@/game/tuning/tuning';
 import { createMoonTexture, createSkyTexture, createTreelineTexture } from '@/components/game/scene/textures';
+import type { LightSample } from '@/game/light/pondLight';
 import type { Runtime } from '@/components/game/types';
 
 export function PondWater({ runtime, normalMap }: { runtime: React.MutableRefObject<Runtime>; normalMap: THREE.Texture }) {
@@ -187,12 +188,18 @@ export function Backdrop() {
 
 // The moon rises slowly through the session "like time is really passing".
 // A sprite in front of the treeline, climbing from near the crowns into the sky.
-export function Moon({ runtime }: { runtime: React.MutableRefObject<Runtime> }) {
+// With a light (A1), the moon fades with the light's moonVisibility.
+export function Moon({ runtime, light }: { runtime: React.MutableRefObject<Runtime>; light?: React.MutableRefObject<LightSample> }) {
   const texture = useMemo(() => createMoonTexture(), []);
   const meshRef = useRef<THREE.Mesh>(null);
   const yRef = useRef<number>(TUNING.visual.moonStartY);
 
   useFrame((_, delta) => {
+    if (meshRef.current && light) {
+      const material = meshRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = light.current.moonVisibility;
+      meshRef.current.visible = material.opacity > 0.01;
+    }
     if (!meshRef.current || runtime.current.pondFrozen) return;
     yRef.current = Math.min(TUNING.visual.moonRiseMaxY, yRef.current + delta * TUNING.visual.moonRiseMPerSec);
     meshRef.current.position.y = yRef.current;
@@ -207,7 +214,15 @@ export function Moon({ runtime }: { runtime: React.MutableRefObject<Runtime> }) 
   );
 }
 
-export function Foreshore() {
+// With a light (A1), the bank is tinted by the light's bank colour.
+export function Foreshore({ light }: { light?: React.MutableRefObject<LightSample> } = {}) {
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame(() => {
+    if (light && materialRef.current) {
+      const bank = light.current.bank;
+      materialRef.current.color.setRGB(bank[0], bank[1], bank[2], THREE.SRGBColorSpace);
+    }
+  });
   const texture = useMemo(() => {
     if (typeof document === 'undefined') {
       return new THREE.Texture();
@@ -284,6 +299,7 @@ export function Foreshore() {
     >
       <planeGeometry args={[TUNING.world.pondWidthM * 1.18, slopeLength]} />
       <meshBasicMaterial
+        ref={materialRef}
         map={texture}
         color="#a89878"
         side={THREE.DoubleSide}

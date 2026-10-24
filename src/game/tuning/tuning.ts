@@ -536,6 +536,100 @@ export const TUNING = {
     thrumFrequencyHz: 60,
     thrumGain: 0.1
   },
+  // The drifting light (23_ALPHA_CANON §3). Four graded lights on one cycle:
+  // dawn 0, day 0.25, dusk 0.5, night 0.75. A visit starts somewhere the game
+  // chooses, drifts slowly, and the pond remembers where it was. Colours are
+  // sRGB hex; the scene converts them to linear once per frame without
+  // allocating. `treeline` is a MULTIPLIER on the painted treeline texture
+  // (white = as painted), not a colour. Day is graded to reference photo 01, dawn/dusk lean on 05,
+  // night keeps the v0.4 moonlit palette so the old mood survives.
+  light: {
+    // One light (a quarter of the cycle) lasts ~10 minutes.
+    cyclePerSecond: 1 / 2400,
+    // Fraction of each quarter spent holding its own light before blending
+    // toward the next one (0 = constant blend, 0.5 = hard cuts).
+    plateau: 0.28,
+    // A first-ever visit opens late in the day so the first thing a player
+    // sees is the dusk turn (the hero light).
+    firstVisitPhase: 0.43,
+    // A return visit jumps forward by this much of the cycle, so it starts at
+    // a different light than the one the player left.
+    returnJumpMin: 0.2,
+    returnJumpMax: 0.55,
+    // Phase persistence cadence while playing.
+    saveEveryMs: 15000,
+    keys: {
+      dawn: {
+        skyZenith: '#56677f', skyHorizon: '#e3b394', fog: '#4a5560',
+        waterShallow: '#6b8a86', waterDeep: '#33484f', waterFar: '#26333a',
+        treeline: '#a39ea6', bank: '#9a8a78', ambient: '#c9b9b0', key: '#ffd3ae',
+        ambientIntensity: 0.75, keyIntensity: 1.1, exposure: 1.0,
+        glint: 0.7, sheen: 0.3, caustic: 0.12, reflect: 0.9,
+        celestialElevation: 9, celestialAzimuth: -38, sunVisibility: 1, moonVisibility: 0, stars: 0.05
+      },
+      day: {
+        skyZenith: '#6b9cc4', skyHorizon: '#d7e6e4', fog: '#8fa69c',
+        waterShallow: '#6e8d55', waterDeep: '#3c5a3c', waterFar: '#2b3e2f',
+        treeline: '#f2f4ea', bank: '#b9aa86', ambient: '#e8efe6', key: '#fff6e2',
+        ambientIntensity: 1.05, keyIntensity: 1.6, exposure: 1.0,
+        glint: 0.2, sheen: 0.1, caustic: 0.3, reflect: 0.7,
+        celestialElevation: 52, celestialAzimuth: 18, sunVisibility: 1, moonVisibility: 0, stars: 0
+      },
+      dusk: {
+        skyZenith: '#34405f', skyHorizon: '#e0875b', fog: '#3a3540',
+        waterShallow: '#5a6a6a', waterDeep: '#263840', waterFar: '#1b2328',
+        treeline: '#8f727a', bank: '#8c7464', ambient: '#a99aa8', key: '#ffb07a',
+        ambientIntensity: 0.7, keyIntensity: 1.05, exposure: 1.05,
+        glint: 1.15, sheen: 0.45, caustic: 0.08, reflect: 0.95,
+        celestialElevation: 6, celestialAzimuth: 24, sunVisibility: 1, moonVisibility: 0.15, stars: 0.12
+      },
+      night: {
+        skyZenith: '#0c1820', skyHorizon: '#2b3d47', fog: '#101c20',
+        waterShallow: '#3f5f5c', waterDeep: '#243d45', waterFar: '#111d21',
+        treeline: '#7f9092', bank: '#6e6656', ambient: '#9fb2b4', key: '#c8d4dc',
+        ambientIntensity: 0.85, keyIntensity: 0.9, exposure: 0.95,
+        glint: 0.7, sheen: 0.3, caustic: 0.2, reflect: 0.85,
+        celestialElevation: 26, celestialAzimuth: -22, sunVisibility: 0, moonVisibility: 1, stars: 1
+      }
+    }
+  },
+  // The A1 water (23_ALPHA_CANON §7): analytic waves + Schlick fresnel + sky
+  // reflection + glint + distance darkening, with fish drawn into the water.
+  water: {
+    // Schlick F0 for water.
+    fresnelF0: 0.02,
+    // Distance (0 = bank, 1 = far shore, in uv.y) where the body colour is
+    // fully the deep colour, and the curve that gets it there.
+    clarityDeepAt: 0.62,
+    clarityCurve: 1.6,
+    // How strongly the far band is pulled toward waterFar (the dark gamble zone).
+    farDarkStart: 0.45,
+    farDarkStrength: 0.85,
+    // Analytic wave field (three directional cosines) — amplitude is slope.
+    waveScale: 3.1,
+    waveSlope: 0.055,
+    waveSpeed: 0.55,
+    // Fine detail from the existing normal map, layered under the waves.
+    detailSlope: 0.32,
+    // Band of the reflected sky near the horizon that the far treeline darkens.
+    // Reflections pointing below this height (R.y) toward the far shore hit
+    // the treeline instead of sky; fades in with distance so near water
+    // reflects sky and far water reflects trees (reference photos 01, 02).
+    treelineBand: 0.5,
+    treelineReflectBase: '#2a3a2b',
+    // Fresnel alone is near zero from a bank-height camera; this maps it to a
+    // usable reflection weight (floor near, gain toward the grazing far water).
+    reflectGain: 4,
+    reflectFloor: 0.08,
+    reflectMax: 0.92,
+    glintSharp: 96,
+    glintBroad: 12,
+    // Fish in the water: darkening of the water body above a fish and the
+    // surface slope its body pushes up. Radius is a multiple of fish width.
+    fishShadowStrength: 0.38,
+    fishShadowRadiusMul: 0.75,
+    fishBulgeSlope: 0.05
+  },
   haptics: {
     tapBegin: [10],
     nibbleTick: [15],

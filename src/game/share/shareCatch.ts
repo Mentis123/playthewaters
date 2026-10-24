@@ -22,8 +22,8 @@ export async function shareCatch(c: CatchCardData): Promise<ShareResult> {
     try {
       await nav.share({
         files: [file],
-        title: 'Reel Mobile',
-        text: `Landed a ${speciesLabel(c.species)} on Reel Mobile.`
+        title: 'The Waters',
+        text: `Landed a ${speciesLabel(c.species)} on The Waters.`
       });
       return 'shared';
     } catch (error) {

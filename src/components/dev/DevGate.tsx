@@ -92,7 +92,7 @@ export function DevGate({ checklist }: DevGateProps) {
   return (
     <main className="dev-page">
       <section className="dev-panel">
-        <p className="eyebrow">Reel Mobile</p>
+        <p className="eyebrow">The Waters</p>
         <h1>Dev Gate</h1>
         <dl className="dev-facts">
           <div>

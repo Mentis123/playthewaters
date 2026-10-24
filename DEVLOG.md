@@ -702,3 +702,28 @@ Gates: typecheck, lint, 48 unit tests, production build. **Not yet gated on the 
 
 ## alpha-canon (2026-10-24)
 Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `docs/goalpack/23_ALPHA_CANON.md` is now the authoritative canon for ALPHA and wins over earlier goalpack files where they conflict (amends `14`, `22`, `08`, `13` as listed in its §8 and §10). `00_OVERVIEW` and `AGENTS.md` point to it. Name research in `docs/rebuild/03_THE_NAME.md`: "The Waters" is usable with a wordmark and coined handle; the owner decides. Nothing built yet; A1 (light and water) is the next chapter.
+
+## A1 — light and water (2026-10-24) · `v1.0-light-candidate`
+*Chapter A1 of `23_ALPHA_CANON` §10. The repo is now `Mentis123/playthewaters` (Reel Mobile's 116 commits merged in, no force-push), deployed at playthewaters.vercel.app. The name is The Waters.*
+
+**Target committed first:** `docs/alpha/A1_RUBRIC.md` (blind gate: the new water must win both rounds; 26-item binary rubric, pass 22, starred items required) went in before any A1 code.
+
+**Shipped:**
+- **The drifting light** (`src/game/light/pondLight.ts`, pure; palettes in `TUNING.light`): dawn / day / dusk / night on one cycle, ~10 min per light, plateau-held so each light dominates and the blend never jumps (tested: max per-step colour change < 0.01 across the wrap). First visit opens just before the dusk turn; a return visit jumps 0.2–0.55 of the cycle so it starts on a different light (tested for every light and jump). Phase persisted (`thewaters.light.v1`) on pagehide/hidden and every 15 s. `?light=` pins it for review and captures.
+- **The water** (`AlphaWater`): analytic three-cosine wave normals (the kit's `waveGradient` idea from `adamrappaport/public/map-assets/water.js`) plus the existing normal map for detail; Schlick fresnel mapped to a usable weight from bank height; a sky-gradient reflection that turns to treeline toward the far shore (so far water is dark for a true reason, as in photos 01/02); a sun/moon glint with a sharp core and a broad sheen; clear-near → deep → dark-far body colour; caustics only in the clear near band; **fish drawn into the water** (per-fish darkening + surface bulge from the same visibility the sprite uses, so the in-water shadow hides in the dark exactly as the sprite does). Sprites still carry the reveal (`21`).
+- **Neutral tone mapping**, exposure from the light; live sky gradient with sun glow and night stars (`AlphaSky`); treeline, bank and moon tinted/faded by the light.
+- **`?look=classic`** renders the v0.4 scene verbatim (old water, sky, lights, ACES) as the gate baseline.
+- **`/ab`**, the blind gate: two rounds (night, dusk), random hidden order, opaque per-session tokens (`?pond=`) so the URL never names the look, reveal only after both picks, verdict against the pre-committed threshold.
+- **Effective state read back** (`window.__waters`: look, light, phase, tone mapping, DPR, drawing buffer, calls, triangles) and `tests/e2e/a1-effective.spec.ts` asserting it on the iPhone 13 profile at all four lights, in CI.
+- **Rename to The Waters**: metadata, manifest, share text, catch-card URL, wordmark, `/dev`. The neon REEL MOBILE splash is retired for a code-built dusk title card until commissioned art lands.
+- **Art prompts for agents**: `public/art/PROMPTS.md` + `prompts.json` (served at `/art/…`, pointed to by `/llms.txt`): splash, icon set (iOS ignores the current SVG icons), OG image, six water cards from the reference photos, and the A2 treeline layer.
+
+**Planted defects (every new oracle watched failing):** reverting the boot-DPR fix turned all four effective-state checks red with `dpr 1 != 2`; shrinking `returnJumpMin` to 0.02 failed "a return visit starts at a different light". Both restored, both green.
+
+**Measured (SwiftShader, 390×844 @2x):** 25–26 draw calls, ~710 triangles, DPR 2, buffer 780×1688, tone mapping Neutral, zero page errors at all four lights and classic. **No phone number exists yet.**
+
+**Tuned by capture, three rounds:** first pass had 5 m swells (read as smeared bands) and day glare blowing out the near water; wave scale 1.25 → 3.1, slope 0.09 → 0.055, day glint 0.55 → 0.2, night exposure 1.1 → 0.95 and darker night water to keep the v0.4 moonlit mood.
+
+**Not done / known:** the bank strip is still the v0.4 texture (A2). Under SwiftShader the drift advances slower than real time because each frame's step is clamped to `maxFrameDtSeconds`; on a 60 fps phone it runs at the designed rate. `preserveDrawingBuffer` still true (e2e reads pixels).
+
+**Gate:** the owner's iPhone, `/ab` then the rubric, recorded in `docs/alpha/A1_RUBRIC.md` §4. Candidate only; `-approved` is the owner's tag.

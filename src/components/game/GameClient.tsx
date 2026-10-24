@@ -1059,12 +1059,13 @@ export function GameClient() {
           onClick={advanceSplash}
           data-testid="tap-to-begin"
         >
-          <img
-            src="/images/reel-mobile-splash.png?v=20260525-game-splash"
-            alt="Reel Mobile"
-            className="splash-title-image"
-            draggable={false}
-          />
+          {/* Code-built title card until the commissioned splash lands
+              (public/art/PROMPTS.md, prompt "splash"). The old neon
+              REEL MOBILE art is retired with the name. */}
+          <div className="splash-title-card" role="img" aria-label="The Waters">
+            <span className="splash-title-name">The Waters</span>
+            <span className="splash-title-tag">six waters, one shore</span>
+          </div>
           <span className="splash-hint">Tap to continue</span>
         </button>
       ) : (

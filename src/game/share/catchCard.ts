@@ -118,7 +118,7 @@ export async function renderCatchCard(c: CatchCardData): Promise<Blob | null> {
   ctx.fillText('REEL MOBILE', cx, 1262);
   ctx.fillStyle = 'rgba(201, 212, 220, 0.45)';
   ctx.font = '400 26px system-ui, -apple-system, sans-serif';
-  ctx.fillText('reelmobile.vercel.app', cx, 1304);
+  ctx.fillText('playthewaters.vercel.app', cx, 1304);
 
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png');

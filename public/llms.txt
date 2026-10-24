@@ -1,0 +1,8 @@
+# The Waters
+
+> Six waters, one shore. A mobile-first browser fishing game (alpha). Play: /game
+
+## For agents
+- Art wanted (prompts, sizes, delivery paths, status): /art/PROMPTS.md and /art/prompts.json
+- Design canon lives in the repo at docs/goalpack/23_ALPHA_CANON.md (private repo Mentis123/playthewaters)
+- Blind gate for the current chapter: /ab

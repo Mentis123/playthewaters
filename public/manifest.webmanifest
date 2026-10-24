@@ -1,7 +1,7 @@
 {
-  "name": "Reel Mobile",
-  "short_name": "Reel",
-  "description": "A mobile-first browser fishing feel experiment.",
+  "name": "The Waters",
+  "short_name": "The Waters",
+  "description": "Six waters, one shore. A fishing game for your phone, in the browser.",
   "start_url": "/game",
   "scope": "/",
   "display": "standalone",

@@ -1,6 +1,8 @@
 # AGENTS.md
 
-This repo contains **Reel Mobile**, a mobile-first browser fishing game.
+This repo contains **The Waters** (working title until 24 Oct 2026: Reel Mobile), a mobile-first browser fishing game. Live: https://playthewaters.vercel.app.
+
+**Art:** image prompts, sizes and delivery paths are in `public/art/PROMPTS.md` and `public/art/prompts.json` (served at `/art/PROMPTS.md`). Image agents deliver there; the game agent wires art in behind an A/B.
 
 Before coding, read `docs/goalpack/00_OVERVIEW.md`, then `docs/goalpack/23_ALPHA_CANON.md` (the alpha canon; it wins over earlier goalpack files where they conflict).
 
