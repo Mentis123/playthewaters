@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
-import { feedingAmount, homeOf, stillNeededMs, type HomeId } from '@/game/fish/habits';
+import { feedingAmount, homeOf, homesOf, stillNeededMs } from '@/game/fish/habits';
 import type { LightSample } from '@/game/light/pondLight';
 import { TUNING } from '@/game/tuning/tuning';
 import { lureStillMs } from '@/components/game/runtime';
@@ -22,11 +22,13 @@ export const XRAY_COLORS = {
   spooked: '#ff5a4f'
 } as const;
 
-const HOME_IDS = Object.keys(TUNING.habits.homes) as HomeId[];
 
 export function XRayLayer({ runtime, light }: { runtime: React.MutableRefObject<Runtime>; light: React.MutableRefObject<LightSample> }) {
   const dotRefs = useRef<Array<THREE.Mesh | null>>([]);
   const homeGroup = useRef<THREE.Group>(null);
+  // The scene remounts per water, so the water is fixed for this layer's life.
+  const water = runtime.current.water;
+  const homeIds = useMemo(() => Object.keys(homesOf(water)), [water]);
   const colors = useMemo(() => {
     const out = {} as Record<keyof typeof XRAY_COLORS, THREE.Color>;
     for (const [k, v] of Object.entries(XRAY_COLORS)) out[k as keyof typeof XRAY_COLORS] = new THREE.Color(v);
@@ -63,8 +65,8 @@ export function XRayLayer({ runtime, light }: { runtime: React.MutableRefObject<
   return (
     <>
       <group ref={homeGroup}>
-        {HOME_IDS.map((id) => {
-          const home = homeOf(id);
+        {homeIds.map((id) => {
+          const home = homeOf(id, water);
           return (
             <mesh key={id} position={[home.x, TUNING.world.waterY + 0.015, home.z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={5}>
               <ringGeometry args={[home.radius - 0.03, home.radius, 64]} />

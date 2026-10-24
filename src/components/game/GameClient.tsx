@@ -24,6 +24,12 @@ import { failureStory, generateStory } from '@/game/ui/storyGenerator';
 import { CatchResultCard } from '@/components/game/CatchResultCard';
 import { XRAY_COLORS } from '@/components/game/scene/XRay';
 import { WallBoard } from '@/components/game/WallBoard';
+import { ART_DELIVERED } from '@/game/art/delivered';
+import { arriveAt, loadShore, saveShore, type Shore } from '@/game/persistence/shoreStore';
+import { createLegendState, legendThisVisit, type LegendState } from '@/game/waters/legend';
+import { isWaterId, WATERS, type WaterId } from '@/game/waters/waters';
+import { isLegend } from '@/game/fish/species';
+import { seededRandom } from '@/game/math/vec';
 import { arrivalLine, decodeCatchLink } from '@/game/share/catchLink';
 import { SPECIES_STORY_LABELS, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
 import { endVisit, formatWeight, keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, touchVisit, wallLines, weightGrams, type Keeper } from '@/game/wall/wall';
@@ -40,7 +46,8 @@ import {
   isEarlyHookAttempt,
   rodTipForRuntime,
   scheduleNextSurge,
-  lureStillMs
+  lureStillMs,
+  spookFromSplash
 } from '@/components/game/runtime';
 import type {
   AimPreview,
@@ -61,6 +68,30 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   const arrival = useMemo(() => decodeCatchLink(arrivalCode ?? searchParams.get('catch')), [arrivalCode, searchParams]);
   const seed = arrival?.seed ?? searchParams.get('seed') ?? dailySeed();
   const baseSpawn = arrival?.spawnIndex ?? 0;
+  // A5: which water you are at. A catch link wins; then `?water=` (review);
+  // then where you were last time. waterRef is what the runtime closures
+  // read (a water change must not re-run the title reset); `water` renders.
+  const [shore, setShoreState] = useState<Shore>(() => loadShore());
+  const initialWater: WaterId = arrival?.water
+    ?? (isWaterId(searchParams.get('water')) ? (searchParams.get('water') as WaterId) : shore.water);
+  const [water, setWater] = useState<WaterId>(initialWater);
+  const waterRef = useRef<WaterId>(initialWater);
+  // Review switches (owner, /ab): the legend present this visit, the old
+  // sinking lure already found. Never linked from the game.
+  const forceLegend = searchParams.get('legend') === '1';
+  const forceSinker = searchParams.get('sinker') === '1';
+  const foundSinker = shore.foundSinker || forceSinker;
+  const sinkerTiedRef = useRef(shore.sinkerTied && foundSinker);
+  const legendRef = useRef<LegendState | null>(null);
+  const [walking, setWalking] = useState(false);
+  const walkingRef = useRef(false);
+  const [waterCard, setWaterCard] = useState<WaterId | null>(null);
+  const updateShore = useCallback((fn: (current: Shore) => Shore) => {
+    const next = fn(loadShore());
+    saveShore(next);
+    setShoreState(next);
+    return next;
+  }, []);
   const queryDebug = searchParams.get('debug') === '1';
   const queryXray = searchParams.get('xray') === '1';
   const [started, setStarted] = useState(false);
@@ -108,7 +139,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   const debugMetrics = useGameStore((state) => state.debugMetrics);
   const glHandlersReady = useGameStore((state) => state.glHandlersReady);
 
-  const runtime = useRef<Runtime>(createRuntime(seed, baseSpawn));
+  const runtime = useRef<Runtime>(createRuntime(seed, baseSpawn, initialWater));
 
   // Pre-cast gear (22_THE_GEAR). gearRef is the always-current selection the
   // runtime + cast closures read; `gear` drives the picker UI. Saved gear loads on
@@ -118,7 +149,9 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   const [gear, setGearState] = useState<GearSelection>({ rodId: DEFAULT_ROD_ID, lureId: DEFAULT_LURE_ID });
   const stampGear = useCallback(() => {
     runtime.current.rodId = gearRef.current.rodId;
-    runtime.current.lureId = gearRef.current.lureId;
+    // A5: the found lure, tied on, outranks the strip until untied.
+    runtime.current.lureId = sinkerTiedRef.current ? 'old_sinker' : gearRef.current.lureId;
+    runtime.current.legend = legendRef.current;
   }, []);
   useEffect(() => {
     const saved = getGear();
@@ -126,12 +159,21 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     setGearState(saved);
     stampGear();
   }, [stampGear]);
-  const applyGear = useCallback((next: GearSelection) => {
+  const applyGear = useCallback((selected: GearSelection) => {
+    // While the old sinking lure is tied on, the strip is shown with no lure
+    // chosen; changing the rod keeps it tied (the strip's own lure stays).
+    const rodOnly = selected.lureId === 'old_sinker';
+    const next = rodOnly ? { ...selected, lureId: gearRef.current.lureId } : selected;
+    // Choosing any lure in the strip takes the old sinking lure off.
+    if (!rodOnly && sinkerTiedRef.current) {
+      sinkerTiedRef.current = false;
+      updateShore((current) => ({ ...current, sinkerTied: false }));
+    }
     gearRef.current = next;
     setGearState(next);
     setGear(next);
     stampGear();
-  }, [stampGear]);
+  }, [stampGear, updateShore]);
 
   // Feel preferences (sound / haptics): loaded client-side like gear, applied
   // to the audio bus and the central haptics gate immediately on change.
@@ -221,7 +263,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   // does. Used on mount/seed change and by the "leave the pond" glyph.
   const resetToTitle = useCallback(() => {
     spawnIndexRef.current = baseSpawn;
-    runtime.current = createRuntime(seed, baseSpawn);
+    runtime.current = createRuntime(seed, baseSpawn, waterRef.current);
     if (arrival) {
       runtime.current.ghost = { species: arrival.species, pos: { ...arrival.hook }, fadeFrom: null };
     }
@@ -284,7 +326,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     }
 
     const preventTouch = (event: TouchEvent) => {
-      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay')) {
+      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay, .found-card')) {
         return;
       }
 
@@ -336,6 +378,10 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     runtime.current.state = { kind: 'scouting', sinceMs: performance.now() };
     setGameState(runtime.current.state);
     setStarted(true);
+    arriveAtWater(waterRef.current);
+    stampGear();
+    // arriveAtWater and stampGear read refs and stable setters only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, sessionStore, setGameState]);
 
   const advanceSplash = useCallback(() => {
@@ -369,7 +415,10 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         id: createId(),
         at: Date.now(),
         species: runtime.current.fish.instance.species,
-        sizeScore: clamp(peakTension, TUNING.fish.catchMinSizeScore, TUNING.fish.catchMaxSizeScore),
+        // A legend is always its full size; everything else is the fight's.
+        sizeScore: isLegend(runtime.current.fish.instance.species)
+          ? TUNING.fish.catchMaxSizeScore
+          : clamp(peakTension, TUNING.fish.catchMinSizeScore, TUNING.fish.catchMaxSizeScore),
         // The lure this fish was actually caught on (22_THE_GEAR) — a flat journal
         // attribute, never a coverage/completion grid (14_DO_NOT_BUILD).
         lure: runtime.current.lureId,
@@ -395,7 +444,8 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         phase: runtime.current.lightPhase,
         hook: runtime.current.hookPos ?? { ...runtime.current.fish.position },
         seed,
-        spawnIndex: runtime.current.spawnIndex
+        spawnIndex: runtime.current.spawnIndex,
+        water: runtime.current.water
       };
       sessionStore.recordCatch(catchEntry);
       track({ type: 'catch', catch: catchEntry });
@@ -426,18 +476,110 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
 
   const resetCast = useCallback(() => {
     spawnIndexRef.current += 1;
-    const nextRuntime = createRuntime(seed, spawnIndexRef.current);
+    const nextRuntime = createRuntime(seed, spawnIndexRef.current, waterRef.current);
     nextRuntime.state = { kind: 'scouting', sinceMs: performance.now() };
-    nextRuntime.rodId = gearRef.current.rodId;
-    nextRuntime.lureId = gearRef.current.lureId;
     runtime.current = nextRuntime;
+    stampGear();
     setOverlay({ linePoints: [], rodTip: { x: 0, y: 0 }, lure: { x: 0, y: 0 }, aimTarget: null });
     setRipples([]);
     setRodOffset({ x: 0, z: 0 });
     setReeling(false);
     setGameState(nextRuntime.state);
     setFishState(nextRuntime.fish.state);
-  }, [seed, setFishState, setGameState, setReeling]);
+  }, [seed, setFishState, setGameState, setReeling, stampGear]);
+
+  // A5: arriving at a water counts a visit to it (the legend contract counts
+  // visits, never the clock) and decides whether its legend is here.
+  function arriveAtWater(to: WaterId) {
+    const next = updateShore((current) => arriveAt(current, to));
+    const count = next.visits[to] ?? 1;
+    legendRef.current = WATERS[to].legendLights.length > 0
+      ? createLegendState(forceLegend || legendThisVisit(count), performance.now(), seededRandom(`${seed}-legend-${to}-${count}`))
+      : null;
+    // Review only (?legend=1): the first surfacing comes quickly.
+    if (forceLegend && legendRef.current) legendRef.current.nextSurfaceAt = performance.now() + 15_000;
+    runtime.current.legend = legendRef.current;
+  }
+
+  // A5 the walk (docs/alpha/A5_RUBRIC.md §1): along the bank to the other
+  // water. The camera walks out of this one toward the path, the next water
+  // is grown, and the camera walks in from the other side. No menu, no map.
+  const walkTo = useCallback(() => {
+    if (walkingRef.current || runtime.current.state.kind !== 'scouting') return;
+    const from = waterRef.current;
+    const to: WaterId = from === 'home' ? 'lily' : 'home';
+    const dir: -1 | 1 = from === 'home' ? -1 : 1;
+    const half = TUNING.walk.durationMs * 0.5;
+    walkingRef.current = true;
+    setWalking(true);
+    runtime.current.walk = { phase: 'out', startAt: performance.now(), dir };
+    vibrate(TUNING.haptics.tapBegin);
+    window.setTimeout(() => {
+      waterRef.current = to;
+      spawnIndexRef.current = 0;
+      const next = createRuntime(seed, 0, to);
+      next.state = { kind: 'scouting', sinceMs: performance.now() };
+      next.walk = { phase: 'in', startAt: performance.now(), dir };
+      runtime.current = next;
+      arriveAtWater(to);
+      stampGear();
+      setRipples([]);
+      setOverlay({ linePoints: [], rodTip: { x: 0, y: 0 }, lure: { x: 0, y: 0 }, aimTarget: null });
+      setWater(to);
+      setGameState(next.state);
+      setFishState(next.fish.state);
+      // The first arrival shows the water's painting, once.
+      if (!loadShore().seenCards.includes(to) && to !== 'home') {
+        updateShore((current) => ({ ...current, seenCards: [...current.seenCards, to] }));
+        setWaterCard(to);
+        window.setTimeout(() => setWaterCard(null), TUNING.walk.cardMs);
+      }
+      window.setTimeout(() => {
+        walkingRef.current = false;
+        setWalking(false);
+      }, half);
+    }, half);
+    // arriveAtWater and updateShore close over refs/stable setters only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed, setFishState, setGameState, stampGear, updateShore]);
+
+  // The found lure on its stone: tap to tie it on, tap again to take it off.
+  const toggleSinker = useCallback(() => {
+    const tied = !sinkerTiedRef.current;
+    sinkerTiedRef.current = tied;
+    updateShore((current) => ({ ...current, sinkerTied: tied }));
+    stampGear();
+    vibrate(TUNING.haptics.nibbleTick);
+    showPondNote(tied ? 'Tied on the old sinking lure.' : 'Took the old sinking lure off.');
+    // showPondNote is declared below and stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stampGear, updateShore]);
+
+  // A snagged lure (it landed on a pad): one tap pulls it free with a splash
+  // that spooks the fish nearby. Nothing is lost.
+  const freeSnag = useCallback(() => {
+    const current = runtime.current;
+    if (!current.snagged) return;
+    current.snagged = false;
+    const at = { ...current.lurePos };
+    spookFromSplash(current, at, TUNING.pads.freeSpookM / Math.max(0.1, TUNING.habits.splashSpookRadiusM), current.lightPhase, performance.now());
+    addRipple(at, TUNING.lure.rippleRadiusOnImpactM, false);
+    audio.current.fishSplash(TUNING.audio.impactSplashIntensity * 0.7);
+    current.lureVisible = false;
+    current.state = { kind: 'scouting', sinceMs: performance.now() };
+    setGameState(current.state);
+  }, [setGameState]);
+
+  const closeFound = useCallback(() => {
+    const current = runtime.current;
+    if (current.state.kind !== 'found') return;
+    if (current.state.what === 'sinker') {
+      updateShore((value) => ({ ...value, foundSinker: true }));
+    }
+    current.lureVisible = false;
+    current.state = { kind: 'scouting', sinceMs: performance.now() };
+    setGameState(current.state);
+  }, [setGameState, updateShore]);
 
   const showPondNote = useCallback((text: string) => {
     setPondNote(text);
@@ -457,7 +599,8 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       sizeScore: result.sizeScore,
       lure: result.lure,
       phase: result.phase ?? 0.25,
-      water: 'home'
+      water: result.water ?? 'home',
+      legend: isLegend(result.species) || undefined
     };
   }, []);
   // Writes the wall and returns what went back; the card then confirms it
@@ -557,6 +700,33 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     if (event.pointerType === 'touch' && event.isPrimary === false) {
       setDebugOpen((value) => !value);
       return;
+    }
+
+    // A5: nothing is cast mid-walk; a snagged lure is freed by any tap; and
+    // while the lure is in, the shore's things can be tapped (the path, the
+    // bench, the found lure on its stone).
+    if (walkingRef.current) return;
+    if (runtime.current.snagged && runtime.current.state.kind === 'lure_idle') {
+      freeSnag();
+      return;
+    }
+    if (runtime.current.state.kind === 'scouting') {
+      const targets = runtime.current.targets;
+      const near = (point: ScreenPoint | null) =>
+        !!point && Math.hypot(event.clientX - point.x, event.clientY - point.y) <= TUNING.walk.tapRadiusPx;
+      if (near(targets.path)) {
+        walkTo();
+        return;
+      }
+      if (near(targets.bench)) {
+        runtime.current.state = { kind: 'found', what: 'bench', shownAt: performance.now() };
+        setGameState(runtime.current.state);
+        return;
+      }
+      if (near(targets.sinker)) {
+        toggleSinker();
+        return;
+      }
     }
 
     pointerRef.current = {
@@ -807,6 +977,24 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       wall() {
         return wallLines(loadWall());
       },
+      // A5: where the shore's tappable things are on screen, the water, the
+      // legend, and a way to tap a target exactly.
+      shore() {
+        const r = runtime.current;
+        return {
+          water: r.water,
+          state: r.state.kind,
+          snagged: r.snagged,
+          lureId: r.lureId,
+          targets: { path: r.targets.path && { ...r.targets.path }, bench: r.targets.bench && { ...r.targets.bench }, sinker: r.targets.sinker && { ...r.targets.sinker } },
+          legend: r.legend ? { ...r.legend, pos: { ...r.legendPos } } : null,
+          species: r.fish.instance.species,
+          saved: loadShore()
+        };
+      },
+      surfaceLegend() {
+        if (runtime.current.legend) runtime.current.legend.nextSurfaceAt = 0;
+      },
       fish() {
         const r = runtime.current;
         const now = performance.now();
@@ -1021,6 +1209,10 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       >
         <Suspense fallback={null}>
           <GameScene
+            key={water}
+            water={water}
+            foundSinker={foundSinker}
+            sinkerTied={shore.sinkerTied && foundSinker}
             started={started}
             runtime={runtime}
             audio={audio}
@@ -1159,7 +1351,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       ) : null}
 
       {started && gameState.kind === 'scouting' ? (
-        <GearSelect gear={gear} onSelect={applyGear} explainerOpen={gearHelpOpen} onExplainerOpenChange={setGearHelpOpen} />
+        <GearSelect gear={shore.sinkerTied && foundSinker ? { ...gear, lureId: 'old_sinker' } : gear} onSelect={applyGear} explainerOpen={gearHelpOpen} onExplainerOpenChange={setGearHelpOpen} />
       ) : null}
 
       {started && gameState.kind === 'scouting' ? (
@@ -1328,6 +1520,59 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         />
       ) : null}
 
+      {gameState.kind === 'found' ? (
+        <div
+          className="found-card"
+          data-testid="found-card"
+          role="dialog"
+          aria-label={gameState.what === 'bench' ? 'The bench' : 'Something that is not a fish'}
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+        >
+          {gameState.what === 'bench' ? (
+            <>
+              <div
+                className="bench-plank"
+                data-testid="bench-plank"
+                style={ART_DELIVERED.benchWood ? { backgroundImage: "url('/assets/textures/bench-wood.webp')", backgroundSize: 'cover' } : undefined}
+              >
+                <p className="bench-carving">
+                  OLD MOSSBACK. 90 LB. FIRST LIGHT.
+                  <br />
+                  IT CAME UP FOR THE ONE ON THE BOTTOM.
+                  <br />
+                  <span className="bench-initials">— R.T. &apos;86</span>
+                </p>
+              </div>
+              <p className="found-sub">Someone carved it into the bench a long time ago.</p>
+            </>
+          ) : (
+            <>
+              <div
+                className="found-sinker"
+                aria-hidden="true"
+                style={ART_DELIVERED.oldSinker ? { background: "url('/assets/sprites/old_sinker.webp') center / contain no-repeat" } : undefined}
+              />
+              <p className="found-title">Not a fish.</p>
+              <p className="found-sub">An old sinking lure, tangled in line under the bank.</p>
+            </>
+          )}
+          <button type="button" className="result-keep" data-testid="found-close" onClick={closeFound}>
+            {gameState.what === 'bench' ? 'Back to the water' : 'Keep it'}
+          </button>
+        </div>
+      ) : null}
+
+      {waterCard ? (
+        <div className="water-card" data-testid="water-card" aria-label={WATERS[waterCard].name}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={WATER_CARD_ART[waterCard]} alt="" />
+          <span className="water-card-name">{WATERS[waterCard].name}</span>
+        </div>
+      ) : null}
+
+      {walking ? <div className="walk-veil" aria-hidden="true" /> : null}
+
       {pondNote && gameState.kind !== 'result' ? (
         <div className="pond-note" role="status" data-testid="pond-note">{pondNote}</div>
       ) : null}
@@ -1454,6 +1699,12 @@ function soundGlyph(on: boolean) {
     </svg>
   );
 }
+
+// The painting shown the first time you arrive at a water (public/art/PROMPTS.md).
+const WATER_CARD_ART: Record<WaterId, string> = {
+  home: '/art/waters/01-garden-pond.webp',
+  lily: '/art/waters/02-lily-pond.webp'
+};
 
 // The wall: a board with three lines on it.
 function wallGlyph() {

@@ -24,6 +24,7 @@ export type ResultCatch = {
   hook?: Vec2;
   seed?: string;
   spawnIndex?: number;
+  water?: import('@/game/waters/waters').WaterId;
 };
 
 export type GameState =
@@ -35,6 +36,9 @@ export type GameState =
   | { kind: 'rod_control'; lurePos: Vec2; sinceMs: number; load: number }
   | { kind: 'bite_window'; openedAt: number; closesAt: number; lurePos: Vec2 }
   | { kind: 'hooked'; hookedAt: number; stamina: number; slackMs: number; nearSnaps: number; peakTension: number }
+  // A5: a find that is not a fish (the old sinking lure), or the bench's
+  // carved line. Shown as a card; nothing is lost or scored.
+  | { kind: 'found'; what: 'sinker' | 'bench'; shownAt: number }
   | { kind: 'result'; outcome: 'catch' | FailureKind; storyText: string; shownAt: number; peakTension: number; catch?: ResultCatch };
 
 export function stateLabel(state: GameState): string {

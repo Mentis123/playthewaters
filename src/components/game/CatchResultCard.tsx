@@ -21,7 +21,8 @@ const LURE_LABELS: Record<string, string> = {
   default: 'moss-green lure',
   natural: 'natural lure',
   popper: 'popper',
-  sinker: 'sinker'
+  sinker: 'sinker',
+  old_sinker: 'old sinking lure'
 };
 
 function isKnownSpecies(species: string): species is SpeciesId {

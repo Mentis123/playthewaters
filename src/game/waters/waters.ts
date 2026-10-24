@@ -34,7 +34,9 @@ export type WaterDef = {
   speciesHomes: Partial<Record<SpeciesId, string[]>>;
   // Water body: colours (sRGB hex) and how far you can see into it, as a
   // multiplier on the home pond's clarity (1 = as home).
-  water: { deep: string; far: string; shallow: string; clarity: number };
+  // reflect: multiplier on how much sky the surface shows (photo 04 is a
+  // brown body with the forest in it, not a sky mirror).
+  water: { deep: string; far: string; shallow: string; clarity: number; reflect: number };
   pads: PadIsland[];
   // Reed islands: drawn as clumps of reeds standing in the water.
   reedIslands: Array<{ x: number; z: number; radius: number }>;
@@ -50,7 +52,7 @@ export const WATERS: Record<WaterId, WaterDef> = {
     species: {},
     homes: {},
     speciesHomes: {},
-    water: { deep: '', far: '', shallow: '', clarity: 1 },
+    water: { deep: '', far: '', shallow: '', clarity: 1, reflect: 1 },
     pads: [],
     reedIslands: [],
     legendLights: []
@@ -60,31 +62,34 @@ export const WATERS: Record<WaterId, WaterDef> = {
     name: 'the lily pond',
     // Photo 04: bass and pike in the cover, minnows in the open, a carp or two.
     species: { moss_bass: 34, reed_pike: 26, moon_minnow: 24, bronze_carp: 16 },
+    // Placed inside what a portrait phone sees (about ±2 m at z -3.5, ±1.6 m
+    // at z 0, ±1.3 m at the bank); wider screens see more around them.
     homes: {
-      pads_left: { x: -2.4, z: -2.2, radius: 1.3 },
-      pads_right: { x: 2.3, z: -3.4, radius: 1.4 },
-      pads_near: { x: 1.6, z: 0.4, radius: 0.9 },
-      reeds_island: { x: -0.6, z: -4.6, radius: 1.2 },
-      open: { x: 0, z: -1.2, radius: 3.0 }
+      pads_left: { x: -1.2, z: -2.6, radius: 0.9 },
+      pads_right: { x: 1.3, z: -3.9, radius: 1.0 },
+      pads_near: { x: 0.9, z: 0.2, radius: 0.7 },
+      reeds_island: { x: -0.4, z: -5.2, radius: 0.9 },
+      open: { x: 0, z: -1.4, radius: 2.2 }
     },
     speciesHomes: {
       moss_bass: ['pads_left', 'pads_right', 'pads_near'],
       reed_pike: ['reeds_island', 'pads_right'],
       moon_minnow: ['open', 'pads_near'],
       bronze_carp: ['pads_right', 'open'],
-      old_kingfish: ['open']
+      old_kingfish: ['open'],
+      old_mossback: ['pads_right']
     },
-    water: { deep: '#3a3422', far: '#24221a', shallow: '#4d4a33', clarity: 0.55 },
+    water: { deep: '#4a4024', far: '#2c2a1a', shallow: '#5c5434', clarity: 0.5, reflect: 0.45 },
     pads: [
-      { x: -2.4, z: -2.2, radius: 1.05, pads: 22, drift: 0.12, phase: 0.0 },
-      { x: 2.3, z: -3.4, radius: 1.25, pads: 26, drift: 0.1, phase: 1.7 },
-      { x: 1.6, z: 0.4, radius: 0.7, pads: 11, drift: 0.14, phase: 3.1 },
-      { x: -1.2, z: -5.0, radius: 0.55, pads: 8, drift: 0.08, phase: 4.4 },
-      { x: 3.4, z: -0.9, radius: 0.45, pads: 6, drift: 0.1, phase: 5.2 }
+      { x: -1.2, z: -2.6, radius: 0.8, pads: 30, drift: 0.1, phase: 0.0 },
+      { x: 1.3, z: -3.9, radius: 0.95, pads: 36, drift: 0.09, phase: 1.7 },
+      { x: 0.9, z: 0.2, radius: 0.52, pads: 16, drift: 0.11, phase: 3.1 },
+      { x: -1.6, z: -4.6, radius: 0.45, pads: 10, drift: 0.07, phase: 4.4 },
+      { x: 1.5, z: -1.4, radius: 0.36, pads: 8, drift: 0.08, phase: 5.2 }
     ],
     reedIslands: [
-      { x: -0.6, z: -4.6, radius: 0.9 },
-      { x: -3.6, z: 0.2, radius: 0.6 }
+      { x: -0.4, z: -5.2, radius: 0.65 },
+      { x: -1.45, z: 0.9, radius: 0.38 }
     ],
     legendLights: ['dawn', 'dusk']
   }

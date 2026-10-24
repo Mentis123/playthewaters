@@ -38,19 +38,21 @@ export type FishUpdateInput = {
   // A3 habits (23_ALPHA_CANON §4). Absent = the pre-A3 fish exactly.
   // feeding: 0..1 for this fish's species at the current light.
   // stillMs: how long the lure has been dead still.
-  habit?: { feeding: number; stillMs: number };
+  habit?: { feeding: number; stillMs: number; water?: import('@/game/waters/waters').WaterId };
 };
 
 // Where a wandering fish goes next: its home (A3) or anywhere (pre-A3).
 function wanderTargetFor(fish: FishSnapshot, input: FishUpdateInput): Vec2 {
   if (input.habit && fish.instance.home) {
-    return habitWanderTarget(homeOf(fish.instance.home), input.habit.feeding, input.rng);
+    return habitWanderTarget(homeOf(fish.instance.home, input.habit.water), input.habit.feeding, input.rng);
   }
   return nextWanderTarget(input.rng);
 }
 
-export function createInitialFish(seedRand: () => number): FishSnapshot {
-  const instance = createFishInstance(seedRand);
+// `weights` (A5): a water's own species table; omitted, the global spawn
+// weights and the rng draws are exactly as before.
+export function createInitialFish(seedRand: () => number, weights?: Partial<Record<SpeciesId, number>>): FishSnapshot {
+  const instance = createFishInstance(seedRand, weights);
   return spawnFishFromInstance(seedRand, instance);
 }
 

@@ -2,39 +2,39 @@
 
 import { useEffect, useState } from 'react';
 
-import { createRuntime } from '@/components/game/runtime';
-import { dailySeed } from '@/game/persistence/sessionStore';
-import { catchLinkPath } from '@/game/share/catchLink';
 
 // /ab in review mode (AGENTS.md /ab rule). A chapter that adds features rather
 // than a look cannot be judged by a blind pair, so /ab becomes a guided review:
 // what changed, what to do, and the starred rubric items as yes/no. A4 is the
 // first such chapter (docs/alpha/A4_RUBRIC.md). Picks stay on this device.
 const REVIEW = {
-  chapter: 'A4',
-  title: 'The wall and the link',
-  rubric: 'docs/alpha/A4_RUBRIC.md',
+  chapter: 'A5',
+  title: 'The lily pond and the walk',
+  rubric: 'docs/alpha/A5_RUBRIC.md',
   reviewing:
-    'Three new things. Every catch now asks Keep or Let go, and you get one keeper per visit. Kept fish go on The Wall, ' +
-    'a record board with the heaviest of each species, weight in lb and oz. And Share now sends a link: whoever opens it lands ' +
-    'on your pond, with the same fish and the same light, and the silhouette of your fish where you hooked it.',
+    'The second water and the way to it. At the home pond\u2019s left edge a soft light shows through the trees where the bank goes on: tap it and you walk along the bank to the lily pond (and back, from its right edge). ' +
+    'The lily pond is brown and still, with pad islands that drift; fish vanish under the pads, and a cast onto a pad snags (one tap frees it). ' +
+    'Two things are hidden: something glints under the home pond\u2019s near bank, and the lily pond has an old bench. And the lily pond has a legend.',
   steps: [
-    'Open the sample link below in a private tab (or on another phone). You should be on a pond in under 2 seconds, with a card saying what was caught there and a dark fish shape in the water.',
-    'Tap Start fishing. The shape fades out and you fish that pond.',
-    'Catch a fish and press Keep. A note says "On the wall."',
-    'Catch another fish in the same visit. The card warns that keeping it puts the first one back. Keep it.',
-    'Open the wall: the board glyph at the top right, next to the leave glyph. One line per species, heaviest first.',
-    'Catch one more and press Let go. A ring where it went back in, nothing on the wall.',
-    'Share a catch, send the link to yourself, and open it on a second phone.'
+    'Open the game. At the home pond, look at the left edge where the water meets the bank: a soft light through the trees. Tap it.',
+    'You walk along the bank. The first time, the lily pond\u2019s painting shows for a moment.',
+    'Watch the pads for a minute: fish slip under them and vanish. Cast onto a pad: it snags. Tap anywhere to pull it free (the fish near it scatter).',
+    'Tap the bench on the left bank. Read it.',
+    'Walk back (the light at the lily pond\u2019s right edge). Under the near bank, something brass glints every few seconds. Cast right onto it.',
+    'Once found, it rests on a stone on the bank. Tap it to tie it on; tap it again, or pick a lure in the strip, to take it off.',
+    'The legend (review shortcut below, so you need not wait for the third visit at dawn): watch for it to surface, tie on the old lure, cast beside the swirl (not on top of it) and leave it completely still.'
   ],
   checks: [
-    { id: 'fate', text: 'Every catch asks Keep or Let go, and either one goes straight back to fishing.' },
-    { id: 'swap', text: 'A second Keep in the same visit replaces the first on the wall, and says so.' },
-    { id: 'wall', text: 'The wall shows one line per species: the heaviest kept, with weight, water, light and lure.' },
-    { id: 'pond', text: 'A shared link opens the sender’s pond: same fish, same light, the silhouette where it was hooked.' },
-    { id: 'fast', text: 'Cold open on a phone: the pond is drawn in under 2 seconds.' },
-    { id: 'play', text: 'Casting, bites, the fight and the A3.1 habits feel the same as before.' },
-    { id: 'smooth', text: 'No new stutter or heat.' }
+    { id: 'path', text: 'At the home pond, the way to somewhere else is visible but not labelled.' },
+    { id: 'walk', text: 'Tapping the path walks you to the lily pond and back, without feeling like a loading screen.' },
+    { id: 'looks', text: 'The lily pond reads as photo 04: brown still water, pad islands, reeds, a forested far shore.' },
+    { id: 'pads', text: 'Pads hide fish, and you start reading the edges of the pads.' },
+    { id: 'snag', text: 'A cast onto a pad snags; one tap frees it; nothing is lost; nearby fish spook.' },
+    { id: 'find', text: 'The sinking lure can be found by looking, with no marker or hint.' },
+    { id: 'bench', text: 'The bench\u2019s carved line is readable and feels like a found thing, not UI.' },
+    { id: 'tell', text: 'The legend makes itself known now and then, unmistakably and unexplained.' },
+    { id: 'legend', text: 'It cannot be caught the wrong way, and a cast on top of it costs you the visit.' },
+    { id: 'budget', text: 'No stutter, heat or flicker at either water.' }
   ]
 };
 
@@ -42,20 +42,7 @@ type Answer = 'yes' | 'no';
 const STATE_KEY = `thewaters.review.${REVIEW.chapter}`;
 
 function sampleLink(): string {
-  // Today's pond, first spawn: the primary fish is really there, and the
-  // silhouette sits where it starts.
-  const seed = dailySeed();
-  const runtime = createRuntime(seed, 0);
-  return catchLinkPath({
-    seed,
-    spawnIndex: 0,
-    phase: 0.5,
-    species: runtime.fish.instance.species,
-    sizeScore: 0.72,
-    hook: { ...runtime.fish.position },
-    lure: 'natural',
-    kept: true
-  });
+  return '/game?water=lily';
 }
 
 export function ReviewGate() {
@@ -103,35 +90,31 @@ export function ReviewGate() {
       </section>
 
       <section className="ab-round">
-        <h2>The sample link</h2>
-        <p className="ab-lede">Today&apos;s pond at dusk, with a kept fish&apos;s silhouette where it was hooked.</p>
-        <div className="ab-ponds">
-          <div className="ab-pond">
-            {link ? (
-              <a className="ab-open" href={link} target="_blank" rel="noopener" data-testid="review-sample-link">
-                Open the sample link
-              </a>
-            ) : null}
-            <a className="ab-open" href="/game" target="_blank" rel="noopener">
-              Open the game
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="ab-round" data-testid="review-art">
-        <h2>New art (merged 24 Oct)</h2>
+        <h2>Open</h2>
         <p className="ab-lede">
-          The title screen, the home-screen icon (add to home screen again to see it) and the link preview are the new paintings.
-          The far trees on the pond are the new painted treeline; compare it with the old drawn one at dusk:
+          Start at the home pond (step 1). The game remembers which water you were at; this link always starts at home.
+          Finds are remembered too: to look for the glint again, use a private tab.
         </p>
         <div className="ab-ponds">
           <div className="ab-pond">
-            <a className="ab-open" href="/game?light=dusk" target="_blank" rel="noopener" data-testid="review-art-new">
-              Painted trees (new)
+            <a className="ab-open" href="/game?water=home" target="_blank" rel="noopener">
+              The home pond
             </a>
-            <a className="ab-open" href="/game?light=dusk&treeline=code" target="_blank" rel="noopener">
-              Drawn trees (old)
+            {link ? (
+              <a className="ab-open" href={link} target="_blank" rel="noopener" data-testid="review-sample-link">
+                The lily pond
+              </a>
+            ) : null}
+          </div>
+        </div>
+        <p className="ab-lede">
+          Legend shortcut (owner only; never linked from the game): the lily pond at dawn with the legend here and the old lure
+          already found. It first surfaces about 15 seconds in.
+        </p>
+        <div className="ab-ponds">
+          <div className="ab-pond">
+            <a className="ab-open" href="/game?water=lily&legend=1&sinker=1&light=dawn" target="_blank" rel="noopener" data-testid="review-legend-link">
+              Legend at dawn
             </a>
           </div>
         </div>

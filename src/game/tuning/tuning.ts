@@ -373,6 +373,31 @@ export const TUNING = {
         surgeTensionSpike: 0.34,
         surgeAudioIntensity: 0.85
       },
+      // A5 the lily pond's legend (docs/alpha/A5_RUBRIC.md). Never spawns by
+      // weight (0): it is placed only when its conditions are met. Bigger and
+      // slower than a carp; the fight is longer, never harder to win.
+      old_mossback: {
+        spawnWeight: 0,
+        widthM: 1.75,
+        heightM: 0.66,
+        opacityMultiplier: 0.95,
+        noticeRadiusMultiplier: 0.95,
+        fearRadiusMultiplier: 0.8,
+        commitThresholdMultiplier: 1.12,
+        wanderSpeedMultiplier: 0.78,
+        approachSpeedMultiplier: 0.75,
+        inspectDurationMultiplier: 0.95,
+        commitDurationMultiplier: 1.18,
+        biteWindowMultiplier: 1.18,
+        staminaDrainMultiplier: 0.7,
+        hookedPullMultiplier: 0.82,
+        cueEveryMultiplier: 0.95,
+        primaryCueRadiusM: 0.22,
+        surgeIntervalMinMs: 2100,
+        surgeIntervalMaxMs: 4000,
+        surgeTensionSpike: 0.18,
+        surgeAudioIntensity: 0.55
+      },
       reed_pike: {
         spawnWeight: 16,
         widthM: 1.16,
@@ -447,7 +472,10 @@ export const TUNING = {
       popper: { attractMult: 1.6, fearMult: 1.5, sinkMult: 0.6, twitchMult: 1.3 },
       // The quiet lure: won't spook even worked close (small fear) but draws only
       // from nearby (small attraction) — demands you place it true.
-      sinker: { attractMult: 0.7, fearMult: 0.6, sinkMult: 1.5, twitchMult: 0.85 }
+      sinker: { attractMult: 0.7, fearMult: 0.6, sinkMult: 1.5, twitchMult: 0.85 },
+      // A5 the old sinking lure (canon §5): FOUND, never in the strip. Goes to
+      // the bottom and lies dead still; barely draws, barely spooks.
+      old_sinker: { attractMult: 0.55, fearMult: 0.4, sinkMult: 2.4, twitchMult: 0.45 }
     }
   },
   timing: {
@@ -696,6 +724,7 @@ export const TUNING = {
       moss_bass: ['reeds_left', 'reeds_right', 'stones'],
       moon_minnow: ['open'],
       old_kingfish: ['deep'],
+      old_mossback: ['open'],
       reed_pike: ['reeds_left', 'reeds_right']
     },
     // The light(s) each species feeds at.
@@ -704,6 +733,7 @@ export const TUNING = {
       moss_bass: ['dawn'],
       moon_minnow: ['dusk', 'night'],
       old_kingfish: ['night'],
+      old_mossback: ['dawn', 'dusk'],
       reed_pike: ['dusk']
     },
     // Half-width of a feeding window around its light, in cycle phase (a
@@ -747,6 +777,7 @@ export const TUNING = {
       moss_bass: 0,
       moon_minnow: 0,
       old_kingfish: 5200,
+      old_mossback: 0,
       reed_pike: 0
     },
     stillFeedingDiscount: 0.55,
@@ -768,6 +799,9 @@ export const TUNING = {
       moss_bass: { a: 0.0117, b: 3.1 },
       moon_minnow: { a: 0.006, b: 3.0 },
       old_kingfish: { a: 0.0186, b: 2.9 },
+      // The heaviest fish in its water (a 49 lb bass must not outweigh it);
+      // landed, it weighs what the bench says.
+      old_mossback: { a: 0.0046, b: 3.0 },
       reed_pike: { a: 0.0049, b: 3.1 }
     },
     // The note on the pond after keep / let go shows for this long.
@@ -785,10 +819,12 @@ export const TUNING = {
     surfaceMaxMs: 240_000,
     surfaceShowMs: 2600,
     stillMs: 12_000,
-    takeRadiusM: 1.2,
-    spookRadiusM: 1.5,
+    // take > spook, or it could never be caught: the rubric's first numbers
+    // (take 1.2, spook 1.5) made it impossible; caught in the probe.
+    takeRadiusM: 1.6,
+    spookRadiusM: 0.7,
     // Where it lives: the right pad island (a home in WATERS.lily).
-    home: { x: 2.3, z: -3.4 },
+    home: { x: 1.3, z: -3.9 },
     roamM: 0.9,
     sizeScore: 0.98
   },
@@ -797,8 +833,14 @@ export const TUNING = {
     durationMs: 3600,
     // The path at the edge of each view: screen position (fractions) and the
     // tap radius in px. Home's path is at the left; the lily pond's at the right.
-    pathHome: { x: 0.08, y: 0.5, radiusPx: 56 },
-    pathLily: { x: 0.92, y: 0.52, radiusPx: 56 },
+    // Where each path leaves the view (pond metres, at the bank edge, inside
+    // a portrait phone's view) and the tap radius around it in px.
+    pathHome: { x: -1.15, z: 2.05 },
+    pathLily: { x: 1.15, z: 2.05 },
+    tapRadiusPx: 58,
+    // The bench (lily pond, near left bank) and where the found lure rests.
+    bench: { x: -1.12, z: 2.25 },
+    sinkerRest: { x: -0.15, z: 2.72 },
     cardMs: 2600
   },
   pads: {
@@ -813,7 +855,7 @@ export const TUNING = {
   find: {
     // Where it lies under the near bank (pond metres) and how close a cast
     // must land to hook it.
-    sinker: { x: -1.3, z: 1.55, hookRadiusM: 0.45 },
+    sinker: { x: -0.7, z: 1.95, hookRadiusM: 0.45 },
     glintEveryMs: 4200,
     glintShowMs: 700
   },

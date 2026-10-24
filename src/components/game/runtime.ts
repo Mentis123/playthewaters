@@ -10,19 +10,23 @@ import { createVerletLine } from '@/game/physics/verletLine';
 import { useGameStore } from '@/game/state/gameStore';
 import { vibrate } from '@/game/haptics/haptics';
 import { TUNING } from '@/game/tuning/tuning';
+import { WATERS, type WaterId } from '@/game/waters/waters';
 import { track } from '@/game/telemetry/track';
 import type { DecorFish, Runtime, SceneProps, ScreenPoint } from '@/components/game/types';
 
-export function createRuntime(seed: string, spawnIndex = 0): Runtime {
-  const rng = seededRandom(`${seed}-spawn-${spawnIndex}`);
+export function createRuntime(seed: string, spawnIndex = 0, water: WaterId = 'home'): Runtime {
+  // The home pond's stream is unchanged (old links and seeds regrow the same
+  // fish); another water draws from its own stream and species table.
+  const rng = seededRandom(water === 'home' ? `${seed}-spawn-${spawnIndex}` : `${seed}-${water}-spawn-${spawnIndex}`);
+  const weights = water === 'home' ? undefined : WATERS[water].species;
   const lurePos = { ...TUNING.world.lureStart };
-  const fish = createInitialFish(rng);
+  const fish = createInitialFish(rng, weights);
   const fishSpecies = speciesTuning(fish.instance.species);
   // Always fill the pool so the bigger water reads populated and spread out,
   // not sparse (19_THE_FAR_WATER): one primary + (fishMaxVisible - 1) decor.
   const extraCount = TUNING.world.fishMaxVisible - 1;
   const decorFish: DecorFish[] = Array.from({ length: extraCount }, () => ({
-    snapshot: createInitialFish(rng),
+    snapshot: createInitialFish(rng, weights),
     fadePhase: rng() * Math.PI * 2,
     fadePeriodMs: lerp(TUNING.world.fishFadeMinPeriodMs, TUNING.world.fishFadeMaxPeriodMs, rng()),
     nextCueAt: nowMs() + lerp(TUNING.fish.decorCueMinMs, TUNING.fish.decorCueMaxMs, rng()),
@@ -51,6 +55,12 @@ export function createRuntime(seed: string, spawnIndex = 0): Runtime {
     spookTrails: [],
     lastNudgeAt: 0,
     lightPhase: 0,
+    water,
+    targets: { path: null, bench: null, sinker: null },
+    legend: null,
+    legendPos: { ...TUNING.legend.home },
+    walk: null,
+    snagged: false,
     hookPos: null,
     ghost: null,
     lureFlashUntil: 0,
@@ -533,11 +543,11 @@ export function clampToFishableWater(point: Vec2): Vec2 {
 export function ensureHomes(runtime: Runtime): void {
   if (!runtime.habits) return;
   if (!runtime.fish.instance.home) {
-    runtime.fish.instance.home = homeFor(runtime.fish.instance.species, runtime.homeRng);
+    runtime.fish.instance.home = homeFor(runtime.fish.instance.species, runtime.homeRng, runtime.water);
   }
   for (const decor of runtime.decorFish) {
     if (!decor.snapshot.instance.home) {
-      decor.snapshot.instance.home = homeFor(decor.snapshot.instance.species, runtime.homeRng);
+      decor.snapshot.instance.home = homeFor(decor.snapshot.instance.species, runtime.homeRng, runtime.water);
     }
   }
 }

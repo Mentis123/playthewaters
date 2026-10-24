@@ -23,11 +23,19 @@ export type SpeciesTuning = typeof TUNING.fish.species[SpeciesId];
 
 export const SPECIES_IDS = Object.keys(TUNING.fish.species) as SpeciesId[];
 
+// Legends (23_ALPHA_CANON §4) never spawn by weight: spawnWeight 0, placed only
+// when their conditions are met.
+export const LEGEND_SPECIES: readonly SpeciesId[] = ['old_mossback'];
+export function isLegend(species: string): boolean {
+  return (LEGEND_SPECIES as readonly string[]).includes(species);
+}
+
 export const SPECIES_CUE_SIGNATURES: Record<SpeciesId, FishCueKind[]> = {
   bronze_carp: ['bubble_trail', 'ripple'],
   moss_bass: ['glint', 'ripple'],
   moon_minnow: ['surface_rise', 'tail_flash'],
   old_kingfish: ['silt_plume', 'ripple'],
+  old_mossback: ['silt_plume', 'bubble_trail'],
   reed_pike: ['wake', 'ripple']
 };
 
@@ -36,12 +44,13 @@ export const SPECIES_STORY_LABELS: Record<SpeciesId, string> = {
   moss_bass: 'Moss Bass',
   moon_minnow: 'Moon Minnow',
   old_kingfish: 'Old Kingfish',
+  old_mossback: 'Old Mossback',
   reed_pike: 'Reed Pike'
 };
 
-export function createFishInstance(rng: () => number): FishInstance {
+export function createFishInstance(rng: () => number, weights?: Partial<Record<SpeciesId, number>>): FishInstance {
   return {
-    species: pickSpecies(rng),
+    species: weights ? pickSpeciesFrom(rng, weights) : pickSpecies(rng),
     personality: rng() * 2 - 1
   };
 }
@@ -85,6 +94,19 @@ export function cueForReveal(
 
 // Computed once at module load — the weights are static tuning data.
 const TOTAL_SPAWN_WEIGHT = SPECIES_IDS.reduce((sum, species) => sum + speciesTuning(species).spawnWeight, 0);
+
+// A5: a water's own species table (same single draw as pickSpecies).
+export function pickSpeciesFrom(rng: () => number, weights: Partial<Record<SpeciesId, number>>): SpeciesId {
+  const entries = SPECIES_IDS.filter((id) => (weights[id] ?? 0) > 0);
+  if (entries.length === 0) return pickSpecies(rng);
+  const total = entries.reduce((sum, id) => sum + (weights[id] as number), 0);
+  let roll = rng() * total;
+  for (const id of entries) {
+    roll -= weights[id] as number;
+    if (roll <= 0) return id;
+  }
+  return entries[entries.length - 1];
+}
 
 function pickSpecies(rng: () => number): SpeciesId {
   let roll = rng() * TOTAL_SPAWN_WEIGHT;

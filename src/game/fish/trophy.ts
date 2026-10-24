@@ -38,6 +38,7 @@ const PROFILES: Record<SpeciesId, TrophyProfile> = {
   moss_bass: { back: '#33401f', body: '#5f6e3e', belly: '#a3b079', fin: '#45542c', eye: '#e7eccb', rim: '#cdd8a8', marking: 'mottle', dorsalAt: 0.18, plumpness: 1.0 },
   moon_minnow: { back: '#5d6b78', body: '#aeb9c4', belly: '#e6edf4', fin: '#8b97a4', eye: '#f5fbff', rim: '#f0f6fb', marking: 'stripe', dorsalAt: 0.12, plumpness: 0.92 },
   old_kingfish: { back: '#222a30', body: '#46535c', belly: '#828f98', fin: '#333e45', eye: '#d8af52', rim: '#aeb9c2', marking: 'scars', dorsalAt: 0.14, plumpness: 1.05 },
+  old_mossback: { back: '#2a301c', body: '#4f5130', belly: '#8f8a5c', fin: '#383b22', eye: '#e2d39a', rim: '#b9b88a', marking: 'scars', dorsalAt: 0.12, plumpness: 1.22 },
   reed_pike: { back: '#33421f', body: '#566b3c', belly: '#bdc48c', fin: '#44542c', eye: '#e9eecb', rim: '#cfd9a6', marking: 'bars', dorsalAt: 0.72, plumpness: 0.86 }
 };
 

@@ -24,7 +24,7 @@ test('the legend takes only the old sinking lure, dead still, close, at its ligh
 });
 
 test('a careless cast close to it blows the visit', () => {
-  assert.equal(legendSpookedBy(1.0, present, true), true);
+  assert.equal(legendSpookedBy(TUNING.legend.spookRadiusM - 0.1, present, true), true);
   assert.equal(legendSpookedBy(TUNING.legend.spookRadiusM + 0.1, present, true), false);
   assert.equal(legendSpookedBy(0.2, { ...present, spooked: true }, true), false);
 });
@@ -47,4 +47,8 @@ test('waters and visit counts', () => {
   assert.equal(counts.home, undefined);
   // The lily pond has no kingfish (photo 04).
   assert.equal(WATERS.lily.species.old_kingfish, undefined);
+});
+
+test('the legend is catchable at all: a lure can land outside its spook ring and inside its take ring', () => {
+  assert.ok(TUNING.legend.takeRadiusM > TUNING.legend.spookRadiusM + 0.3, 'take must exceed spook by a castable margin');
 });
