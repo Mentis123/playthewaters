@@ -776,7 +776,7 @@ export const TUNING = {
     maxCodeChars: 400,
     ghostOpacity: 0.55,
     ghostPulseHz: 0.5,
-    // After "Fish here" the silhouette fades over this long.
+    // After "Start fishing" the silhouette fades over this long.
     ghostFadeMs: 9000
   },
   haptics: {

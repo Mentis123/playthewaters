@@ -55,7 +55,7 @@ export default async function Image({ params }: { params: { code: string } }) {
         }}
       >
         <div style={{ fontSize: 26, letterSpacing: 8, color: 'rgba(200,168,92,0.95)', display: 'flex' }}>
-          {link ? 'LANDED ON THE WATERS' : 'THE WATERS'}
+          {link ? 'CAUGHT ON THE WATERS' : 'THE WATERS'}
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
         {art ? <img src={art} width={640} height={360} style={{ marginTop: 6 }} alt="" /> : <div style={{ height: 360, display: 'flex' }} />}

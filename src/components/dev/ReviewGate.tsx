@@ -20,7 +20,7 @@ const REVIEW = {
     'on your pond, with the same fish and the same light, and the silhouette of your fish where you hooked it.',
   steps: [
     'Open the sample link below in a private tab (or on another phone). You should be on a pond in under 2 seconds, with a card saying what was caught there and a dark fish shape in the water.',
-    'Tap Fish here. The shape fades out and you fish that pond.',
+    'Tap Start fishing. The shape fades out and you fish that pond.',
     'Catch a fish and press Keep. A note says "On the wall."',
     'Catch another fish in the same visit. The card warns that keeping it puts the first one back. Keep it.',
     'Open the wall: the board glyph at the top right, next to the leave glyph. One line per species, heaviest first.',

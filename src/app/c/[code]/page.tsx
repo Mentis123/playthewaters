@@ -16,7 +16,7 @@ export function generateMetadata({ params }: Props): Metadata {
   if (!link) return { title: 'The Waters', robots: { index: false } };
   const name = SPECIES_STORY_LABELS[link.species];
   const title = `A ${trophyLengthCm(link.species, link.sizeScore)} cm ${name}, ${lightWord(link.phase)}`;
-  const description = 'Landed on The Waters. Tap to stand where it was caught.';
+  const description = 'Caught on The Waters, a fishing game. Tap to fish the same pond.';
   return {
     title: `${title} · The Waters`,
     description,

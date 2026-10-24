@@ -1214,11 +1214,13 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
           onPointerUp={(event) => event.stopPropagation()}
         >
           <div className="arrival-card" data-testid="arrival-card">
-            <span className="arrival-kicker">The Waters</span>
+            <span className="arrival-kicker">The Waters · a fishing game</span>
             <p className="arrival-line">{arrivalLine(arrival)}</p>
-            <p className="arrival-sub">Same water, same fish, same light. Where it was hooked is still in the water.</p>
+            <p className="arrival-sub">
+              It&apos;s the same pond with the same fish. The dark shape in the water is where it bit. Can you catch one too?
+            </p>
             <button type="button" className="arrival-go" data-testid="arrival-go" onClick={begin}>
-              Fish here
+              Start fishing
             </button>
             <span className="arrival-credit">
               A Birb Labs artefact ·{' '}

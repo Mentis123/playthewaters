@@ -105,12 +105,13 @@ const LIGHT_WORDS: Record<LightName, string> = {
 };
 
 // What was caught and where; never how (canon §4, the legend contract). The
-// lure is deliberately absent here: it is part of the "how".
+// lure is deliberately absent here: it is part of the "how". Written for a
+// stranger who has never seen the game (owner, 24 Oct 2026: "new players
+// definitely won't" understand game words like "landed", "kept", "hooked").
 export function arrivalLine(link: CatchLink): string {
   const length = trophyLengthCm(link.species, link.sizeScore);
   const name = SPECIES_STORY_LABELS[link.species];
-  const fate = link.kept === undefined ? '' : link.kept ? ', and kept' : ', and let go';
-  return `A ${length} cm ${name} was landed here, ${LIGHT_WORDS[nearestLight(link.phase)]}${fate}.`;
+  return `Your friend caught a ${length} cm ${name} in this pond, ${LIGHT_WORDS[nearestLight(link.phase)]}.`;
 }
 
 export function lightWord(phase: number): string {

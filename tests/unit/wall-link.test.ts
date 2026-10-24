@@ -80,7 +80,7 @@ test('the arrival line says what and where, never how', () => {
   const line = arrivalLine(LINK);
   assert.match(line, /Bronze Carp/);
   assert.match(line, /at dusk/);
-  assert.match(line, /kept/);
+  assert.doesNotMatch(line, /landed|kept|hooked/, 'no game words a stranger would not know');
   assert.doesNotMatch(line, /popper|lure/i, 'the lure is the how');
 });
 

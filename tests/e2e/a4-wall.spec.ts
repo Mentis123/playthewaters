@@ -36,7 +36,7 @@ test('a catch link opens the sender’s pond and light behind an arrival card', 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   await page.goto(`/c/${encodeCatchLink(LINK)}?debug=1`);
-  await expect(page.getByTestId('arrival-card')).toContainText('was landed here, at dusk, and kept.');
+  await expect(page.getByTestId('arrival-card')).toContainText('Your friend caught a');
   await expect(page.getByTestId('arrival-card')).not.toContainText('popper');
   await page.waitForFunction(() => ((window as Window & { __waters?: Probe }).__waters?.firstFrameMs ?? 0) > 0, null, { timeout: 15_000 });
   const probe = (await page.evaluate(() => (window as Window & { __waters?: Probe }).__waters))!;
