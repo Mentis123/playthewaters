@@ -748,3 +748,21 @@ Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `
 **Deferred, stated in the rubric before the build:** the wake pool (instanced ripple rings) moves to A3 with the cue/habits work.
 
 **Measured (SwiftShader, 390×844 @2x):** 28–31 draws, ~4.4k triangles (budget 100 / 80k), zero page errors at all four lights. e2e: 8/8 (a1-effective ×5, a2-bank ×3). **No phone number yet.**
+
+## A3 — habits (2026-10-24) · `v1.2-habits-candidate`
+*Chapter A3 of `23_ALPHA_CANON` §4 and §10. A2 passed its blind gate (owner: "A2 won both rounds"), recorded in `docs/alpha/A2_RUBRIC.md`. A3's rubric committed before any A3 code.*
+
+**Shipped (`src/game/fish/habits.ts`, pure; data in `TUNING.habits`):**
+- **Homes.** Five features on the home pond (the stones, reeds left and right, the deep, the open water); each species takes homes from its own preference list (carp at the stones, pike in the reeds, kingfish in the deep, bass split, minnows in the open). Assigned from a separate seeded stream (`runtime.homeRng`) so a baseline pond spawns exactly as before.
+- **Feeding lights.** Each species feeds at one or two of the four lights (carp day, bass dawn, pike dusk, minnows dusk and night, kingfish night), smooth over a window. Off-feed: stays within its home, slower (0.7×), less curious (notice 0.7×). Feeding: roams 2.2× wider, 1.8 m nearer the bank, 1.25× faster, notice 1.3×, and its cues come twice as often. So at night the kingfish comes up from the deep toward the near water.
+- **The spook rule.** A splash within 0.55 m (× species fear × lure fear, eased 35% while feeding) of a wandering or curious fish sends it to the far dark for 18–34 s (shyer fish longer), visibly (a wake at the spot), and it ignores lures until the hold runs out. A splash outside that and inside notice range still draws it in. Implemented as a `holdMs` on the existing `flee` state, so no new state kind leaks into the UI.
+- **The still lure.** The kingfish (5.2 s) and the carp off-feed (2.6 s) only commit after the lure has been dead still that long, and give up after 9 s more. Stillness is measured since the lure landed or last moved; rod control resets it. A faint ring closes around the lure as stillness builds and resets the instant it moves.
+- **Baselines stay exact:** everything is gated on an optional `habit` input; without it (and `?look=a2`) a fish's trajectory is byte-identical to before (unit test). `?look=a2` renders A2 with habits off; the read-back reports `look` and `habits`.
+- **`/ab` now says what is being reviewed** (owner: "make sure the ab is updated with what it is I'm reviewing"): a brief and a "try this in both ponds" list at the top, configured per chapter in `GATE` (rule added to `AGENTS.md`). A3 gate: day then night, A3 vs A2.
+- **Debug hook** (`?debug=1` only): `window.__watersDebug.castAt(x, z)` starts a real cast; `.fish()` reads fish, homes and the still clock back.
+
+**Checks:** 67 unit tests (9 new for habits), 10 phone-profile e2e. Planted defects: removing the still gate failed the still-lure test; ignoring the spook hold failed the hold test. Real-game probe (headless, same seed): a cast on top of a moss bass → `flee` in A3, `notice` in the A2 baseline. Budget unchanged: 32 draws, ~4.9k triangles.
+
+**Moved to the backlog, stated in the rubric before the build:** the wake pool (deferred from A2). Measure first: 28–37 draws against 100.
+
+**Not testable here:** the canon's real gate for A3 is people. Five strangers, untold, 10 minutes each; at least one habit named by three of them.

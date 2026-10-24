@@ -1,15 +1,15 @@
 import { isLightName, type LightName } from '@/game/light/pondLight';
 
-// Which look the scene renders. `alpha` is the current chapter (A2: the bank
-// on top of A1's light and water). Earlier chapters stay reachable verbatim as
+// Which look the scene renders. `alpha` is the current chapter (A3: habits on
+// the A2 bank). `a2` is A2 exactly (habits off, the A3 gate baseline). Earlier chapters stay reachable verbatim as
 // blind-gate baselines: `a1` is A1 as shipped (docs/alpha/A2_RUBRIC.md),
 // `classic` is the v0.4 scene (docs/alpha/A1_RUBRIC.md). Pure: callers pass
 // location.search.
-export type Look = 'alpha' | 'a1' | 'classic';
+export type Look = 'alpha' | 'a2' | 'a1' | 'classic';
 
 export function readLook(search: string): Look {
   const value = new URLSearchParams(search).get('look');
-  return value === 'classic' || value === 'a1' ? value : 'alpha';
+  return value === 'classic' || value === 'a1' || value === 'a2' ? value : 'alpha';
 }
 
 // `?light=dawn|day|dusk|night` pins the light and stops the drift: for review,

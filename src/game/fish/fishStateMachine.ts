@@ -1,6 +1,7 @@
 import { add, clamp, distance, normalize, scale, sub, type Vec2 } from '@/game/math/vec';
 import { TUNING } from '@/game/tuning/tuning';
 import { createFishInstance, createFishInstanceOfSpecies, personalityMultiplier, speciesTuning, type FishInstance, type SpeciesId } from '@/game/fish/species';
+import { habitNoticeMultiplier, habitSpeedMultiplier, habitWanderTarget, homeOf, stillNeededMs } from '@/game/fish/habits';
 
 export type FishState =
   | { kind: 'wander'; targetPos: Vec2; sinceMs: number }
@@ -10,7 +11,8 @@ export type FishState =
   | { kind: 'commit'; lurePos: Vec2; biteEtaMs: number; sinceMs: number }
   | { kind: 'bite'; biteWindowMs: number; openedAt: number }
   | { kind: 'hooked'; stamina: number; rage: number }
-  | { kind: 'flee'; targetPos: Vec2; sinceMs: number }
+  // holdMs (A3 spook rule): how long a spooked fish stays away; default flee otherwise.
+  | { kind: 'flee'; targetPos: Vec2; sinceMs: number; holdMs?: number }
   | { kind: 'landed' };
 
 export type FishSnapshot = {
@@ -33,7 +35,19 @@ export type FishUpdateInput = {
   // the lure entirely).
   lureAttractMult: number;
   lureFearMult: number;
+  // A3 habits (23_ALPHA_CANON §4). Absent = the pre-A3 fish exactly.
+  // feeding: 0..1 for this fish's species at the current light.
+  // stillMs: how long the lure has been dead still.
+  habit?: { feeding: number; stillMs: number };
 };
+
+// Where a wandering fish goes next: its home (A3) or anywhere (pre-A3).
+function wanderTargetFor(fish: FishSnapshot, input: FishUpdateInput): Vec2 {
+  if (input.habit && fish.instance.home) {
+    return habitWanderTarget(homeOf(fish.instance.home), input.habit.feeding, input.rng);
+  }
+  return nextWanderTarget(input.rng);
+}
 
 export function createInitialFish(seedRand: () => number): FishSnapshot {
   const instance = createFishInstance(seedRand);
@@ -93,7 +107,9 @@ export function updateFish(input: FishUpdateInput, fish: FishSnapshot): FishSnap
   let target = state.kind === 'wander' ? state.targetPos : fish.position;
   const species = speciesTuning(fish.instance.species);
   const personality = personalityMultiplier(fish.instance.personality);
-  let speed: number = TUNING.fish.wanderSpeedMps * species.wanderSpeedMultiplier * personality;
+  const habitOn = Boolean(input.habit && fish.instance.home);
+  const feeding = habitOn ? input.habit!.feeding : 0;
+  let speed: number = TUNING.fish.wanderSpeedMps * species.wanderSpeedMultiplier * personality * (habitOn ? habitSpeedMultiplier(feeding) : 1);
 
   if (input.hooked && state.kind !== 'hooked' && state.kind !== 'landed') {
     nextState = { kind: 'hooked', stamina: TUNING.fish.staminaLandThreshold + 0.9, rage: input.rng() };
@@ -104,11 +120,11 @@ export function updateFish(input: FishUpdateInput, fish: FishSnapshot): FishSnap
     target = state.targetPos;
 
     if (distance(fish.position, state.targetPos) < TUNING.fish.biteDistanceM) {
-      nextState = { kind: 'wander', targetPos: nextWanderTarget(input.rng), sinceMs: 0 };
+      nextState = { kind: 'wander', targetPos: wanderTargetFor(fish, input), sinceMs: 0 };
       target = nextState.targetPos;
     }
 
-    if (lurePos && distance(fish.position, lurePos) < noticeRadius(fish.instance, input.lureAttractMult)) {
+    if (lurePos && distance(fish.position, lurePos) < noticeRadius(fish.instance, input.lureAttractMult) * (habitOn ? habitNoticeMultiplier(feeding) : 1)) {
       nextState = { kind: 'notice', lurePos, alertness: fish.instance.personality, sinceMs: 0 };
     }
   } else if (state.kind === 'notice') {
@@ -148,7 +164,14 @@ export function updateFish(input: FishUpdateInput, fish: FishSnapshot): FishSnap
     target = orbit;
     speed = TUNING.fish.approachSpeedMps * species.approachSpeedMultiplier * state.patience;
 
-    if (state.sinceMs > inspectDuration && lurePos) {
+    // The still lure (A3): some fish look, but only commit once the lure has
+    // been dead still for long enough; they give up if it never is.
+    const stillNeeded = habitOn ? stillNeededMs(fish.instance.species, feeding) : 0;
+    const stillEnough = stillNeeded <= 0 || (input.habit?.stillMs ?? 0) >= stillNeeded;
+
+    if (habitOn && !stillEnough && state.sinceMs > inspectDuration + TUNING.habits.stillGiveUpMs) {
+      nextState = { kind: 'wander', targetPos: wanderTargetFor(fish, input), sinceMs: 0 };
+    } else if (state.sinceMs > inspectDuration && lurePos && stillEnough) {
       const biteEtaMs =
         TUNING.fish.commitDurationMs *
         species.commitDurationMultiplier *
@@ -183,11 +206,11 @@ export function updateFish(input: FishUpdateInput, fish: FishSnapshot): FishSnap
     target = state.targetPos;
     speed = TUNING.fish.approachSpeedMps * species.approachSpeedMultiplier;
 
-    const fleeDuration =
+    const fleeDuration = state.holdMs ??
       TUNING.fish.fleeDurationMs * hesitation(fish.instance.personality);
 
     if (state.sinceMs > fleeDuration) {
-      nextState = { kind: 'wander', targetPos: nextWanderTarget(input.rng), sinceMs: 0 };
+      nextState = { kind: 'wander', targetPos: wanderTargetFor(fish, input), sinceMs: 0 };
     }
   }
 

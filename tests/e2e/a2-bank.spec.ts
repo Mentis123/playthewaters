@@ -41,3 +41,27 @@ test('the default look is the bank chapter, inside budget', async ({ page }) => 
   expect(probe.triangles).toBeLessThan(80_000);
   expect(probe.calls).toBeLessThan(100);
 });
+
+test('A3: the default look has habits on; ?look=a2 is the habit-free baseline', async ({ page }) => {
+  await enterPond(page, '?light=night');
+  await page.waitForTimeout(600);
+  const a3 = (await page.evaluate(() => (window as Window & { __waters?: { look: string; habits: boolean } }).__waters))!;
+  expect(a3.look).toBe('alpha');
+  expect(a3.habits).toBe(true);
+  await enterPond(page, '?look=a2&light=night');
+  await page.waitForTimeout(600);
+  const a2 = (await page.evaluate(() => (window as Window & { __waters?: { look: string; habits: boolean } }).__waters))!;
+  expect(a2.look).toBe('a2');
+  expect(a2.habits).toBe(false);
+});
+
+test('/ab says what is being reviewed and what to try', async ({ page }) => {
+  await page.goto('/ab', { waitUntil: 'domcontentloaded' });
+  const brief = page.getByTestId('ab-brief');
+  await expect(brief).toBeVisible();
+  await expect(brief).toContainText('Reviewing');
+  expect(await brief.locator('li').count()).toBeGreaterThan(1);
+  const hrefs = await page.locator('a.ab-open').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''));
+  expect(hrefs.length).toBe(4);
+  for (const href of hrefs) expect(href).not.toMatch(/look=|light=|classic|alpha/);
+});

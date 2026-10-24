@@ -34,7 +34,8 @@ import {
   distancePointToSegment,
   isEarlyHookAttempt,
   rodTipForRuntime,
-  scheduleNextSurge
+  scheduleNextSurge,
+  lureStillMs
 } from '@/components/game/runtime';
 import type {
   AimPreview,
@@ -693,6 +694,40 @@ export function GameClient() {
     audio.current.castWhoosh(cast.power);
     setGameState(runtime.current.state);
   };
+
+  // Debug-only harness hook (?debug=1): start a REAL cast at a world point —
+  // the same state a finger release sets — and read fish back. Lets headless
+  // checks drive the landing path (promotion, the A3 spook rule, the still-lure
+  // clock) without faking perspective-correct drags.
+  useEffect(() => {
+    if (!queryDebug) return;
+    const hook = {
+      castAt(x: number, z: number) {
+        const now = performance.now();
+        runtime.current.state = { kind: 'casting', from: TUNING.world.rodTip, target: { x, z }, startedAt: now, flightMs: 500, power: 0.6 };
+        runtime.current.lureVisible = true;
+        runtime.current.lurePos = TUNING.world.rodTip;
+        runtime.current.lureVelocity = { x: 0, z: 0 };
+        runtime.current.lureY = TUNING.world.lureSurfaceY;
+        setGameState(runtime.current.state);
+      },
+      fish() {
+        const r = runtime.current;
+        const now = performance.now();
+        const all = [r.fish, ...r.decorFish.map((d) => d.snapshot)];
+        return {
+          state: r.state.kind,
+          habits: r.habits,
+          stillMs: lureStillMs(r, now),
+          fish: all.map((f, i) => ({ primary: i === 0, x: f.position.x, z: f.position.z, kind: f.state.kind, species: f.instance.species, home: f.instance.home ?? null }))
+        };
+      }
+    };
+    (window as Window & { __watersDebug?: typeof hook }).__watersDebug = hook;
+    return () => {
+      delete (window as Window & { __watersDebug?: typeof hook }).__watersDebug;
+    };
+  }, [queryDebug, setGameState]);
 
   function reelTap() {
     if (runtime.current.state.kind !== 'hooked') {

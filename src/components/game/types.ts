@@ -42,6 +42,12 @@ export type Runtime = {
   lureVisible: boolean;
   lureMovedUntil: number;
   lureFlashUntil: number;
+  // A3 habits (23_ALPHA_CANON §4): on for the current chapter's look only, so
+  // `?look=a2` and earlier stay exact baselines. lureLandedAt starts the
+  // still-lure clock; homeRng assigns homes from its own stream.
+  habits: boolean;
+  lureLandedAt: number;
+  homeRng: () => number;
   line: VerletLine;
   tension: number;
   rodOffset: Vec2;

@@ -673,6 +673,73 @@ export const TUNING = {
     midgeCount: 120,
     midgeSizePx: 2.6
   },
+  // A3 — habits (23_ALPHA_CANON §4, docs/alpha/A3_RUBRIC.md). The home pond
+  // made learnable: homes, feeding lights, the spook rule, the still lure.
+  // All data; nothing here is ever shown or named in UI.
+  habits: {
+    // Home features on the home pond, world metres (fishable band is
+    // z -5.4 .. 1.8, x ±4.05; the stones are along z ≈ 2.5).
+    homes: {
+      stones: { x: -2.1, z: 1.0, radius: 1.3 },
+      reeds_left: { x: -3.5, z: -1.4, radius: 1.1 },
+      reeds_right: { x: 3.5, z: -0.4, radius: 1.1 },
+      deep: { x: 0.6, z: -4.5, radius: 1.3 },
+      open: { x: 0, z: -1.6, radius: 3.0 }
+    },
+    // Which homes each species takes (first listed most often).
+    speciesHomes: {
+      bronze_carp: ['stones', 'stones', 'open'],
+      moss_bass: ['reeds_left', 'reeds_right', 'stones'],
+      moon_minnow: ['open'],
+      old_kingfish: ['deep'],
+      reed_pike: ['reeds_left', 'reeds_right']
+    },
+    // The light(s) each species feeds at.
+    feedingLights: {
+      bronze_carp: ['day'],
+      moss_bass: ['dawn'],
+      moon_minnow: ['dusk', 'night'],
+      old_kingfish: ['night'],
+      reed_pike: ['dusk']
+    },
+    // Half-width of a feeding window around its light, in cycle phase (a
+    // quarter is one light), smoothstepped to 0 at the edge.
+    feedingHalfWidth: 0.16,
+    // Off its light a fish keeps within its home radius; feeding widens the
+    // roam by this factor and pulls it this many metres toward the near water.
+    feedingRoamMul: 2.2,
+    feedingShoreward: 1.8,
+    // Speed and curiosity off-feed (0) vs feeding (1).
+    speedOffFeed: 0.7,
+    speedFeeding: 1.25,
+    noticeOffFeed: 0.7,
+    noticeFeeding: 1.3,
+    // Feeding fish leave cues this much more often (interval multiplier).
+    cueIntervalFeeding: 0.5,
+    // The spook rule: a splash this close (× species fear × lure fear) sends
+    // the fish to the far dark for a while. Feeding fish are bolder.
+    splashSpookRadiusM: 0.55,
+    splashSpookFeedingRelief: 0.35,
+    spookHoldMinMs: 18000,
+    spookHoldMaxMs: 34000,
+    spookFarBandM: 1.3,
+    spookSideReachM: 1.6,
+    // The still lure: how long the lure must be dead still before this
+    // species will commit, off-feed. Feeding discounts it.
+    stillLureMs: {
+      bronze_carp: 2600,
+      moss_bass: 0,
+      moon_minnow: 0,
+      old_kingfish: 5200,
+      reed_pike: 0
+    },
+    stillFeedingDiscount: 0.55,
+    // A fish waiting on a still lure loses interest after this long.
+    stillGiveUpMs: 9000,
+    // The ring around the lure: closes over this long of stillness.
+    stillRingFullMs: 5200,
+    stillRingMaxOpacity: 0.32
+  },
   haptics: {
     tapBegin: [10],
     nibbleTick: [15],

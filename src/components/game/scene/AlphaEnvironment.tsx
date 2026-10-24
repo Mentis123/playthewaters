@@ -20,7 +20,8 @@ function setSrgb(color: THREE.Color, rgb: Rgb): void {
 }
 
 type WatersProbe = {
-  look: 'alpha' | 'a1';
+  look: 'alpha' | 'a1' | 'a2';
+  habits: boolean;
   light: string;
   phase: number;
   frozen: boolean;
@@ -40,13 +41,15 @@ export function LightDriver({
   light,
   initialPhase,
   frozen,
-  look = 'alpha'
+  look = 'alpha',
+  habits = false
 }: {
   runtime: React.MutableRefObject<Runtime>;
   light: LightRef;
   initialPhase: number;
   frozen: boolean;
-  look?: 'alpha' | 'a1';
+  look?: 'alpha' | 'a1' | 'a2';
+  habits?: boolean;
 }) {
   const { gl, scene } = useThree();
   const phaseRef = useRef(initialPhase);
@@ -113,6 +116,7 @@ export function LightDriver({
       gl.getDrawingBufferSize(sizeRef.current);
       const probe: WatersProbe = {
         look,
+        habits,
         light: sample.name,
         phase: sample.phase,
         frozen,

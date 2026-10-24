@@ -4,7 +4,7 @@ export type DevChecklistItem = {
 };
 
 export type DevChecklist = {
-  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank';
+  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank' | 'a3-habits';
   title: string;
   items: DevChecklistItem[];
 };
@@ -140,10 +140,28 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
       { id: 'a2-phone', text: 'No frame drops or extra heat over 10 minutes.' },
       { id: 'a2-rubric', text: 'Score docs/alpha/A2_RUBRIC.md (22 items, pass 18, all starred) and record it in section 4.' }
     ]
+  },
+  'a3-habits': {
+    milestone: 'a3-habits',
+    title: 'A3 habits gate',
+    items: [
+      { id: 'a3-blind', text: 'Run /ab on the iPhone (the page says what to try): day then night, A3 against A2. A3 must win BOTH.' },
+      { id: 'a3-spook', text: 'Cast right on top of a fish: it darts off to the far dark with a wake and stays away for a while.' },
+      { id: 'a3-near', text: 'Cast a little short of a fish: it still comes in, as before.' },
+      { id: 'a3-homes', text: 'The same kinds of shadow keep turning up in the same places (stones, reeds, the deep).' },
+      { id: 'a3-lights', text: 'Different fish are busy at different lights; at night something big comes up from the deep.' },
+      { id: 'a3-still', text: 'Leave the lure dead still near a fish: a faint ring closes; some fish only take it then.' },
+      { id: 'a3-strangers', text: 'Five people, untold, 10 minutes each: does at least one habit get named by three of them?' },
+      { id: 'a3-rubric', text: 'Score docs/alpha/A3_RUBRIC.md (18 items, pass 14, all starred) and record it in section 5.' }
+    ]
   }
 };
 
 export function getChecklist(milestone: string): DevChecklist {
+  if (milestone === 'a3-habits') {
+    return checklists['a3-habits'];
+  }
+
   if (milestone === 'a2-bank') {
     return checklists['a2-bank'];
   }

@@ -23,7 +23,7 @@ Before coding, read `docs/goalpack/00_OVERVIEW.md`, then `docs/goalpack/23_ALPHA
 - Vercel deploy target
 
 ## Rules
-- **The owner reviews every chapter at https://playthewaters.vercel.app/ab** (owner's standing instruction, 24 Oct 2026: "always give me the new ab on that same url"). When a chapter is built, repoint `GATE` in `src/components/dev/AbGate.tsx` (chapter, baseline look, rounds, rubric) at the new chapter vs the previous one, keep the previous chapter reachable as a `?look=` baseline, and say in the hand-off that `/ab` is ready. Never move the gate to another URL.
+- **The owner reviews every chapter at https://playthewaters.vercel.app/ab** (owner's standing instruction, 24 Oct 2026: "always give me the new ab on that same url"). When a chapter is built, repoint `GATE` in `src/components/dev/AbGate.tsx` (chapter, title, baseline look, rounds, rubric) at the new chapter vs the previous one, **and rewrite its `reviewing` and `tryThis` so the page says what the owner is reviewing and what to do in both ponds** (owner: "make sure the ab is updated with what it is I'm reviewing"), keep the previous chapter reachable as a `?look=` baseline, and say in the hand-off that `/ab` is ready. Never move the gate to another URL.
 - Do not add scope from `docs/goalpack/14_DO_NOT_BUILD.md` as amended by `23_ALPHA_CANON.md` §8.
 - Keep all feel constants in `src/game/tuning/tuning.ts`.
 - Update `DEVLOG.md` after every milestone.

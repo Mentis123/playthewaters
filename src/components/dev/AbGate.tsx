@@ -13,13 +13,28 @@ import type { LightName } from '@/game/light/pondLight';
 
 // The gate for the chapter under review. Bump `chapter` when a new chapter
 // is gated so an old gate's picks are never mixed into a new one.
+// `reviewing` and `tryThis` are shown at the top of /ab (owner, 24 Oct 2026:
+// "make sure the ab is updated with what it is I'm reviewing"). Write them for
+// the person holding the phone: what changed, and what to do in BOTH ponds to
+// feel the difference. Never say which pond is which.
 const GATE = {
-  chapter: 'A2',
-  rubric: 'docs/alpha/A2_RUBRIC.md',
-  baseline: 'a1' as AbArm['look'],
-  baselineLabel: 'A1 (the water, before the bank)',
-  candidateLabel: 'A2 (the bank)',
-  rounds: ['day', 'dusk'] as LightName[]
+  chapter: 'A3',
+  title: 'Habits',
+  rubric: 'docs/alpha/A3_RUBRIC.md',
+  baseline: 'a2' as AbArm['look'],
+  baselineLabel: 'A2 (the bank, fish wander anywhere)',
+  candidateLabel: 'A3 (habits)',
+  rounds: ['day', 'night'] as LightName[],
+  reviewing:
+    'Not the looks this time: how the fish behave. In one of the two ponds the fish have homes (the stones, the reeds, the deep), ' +
+    'feed at certain lights, bolt if you cast right on top of them, and some only take a lure that is dead still. ' +
+    'Nothing on screen will tell you any of this.',
+  tryThis: [
+    'Cast right on top of a shadow. Then cast a little short of one.',
+    'Watch where the shadows keep turning up for a minute or two before you cast.',
+    'Land the lure near a fish and leave it completely alone. Do not twitch it. Watch the water around the lure.',
+    'Play each pond for a few minutes. Day round first, then night: the fish may not be in the same places.'
+  ]
 };
 const ROUNDS = GATE.rounds;
 const STATE_KEY = `thewaters.ab.state.${GATE.chapter}`;
@@ -104,6 +119,18 @@ export function AbGate() {
     <main className="ab-gate">
       <p className="eyebrow">The Waters · blind gate · {GATE.chapter}</p>
       <h1>Which pond is better?</h1>
+      <section className="ab-brief" data-testid="ab-brief">
+        <h2>
+          Reviewing {GATE.chapter}: {GATE.title}
+        </h2>
+        <p>{GATE.reviewing}</p>
+        <p className="ab-try-label">Try this in both ponds</p>
+        <ul>
+          {GATE.tryThis.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
       <p className="ab-lede">
         Two rounds. In each, open both ponds, play as long as you like, come back here, and pick one. The page will not say
         which is which until you have picked both rounds.

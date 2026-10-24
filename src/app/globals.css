@@ -1653,3 +1653,16 @@ code {
 .ab-pick.is-picked { background: #c8a85c; color: #141c20; border-color: #c8a85c; }
 .ab-result { border-top: 1px solid rgba(232, 223, 210, 0.15); padding-top: 18px; }
 .ab-result ul { padding-left: 18px; line-height: 1.6; }
+.ab-brief {
+  border: 1px solid rgba(200, 168, 92, 0.45);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 4px 0 18px;
+  background: rgba(200, 168, 92, 0.07);
+  line-height: 1.45;
+}
+.ab-brief h2 { color: #c8a85c; margin-bottom: 8px; }
+.ab-brief p { margin: 0 0 8px; }
+.ab-try-label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(232, 223, 210, 0.7); }
+.ab-brief ul { margin: 0; padding-left: 18px; }
+.ab-brief li { margin-bottom: 4px; }

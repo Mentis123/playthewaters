@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { ProceduralAudio } from '@/game/audio/procedural';
 import { createInitialFish, type FishSnapshot } from '@/game/fish/fishStateMachine';
 import { speciesTuning, type FishCueKind } from '@/game/fish/species';
+import { feedingAmount, homeFor, splashSpooks, spookHoldMs, spookTarget } from '@/game/fish/habits';
 import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, rodMods } from '@/game/gear/gear';
 import { add, clamp, clampToPond, distance, lerp, lerpVec, normalize, scale, seededRandom, sub, type Vec2 } from '@/game/math/vec';
 import { createVerletLine } from '@/game/physics/verletLine';
@@ -44,6 +45,9 @@ export function createRuntime(seed: string, spawnIndex = 0): Runtime {
     lureY: TUNING.world.lureSurfaceY,
     lureVisible: false,
     lureMovedUntil: 0,
+    habits: false,
+    lureLandedAt: 0,
+    homeRng: seededRandom(`${seed}-a3-homes`),
     lureFlashUntil: 0,
     line: createVerletLine(TUNING.world.rodTip, lurePos),
     tension: 0,
@@ -515,4 +519,57 @@ export function clampToFishableWater(point: Vec2): Vec2 {
     ...clamped,
     z: clamp(clamped.z, TUNING.world.fishableMinZ, TUNING.world.fishableMaxZ)
   };
+}
+
+// ---------------------------------------------------------------- A3 habits
+
+// Give every fish a home the first time habits see it (fresh spawns after a
+// catch included). Separate seeded stream: the pond's own rng is untouched.
+export function ensureHomes(runtime: Runtime): void {
+  if (!runtime.habits) return;
+  if (!runtime.fish.instance.home) {
+    runtime.fish.instance.home = homeFor(runtime.fish.instance.species, runtime.homeRng);
+  }
+  for (const decor of runtime.decorFish) {
+    if (!decor.snapshot.instance.home) {
+      decor.snapshot.instance.home = homeFor(decor.snapshot.instance.species, runtime.homeRng);
+    }
+  }
+}
+
+// How long the lure has been dead still: since it landed or last moved,
+// whichever is later. Zero while it is not sitting in the water.
+export function lureStillMs(runtime: Runtime, now: number): number {
+  const kind = runtime.state.kind;
+  if (!runtime.lureVisible || (kind !== 'lure_idle' && kind !== 'rod_control')) return 0;
+  if (runtime.rodControlActive) return 0;
+  return Math.max(0, now - Math.max(runtime.lureLandedAt, runtime.lureMovedUntil));
+}
+
+// The spook rule at the splash: any wandering or curious fish the lure landed
+// on darts to the far dark and stays away. Returns where each spooked fish was
+// (for the wake), so the scene can show it.
+export function spookFromSplash(runtime: Runtime, splash: Vec2, lureFearMult: number, phase: number): Vec2[] {
+  const spooked: Vec2[] = [];
+  if (!runtime.habits) return spooked;
+  const apply = (snapshot: FishSnapshot): FishSnapshot => {
+    const kind = snapshot.state.kind;
+    if (kind !== 'wander' && kind !== 'notice' && kind !== 'approach' && kind !== 'inspect') return snapshot;
+    const species = speciesTuning(snapshot.instance.species);
+    const feeding = feedingAmount(snapshot.instance.species, phase);
+    if (!splashSpooks(snapshot.position, splash, species.fearRadiusMultiplier, lureFearMult, feeding)) return snapshot;
+    spooked.push({ x: snapshot.position.x, z: snapshot.position.z });
+    return {
+      ...snapshot,
+      state: {
+        kind: 'flee',
+        targetPos: spookTarget(snapshot.position, runtime.homeRng),
+        sinceMs: 0,
+        holdMs: spookHoldMs(snapshot.instance.personality, runtime.homeRng)
+      }
+    };
+  };
+  runtime.fish = apply(runtime.fish);
+  for (const decor of runtime.decorFish) decor.snapshot = apply(decor.snapshot);
+  return spooked;
 }

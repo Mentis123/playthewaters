@@ -25,6 +25,9 @@ import {
   projectVecToScreen,
   projectVecToScreenInto,
   promoteNearestFish,
+  ensureHomes,
+  lureStillMs,
+  spookFromSplash,
   rodTipFor,
   rodTipForRuntime,
   THREE_UP,
@@ -39,6 +42,7 @@ import { AlphaSky, AlphaTreeline, AlphaWater, LightDriver } from '@/components/g
 import { BankGround, BankStones, BankWeeds, FarMist, LayeredTreeline, Midges, SideReeds } from '@/components/game/scene/AlphaBank';
 import { AB_STORAGE_KEY, readLightOverride, readLook, resolveAbSearch } from '@/game/light/look';
 import { createLightSample, phaseOf, startPhaseForVisit } from '@/game/light/pondLight';
+import { feedingAmount, habitCueIntervalMultiplier, stillRingAmount } from '@/game/fish/habits';
 import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
 import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/game/scene/silhouettes';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
@@ -60,6 +64,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     Array.from({ length: TUNING.world.fishMaxVisible }, () => null)
   );
   const lureRef = useRef<THREE.Mesh>(null);
+  const stillRingRef = useRef<THREE.Mesh>(null);
   // A1 look and light (23_ALPHA_CANON §3, §7). `?look=classic` renders the
   // v0.4 scene verbatim as the blind-gate baseline; `?light=` pins the light.
   const lookSetup = useMemo(() => {
@@ -166,6 +171,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
   }, [gl, onRestoringChange, recordGlContextLoss, runtime, setGlHandlersReady]);
 
   useFrame((_, rawDt) => {
+    // A3 habits belong to the current chapter's look only; baselines stay exact.
+    runtime.current.habits = lookSetup.look === 'alpha';
     if (!started || runtime.current.restoring) {
       return;
     }
@@ -227,6 +234,24 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         // Without this, the 4 decor fish are inert silhouettes that ignore the
         // lure no matter how perfectly you cast at them.
         promoteNearestFish(current, gameState.target);
+        current.lureLandedAt = now;
+        // The spook rule (A3): a lure landed on top of a fish sends it darting
+        // to the far dark, visibly. Near, not on, still draws it in.
+        const spookedAt = spookFromSplash(current, gameState.target, lureMods(current.lureId).fearMult, lightRef.current.phase);
+        if (spookedAt.length > 0) {
+          setRipples((value) => [
+            ...value,
+            ...spookedAt.map((pos) => ({
+              id: createId(),
+              pos,
+              radius: TUNING.fish.genericCueRadiusM * 1.3,
+              createdAt: now,
+              durationMs: TUNING.fish.cueRippleDurationMs,
+              falseCue: false,
+              cue: 'wake' as const
+            }))
+          ]);
+        }
         current.state = { kind: 'lure_idle', lurePos: gameState.target, sinceMs: now, lastTwitchAt: current.lastTwitchAt };
         current.lureY = TUNING.world.lureSurfaceY;
         audio.current.lurePlop(gameState.power);
@@ -359,6 +384,9 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
 
     const previousFishKind: string = current.fish.state.kind;
     const equippedLure = lureMods(current.lureId);
+    ensureHomes(current);
+    const phase = lightRef.current.phase;
+    const stillMs = lureStillMs(current, now);
     current.fish = updateFish({
       nowMs: now,
       dt,
@@ -368,7 +396,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       rng: current.rng,
       // The equipped lure draws/spooks only the player's primary fish.
       lureAttractMult: equippedLure.attractMult,
-      lureFearMult: equippedLure.fearMult
+      lureFearMult: equippedLure.fearMult,
+      habit: current.habits ? { feeding: feedingAmount(current.fish.instance.species, phase), stillMs } : undefined
     }, current.fish);
     updateHookedContactPoint(current, dt);
 
@@ -422,7 +451,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         rng: current.rng,
         // Decor fish ignore the lure entirely — neutral gear (no draw/spook).
         lureAttractMult: 1,
-        lureFearMult: 1
+        lureFearMult: 1,
+        habit: current.habits ? { feeding: feedingAmount(decor.snapshot.instance.species, phase), stillMs: 0 } : undefined
       }, decor.snapshot);
 
       // Alive pond: every fish — not just the catchable one — leaves the odd cue
@@ -434,7 +464,9 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         const decorCue = cueForReveal(decor.snapshot.instance.species, decor.cueIndex, decorReveal, TUNING.fish.cueSpeciesRevealThreshold);
         const decorRadius = decorReveal < TUNING.fish.cueSpeciesRevealThreshold ? TUNING.fish.genericCueRadiusM : decorSpecies.primaryCueRadiusM;
         decor.cueIndex += 1;
-        decor.nextCueAt = now + lerp(TUNING.fish.decorCueMinMs, TUNING.fish.decorCueMaxMs, current.rng());
+        // Feeding fish (A3) leave cues more often: a busy patch of water is a tell.
+        const cueInterval = current.habits ? habitCueIntervalMultiplier(feedingAmount(decor.snapshot.instance.species, phase)) : 1;
+        decor.nextCueAt = now + lerp(TUNING.fish.decorCueMinMs, TUNING.fish.decorCueMaxMs, current.rng()) * cueInterval;
         setRipples((value) => [
           ...value,
           {
@@ -550,6 +582,20 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       const material = lureRef.current.material as THREE.MeshBasicMaterial;
       material.opacity = flashing ? 1 : 0.95;
       material.color.set(flashing ? '#f1d47a' : '#ffffff');
+    }
+
+    // The still lure (A3): a faint ring that closes as the lure stays dead
+    // still and resets the instant it moves, so the player sees their own
+    // tremor. Never a number, never a timer.
+    const ring = stillRingRef.current;
+    if (ring) {
+      const amount = current.habits ? stillRingAmount(lureStillMs(current, now)) : 0;
+      ring.visible = amount > 0.02;
+      if (ring.visible) {
+        ring.position.set(current.lurePos.x, TUNING.world.waterY + 0.012, current.lurePos.z);
+        ring.scale.setScalar(lerp(1.7, 0.55, amount));
+        (ring.material as THREE.MeshBasicMaterial).opacity = amount * TUNING.habits.stillRingMaxOpacity;
+      }
     }
 
     current.line = updateVerletLine(current.line, rodTipForRuntime(current, hookImpulseFor(current, now)), current.lurePos, dt, current.tension);
@@ -683,7 +729,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         </>
       ) : (
         <>
-          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} />
+          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} look={lookSetup.look === 'a2' ? 'a2' : 'alpha'} habits={lookSetup.look === 'alpha'} />
           <AlphaSky light={lightRef} />
           <Moon runtime={runtime} light={lightRef} />
           <LayeredTreeline light={lightRef} />
@@ -727,6 +773,10 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <meshBasicMaterial map={genericSilhouette} color="#111718" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       ))}
+      <mesh ref={stillRingRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[TUNING.lure.lureRadiusM * 2.6, TUNING.lure.lureRadiusM * 3.1, 40]} />
+        <meshBasicMaterial color="#e8e2cc" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
       <mesh ref={lureRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]} position={[TUNING.world.lureStart.x, TUNING.world.lureSurfaceY, TUNING.world.lureStart.z]}>
         <planeGeometry args={[TUNING.lure.lureRadiusM * 4.6, TUNING.lure.lureRadiusM * 2.7]} />
         <meshBasicMaterial map={lureTexture} transparent depthWrite={false} side={THREE.DoubleSide} />

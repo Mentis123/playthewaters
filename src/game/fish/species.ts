@@ -14,6 +14,9 @@ export type FishCueKind =
 export type FishInstance = {
   species: SpeciesId;
   personality: number;
+  // A3 habits: the home feature this fish returns to. Assigned only when
+  // habits are on, from a separate seeded stream so baselines stay identical.
+  home?: import('@/game/fish/habits').HomeId;
 };
 
 export type SpeciesTuning = typeof TUNING.fish.species[SpeciesId];
