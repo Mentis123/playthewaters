@@ -777,6 +777,46 @@ export const TUNING = {
     // A released fish's ripple at the bank.
     releaseRippleM: 0.6
   },
+  // A5 the lily pond's legend (docs/alpha/A5_RUBRIC.md §2; never shown to
+  // players). Present from the third lily visit on, odd visits only.
+  legend: {
+    firstVisit: 3,
+    surfaceMinMs: 120_000,
+    surfaceMaxMs: 240_000,
+    surfaceShowMs: 2600,
+    stillMs: 12_000,
+    takeRadiusM: 1.2,
+    spookRadiusM: 1.5,
+    // Where it lives: the right pad island (a home in WATERS.lily).
+    home: { x: 2.3, z: -3.4 },
+    roamM: 0.9,
+    sizeScore: 0.98
+  },
+  // A5 the walk between waters and the lily pond's pads.
+  walk: {
+    durationMs: 3600,
+    // The path at the edge of each view: screen position (fractions) and the
+    // tap radius in px. Home's path is at the left; the lily pond's at the right.
+    pathHome: { x: 0.08, y: 0.5, radiusPx: 56 },
+    pathLily: { x: 0.92, y: 0.52, radiusPx: 56 },
+    cardMs: 2600
+  },
+  pads: {
+    // A cast landing within this of a pad island's rim snags.
+    snagGrowM: 0.05,
+    // Fish under a pad (rim widened by this) are hidden.
+    hideGrowM: 0.15,
+    // Pulling a snagged lure free: the splash's spook radius.
+    freeSpookM: 1.4
+  },
+  // A5 the old sinking lure (home pond find).
+  find: {
+    // Where it lies under the near bank (pond metres) and how close a cast
+    // must land to hook it.
+    sinker: { x: -1.3, z: 1.55, hookRadiusM: 0.45 },
+    glintEveryMs: 4200,
+    glintShowMs: 700
+  },
   // A4 the link: the arrival silhouette where the sender hooked the fish.
   link: {
     maxCodeChars: 400,
