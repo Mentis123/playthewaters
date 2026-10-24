@@ -1,3 +1,4 @@
+// Set in next.config.mjs (the one source); these fallbacks only apply outside Next.
 export const CURRENT_CANDIDATE_TAG =
   process.env.NEXT_PUBLIC_REEL_CANDIDATE_TAG ?? 'v1.2-habits-candidate';
 

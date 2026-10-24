@@ -766,3 +766,13 @@ Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `
 **Moved to the backlog, stated in the rubric before the build:** the wake pool (deferred from A2). Measure first: 28–37 draws against 100.
 
 **Not testable here:** the canon's real gate for A3 is people. Five strangers, untold, 10 minutes each; at least one habit named by three of them.
+
+## playtest page + a /dev bug (2026-10-24)
+*The canon's A3 gate is five strangers, untold. The owner asked for a page to DM them.*
+
+- **`/playtest`** (unlisted, noindex): play first, then the open question **alone** ("What did you notice about how the fish behave?"), and only after that a checklist (same places / busier at times / shot off when landed on / took a still lure / saw the ring), minutes played, fun 1–5, would-you-return, broken/confusing, anything else. Honeypot field; says plainly what is sent (answers, optional name, game version, device type and screen size; no email, no tracking).
+- **Storage**: this site has no database, so answers POST to `adamrappaport.vercel.app/api/waters-feedback` (Neon, table `waters_feedback`, created on first write). Origin-locked to this site and its previews, size-capped, no IP stored. **Reading** needs the owner's key; only its SHA-256 is in the (public) adamrappaport repo, because this session cannot create Vercel production env vars (403). `WATERS_FEEDBACK_CLOSED=1` on that project closes it.
+- **`/playtest/results`**: the owner's view. Key remembered per device. Shows the gate (a habit named by 3 of 5 in the OPEN answers, keyword hints, owner confirms from the quotes), the checklist tallies, average fun, and every answer. Rows from tester `__selftest__` (the deploy check) are hidden.
+- **Verified end to end**: bad origin 403, empty answer 400, no or wrong key 404; a real browser submit from this site's build landed in Neon and read back with the key; the results page hid it.
+
+**Bug found and fixed:** `next.config.mjs` hard-coded the candidate tag (`v0.4-far-water-candidate`) and overrode `src/lib/buildInfo.ts`, so **`/dev` showed the far-water checklist through A1, A2 and A3**, despite the DEVLOG entries saying the A1/A2/A3 checklists were live. The config is now the one source (`v1.2-habits-candidate` → `a3-habits`, with v1.0/v1.1 mapped), and `AGENTS.md` says to bump it there. `shell.spec` (which asserts `/dev` shows the current milestone's checklist) passes.

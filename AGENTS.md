@@ -28,6 +28,6 @@ Before coding, read `docs/goalpack/00_OVERVIEW.md`, then `docs/goalpack/23_ALPHA
 - Keep all feel constants in `src/game/tuning/tuning.ts`.
 - Update `DEVLOG.md` after every milestone.
 - Run validation from `docs/goalpack/12_VALIDATION.md` before declaring work complete.
-- Commit and tag milestone candidates as `*-candidate`. Only humans create `*-approved` tags.
+- Commit and tag milestone candidates as `*-candidate`, and bump the tag in `next.config.mjs` `currentCandidateTag()` (the one source for `/dev` and playtest build labels). Only humans create `*-approved` tags.
 - If the same validation fails twice, stop and document the issue in `DEVLOG.md` instead of guessing.
 - If image generation is unavailable, continue Phase A with grey-box only and stop before Phase B.

@@ -3,10 +3,26 @@ function currentCandidateTag() {
     return process.env.NEXT_PUBLIC_REEL_CANDIDATE_TAG;
   }
 
-  return 'v0.4-far-water-candidate';
+  // The build's chapter. This is the ONE place it is set (src/lib/buildInfo.ts
+  // only falls back to it outside Next): bump it with each chapter, or /dev
+  // shows the wrong gate and playtest answers carry the wrong version. Found
+  // 24 Oct 2026: it still said v0.4 through A1, A2 and A3.
+  return 'v1.2-habits-candidate';
 }
 
 function currentMilestone(tag) {
+  if (tag.startsWith('v1.2-')) {
+    return 'a3-habits';
+  }
+
+  if (tag.startsWith('v1.1-')) {
+    return 'a2-bank';
+  }
+
+  if (tag.startsWith('v1.0-')) {
+    return 'a1-light';
+  }
+
   if (tag.startsWith('v0.4-')) {
     return 'far-water';
   }

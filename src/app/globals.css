@@ -1666,3 +1666,29 @@ code {
 .ab-try-label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(232, 223, 210, 0.7); }
 .ab-brief ul { margin: 0; padding-left: 18px; }
 .ab-brief li { margin-bottom: 4px; }
+
+/* Playtest (/playtest, /playtest/results) */
+.playtest .ab-pick { margin-top: 8px; }
+.playtest-steps { padding-left: 20px; line-height: 1.5; margin: 0 0 18px; }
+.playtest-steps li { margin-bottom: 12px; }
+.playtest-steps .ab-open { display: inline-block; margin: 6px 0; }
+.playtest-field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; color: rgba(232, 223, 210, 0.85); }
+.playtest-field input, .playtest-text {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 223, 210, 0.3);
+  background: #1b2529;
+  color: #e8dfd2;
+  font: inherit;
+  font-size: 16px;
+}
+.playtest-check { border: 0; padding: 0; margin: 14px 0; }
+.playtest-check legend { margin-bottom: 6px; line-height: 1.4; }
+.playtest-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.playtest-choices .ab-pick { margin-top: 0; min-width: 64px; flex: 1 1 auto; }
+.playtest-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.playtest-error { color: #f0a090; }
+.playtest-privacy { font-size: 12px; color: rgba(232, 223, 210, 0.6); margin-top: 18px; }
+.playtest-quote { font-size: 17px; line-height: 1.5; }
+.ab-pick:disabled { opacity: 0.45; }
