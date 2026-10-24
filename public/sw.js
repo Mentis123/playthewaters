@@ -2,7 +2,7 @@
 /* eslint-disable */
 'use strict';
 
-const CACHE_VERSION = '2c54f4587132';
+const CACHE_VERSION = '1946707a26cf';
 const CACHE_NAME = 'reel-precache-' + CACHE_VERSION;
 const RUNTIME_CACHE = 'reel-runtime-' + CACHE_VERSION;
 const PRECACHE_URLS = [
@@ -11,11 +11,16 @@ const PRECACHE_URLS = [
   "/assets/fish/moon_minnow.webp",
   "/assets/fish/moss_bass.webp",
   "/assets/fish/old_kingfish.webp",
+  "/assets/fish/old_mossback.webp",
   "/assets/fish/reed_pike.webp",
   "/assets/sprites/fish_generic.webp",
+  "/assets/sprites/lilypads.webp",
   "/assets/sprites/lure_default.webp",
+  "/assets/sprites/old_sinker.webp",
+  "/assets/textures/bench-wood.webp",
   "/assets/textures/dock_planks.webp",
   "/assets/textures/treeline-01.webp",
+  "/assets/textures/treeline-02.webp",
   "/assets/textures/water_normal.webp",
   "/assets/ui/wordmark.svg",
   "/game",

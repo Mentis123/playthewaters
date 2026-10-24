@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 import { ART_DELIVERED } from '@/game/art/delivered';
@@ -46,6 +46,37 @@ function useProjectInto(runtime: RuntimeRef, key: 'path' | 'bench' | 'sinker', w
     out.current.y = (-scratch.current.y * 0.5 + 0.5) * size.height;
     runtime.current.targets[key] = out.current;
   });
+}
+
+// A commissioned image, swapped in only once it has DECODED (a texture
+// assigned before its image lands draws blank). Null until then, or forever
+// if the art has not been delivered.
+function useArtTexture(src: string, delivered: boolean, srgb = true): THREE.Texture | null {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  useEffect(() => {
+    if (!delivered) return undefined;
+    let cancelled = false;
+    let loaded: THREE.Texture | null = null;
+    new THREE.TextureLoader().load(
+      src,
+      (t) => {
+        if (cancelled) {
+          t.dispose();
+          return;
+        }
+        loaded = t;
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        setTexture(t);
+      },
+      undefined,
+      () => undefined
+    );
+    return () => {
+      cancelled = true;
+      loaded?.dispose();
+    };
+  }, [src, delivered, srgb]);
+  return texture;
 }
 
 // ---------------------------------------------------------------- the path
@@ -110,33 +141,31 @@ export function ShorePath({ runtime, side }: { runtime: RuntimeRef; side: 'left'
 
 // ---------------------------------------------------------------- pads
 
+// A drawn 2x2 sheet of pads, laid out like the commissioned one
+// (public/assets/sprites/lilypads.webp), so the same per-cell UVs work for
+// both while the painting decodes.
 function createPadTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
+  canvas.width = 256;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // A round leaf with its notch, dark green with a brown-purple rim and veins.
-    ctx.translate(64, 64);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, 58, 0.18, Math.PI * 2 - 0.18);
-    ctx.closePath();
-    const g = ctx.createRadialGradient(-10, -10, 4, 0, 0, 60);
-    g.addColorStop(0, '#5c7a3e');
-    g.addColorStop(0.75, '#3f5a2c');
-    g.addColorStop(1, '#5a3e3a');
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(30, 44, 20, 0.45)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 9; i += 1) {
-      const a = 0.4 + (i / 8) * (Math.PI * 2 - 0.8);
+    for (let cell = 0; cell < 4; cell += 1) {
+      ctx.save();
+      ctx.translate((cell % 2) * 128 + 64, Math.floor(cell / 2) * 128 + 64);
+      ctx.rotate(cell * 1.3);
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(a) * 52, Math.sin(a) * 52);
-      ctx.stroke();
+      ctx.arc(0, 0, 56, 0.18, Math.PI * 2 - 0.18);
+      ctx.closePath();
+      const g = ctx.createRadialGradient(-10, -10, 4, 0, 0, 58);
+      g.addColorStop(0, '#5c7a3e');
+      g.addColorStop(0.75, '#3f5a2c');
+      g.addColorStop(1, '#5a3e3a');
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.restore();
     }
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -144,21 +173,41 @@ function createPadTexture(): THREE.CanvasTexture | null {
   return texture;
 }
 
+// A unit plane whose UVs cover one cell of a 2x2 sheet (cell 0 top-left).
+function padCellGeometry(cell: number): THREE.PlaneGeometry {
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  const uv = geometry.attributes.uv as THREE.BufferAttribute;
+  const u0 = (cell % 2) * 0.5;
+  const v0 = cell < 2 ? 0.5 : 0;
+  for (let i = 0; i < uv.count; i += 1) uv.setXY(i, u0 + uv.getX(i) * 0.5, v0 + uv.getY(i) * 0.5);
+  uv.needsUpdate = true;
+  return geometry;
+}
+
 type PadInstance = { island: number; dx: number; dz: number; size: number; spin: number };
 
+// Lily pads: one instanced mesh per sheet cell (four draws), all sharing one
+// material, re-matrixed per frame without allocation as the islands drift.
 export function LilyPads({ runtime, light, water }: { runtime: RuntimeRef; light: LightRef; water: WaterId }) {
   const def = WATERS[water];
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const materialRef = useRef<THREE.MeshLambertMaterial>(null);
+  const meshRefs = useRef<Array<THREE.InstancedMesh | null>>([null, null, null, null]);
   const procedural = useMemo(() => createPadTexture(), []);
-  const pads = useMemo<PadInstance[]>(() => {
+  const material = useMemo(
+    () => new THREE.MeshLambertMaterial({ map: procedural, transparent: true, alphaTest: 0.4, depthWrite: false, side: THREE.DoubleSide }),
+    [procedural]
+  );
+  const geometries = useMemo(() => [0, 1, 2, 3].map(padCellGeometry), []);
+  const cells = useMemo<PadInstance[][]>(() => {
     const rng = seededRandom(`a5-pads-${water}`);
-    const out: PadInstance[] = [];
+    const out: PadInstance[][] = [[], [], [], []];
     def.pads.forEach((island, index) => {
       for (let i = 0; i < island.pads; i += 1) {
         const a = rng() * Math.PI * 2;
         const r = Math.sqrt(rng()) * island.radius * 0.92;
-        out.push({ island: index, dx: Math.cos(a) * r, dz: Math.sin(a) * r * 0.9, size: 0.26 + rng() * 0.2, spin: rng() * Math.PI * 2 });
+        const pad = { island: index, dx: Math.cos(a) * r, dz: Math.sin(a) * r * 0.9, size: 0.26 + rng() * 0.2, spin: rng() * Math.PI * 2 };
+        // The bud (cell 2) is rare; the plain pads carry the islands.
+        const roll = rng();
+        out[roll < 0.06 ? 2 : roll < 0.4 ? 0 : roll < 0.7 ? 1 : 3].push(pad);
       }
     });
     return out;
@@ -166,7 +215,7 @@ export function LilyPads({ runtime, light, water }: { runtime: RuntimeRef; light
   const scratch = useMemo(() => ({ m: new THREE.Matrix4(), q: new THREE.Quaternion(), p: new THREE.Vector3(), s: new THREE.Vector3(), e: new THREE.Euler(), c: { x: 0, z: 0 } }), []);
 
   // The commissioned sprite sheet (public/art/PROMPTS.md `lilypads`), swapped
-  // in only once it has decoded; the drawn pad holds until then (or forever).
+  // in only once it has decoded; the drawn sheet holds until then.
   useEffect(() => {
     if (!ART_DELIVERED.lilypads) return undefined;
     let cancelled = false;
@@ -180,11 +229,9 @@ export function LilyPads({ runtime, light, water }: { runtime: RuntimeRef; light
         }
         loaded = texture;
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.repeat.set(0.5, 0.5);
-        if (materialRef.current) {
-          materialRef.current.map = texture;
-          materialRef.current.needsUpdate = true;
-        }
+        texture.anisotropy = 4;
+        material.map = texture;
+        material.needsUpdate = true;
       },
       undefined,
       () => undefined
@@ -193,34 +240,51 @@ export function LilyPads({ runtime, light, water }: { runtime: RuntimeRef; light
       cancelled = true;
       loaded?.dispose();
     };
-  }, []);
+  }, [material]);
+
+  useEffect(() => () => {
+    material.dispose();
+    geometries.forEach((g) => g.dispose());
+  }, [material, geometries]);
 
   useFrame(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
     const t = runtime.current.pondFrozen ? 0 : performance.now() / 1000;
-    for (let i = 0; i < pads.length; i += 1) {
-      const pad = pads[i];
-      padIslandCentre(def.pads[pad.island], t, scratch.c);
-      scratch.p.set(scratch.c.x + pad.dx, TUNING.world.waterY + 0.012, scratch.c.z + pad.dz);
-      scratch.e.set(-Math.PI / 2, 0, pad.spin + Math.sin(t * 0.05 + pad.spin) * 0.08);
-      scratch.q.setFromEuler(scratch.e);
-      scratch.s.set(pad.size, pad.size, 1);
-      scratch.m.compose(scratch.p, scratch.q, scratch.s);
-      mesh.setMatrixAt(i, scratch.m);
+    for (let cell = 0; cell < 4; cell += 1) {
+      const mesh = meshRefs.current[cell];
+      if (!mesh) continue;
+      const pads = cells[cell];
+      for (let i = 0; i < pads.length; i += 1) {
+        const pad = pads[i];
+        padIslandCentre(def.pads[pad.island], t, scratch.c);
+        scratch.p.set(scratch.c.x + pad.dx, TUNING.world.waterY + 0.012, scratch.c.z + pad.dz);
+        scratch.e.set(-Math.PI / 2, 0, pad.spin + Math.sin(t * 0.05 + pad.spin) * 0.08);
+        scratch.q.setFromEuler(scratch.e);
+        scratch.s.set(pad.size, pad.size, 1);
+        scratch.m.compose(scratch.p, scratch.q, scratch.s);
+        mesh.setMatrixAt(i, scratch.m);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
     }
-    mesh.instanceMatrix.needsUpdate = true;
-    if (materialRef.current) {
-      const k = light.current.bank;
-      materialRef.current.color.setRGB(0.55 + k[0] * 0.5, 0.55 + k[1] * 0.5, 0.55 + k[2] * 0.5, THREE.SRGBColorSpace);
-    }
+    const k = light.current.bank;
+    material.color.setRGB(0.55 + k[0] * 0.5, 0.55 + k[1] * 0.5, 0.55 + k[2] * 0.5, THREE.SRGBColorSpace);
   });
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, pads.length]} renderOrder={3} frustumCulled={false}>
-      <planeGeometry args={[1, 1]} />
-      <meshLambertMaterial ref={materialRef} map={procedural} transparent alphaTest={0.4} depthWrite={false} side={THREE.DoubleSide} />
-    </instancedMesh>
+    <>
+      {cells.map((pads, cell) =>
+        pads.length === 0 ? null : (
+          <instancedMesh
+            key={cell}
+            ref={(node) => {
+              meshRefs.current[cell] = node;
+            }}
+            args={[geometries[cell], material, pads.length]}
+            renderOrder={3}
+            frustumCulled={false}
+          />
+        )
+      )}
+    </>
   );
 }
 
@@ -278,16 +342,17 @@ export function Bench({ runtime }: { runtime: RuntimeRef }) {
   const y = bankHeightAt(z);
   const world = useMemo(() => new THREE.Vector3(x, y + 0.18, z), [x, y, z]);
   useProjectInto(runtime, 'bench', world);
-  const wood = '#6f6559';
+  const woodMap = useArtTexture('/assets/textures/bench-wood.webp', ART_DELIVERED.benchWood);
+  const wood = woodMap ? '#ffffff' : '#6f6559';
   return (
     <group position={[x, y, z]} rotation={[0, 0.35, 0]}>
       <mesh position={[0, 0.2, 0]} renderOrder={3}>
         <boxGeometry args={[0.62, 0.04, 0.18]} />
-        <meshStandardMaterial color={wood} roughness={1} />
+        <meshStandardMaterial color={wood} map={woodMap} roughness={1} />
       </mesh>
       <mesh position={[0, 0.34, -0.08]} rotation={[0.25, 0, 0]} renderOrder={3}>
         <boxGeometry args={[0.62, 0.12, 0.03]} />
-        <meshStandardMaterial color={wood} roughness={1} />
+        <meshStandardMaterial color={wood} map={woodMap} roughness={1} />
       </mesh>
       {[-0.26, 0.26].map((lx) => (
         <mesh key={lx} position={[lx, 0.1, 0]} renderOrder={3}>
@@ -330,13 +395,21 @@ export function CarriedSinker({ runtime, tied }: { runtime: RuntimeRef; tied: bo
   const y = bankHeightAt(z);
   const world = useMemo(() => new THREE.Vector3(x, y + 0.08, z), [x, y, z]);
   useProjectInto(runtime, 'sinker', world);
+  const sprite = useArtTexture('/assets/sprites/old_sinker.webp', ART_DELIVERED.oldSinker);
   return (
     <group position={[x, y, z]}>
       <mesh position={[0, 0.03, 0]} scale={[0.16, 0.07, 0.13]} renderOrder={3}>
         <dodecahedronGeometry args={[1, 0]} />
         <meshStandardMaterial color="#6d675c" roughness={0.95} flatShading />
       </mesh>
-      {tied ? null : (
+      {tied ? null : sprite ? (
+        // The commissioned lure (public/art/PROMPTS.md `old-sinker`), lying
+        // on the stone, tilted toward the camera.
+        <mesh position={[0, 0.085, 0.01]} rotation={[-0.55, 0, 0.25]} renderOrder={4}>
+          <planeGeometry args={[0.2, 0.2]} />
+          <meshBasicMaterial map={sprite} transparent alphaTest={0.3} depthWrite={false} />
+        </mesh>
+      ) : (
         <mesh position={[0.01, 0.1, 0]} rotation={[0, 0, Math.PI / 2.4]} scale={[0.03, 0.06, 0.03]} renderOrder={4}>
           <sphereGeometry args={[1, 10, 8]} />
           <meshStandardMaterial color="#b8913f" metalness={0.6} roughness={0.35} emissive="#3a2a08" />

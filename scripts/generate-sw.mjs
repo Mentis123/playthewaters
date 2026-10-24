@@ -42,7 +42,7 @@ async function fileHash(path) {
 // visit behaviour is unchanged.
 // The treeline master PNG (2.3MB) is kept as the art source; the game loads
 // its WebP (public/assets/textures/treeline-01.webp, ~420KB).
-const PRECACHE_EXCLUDE = new Set(['/images/reel-mobile-splash.png', '/assets/textures/treeline-01.png']);
+const PRECACHE_EXCLUDE = new Set(['/images/reel-mobile-splash.png', '/assets/textures/treeline-01.png', '/assets/textures/treeline-02.png']);
 
 async function collectAssetUrls() {
   const roots = [

@@ -10,6 +10,7 @@ export const SPECIES_ART: Partial<Record<SpeciesId, string>> = {
   moss_bass: '/assets/fish/moss_bass.webp',
   moon_minnow: '/assets/fish/moon_minnow.webp',
   old_kingfish: '/assets/fish/old_kingfish.webp',
+  old_mossback: '/assets/fish/old_mossback.webp',
   reed_pike: '/assets/fish/reed_pike.webp'
 };
 

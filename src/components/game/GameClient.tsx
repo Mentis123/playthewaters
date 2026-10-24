@@ -1534,7 +1534,11 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
               <div
                 className="bench-plank"
                 data-testid="bench-plank"
-                style={ART_DELIVERED.benchWood ? { backgroundImage: "url('/assets/textures/bench-wood.webp')", backgroundSize: 'cover' } : undefined}
+                style={ART_DELIVERED.benchWood ? {
+                  // A pale wash over the painted grain, so the cut reads.
+                  backgroundImage: "linear-gradient(180deg, rgba(232, 226, 212, 0.18), rgba(232, 226, 212, 0.32) 50%, rgba(232, 226, 212, 0.18)), url('/assets/textures/bench-wood.webp')",
+                  backgroundSize: 'cover'
+                } : undefined}
               >
                 <p className="bench-carving">
                   OLD MOSSBACK. 90 LB. FIRST LIGHT.

@@ -934,3 +934,19 @@ Planted defects, each caught:
 Budget at the lily pond: 37–54 draws, 2.0–2.8k triangles. No console or page errors.
 
 **Not testable here:** the feel of the walk on a phone (canon gate: two failures stop the shoreline at two waters), and whether the legend's tell reads as unmistakable on glass.
+
+## A5 art wired in (2026-10-24)
+*All five A5 prompts delivered (PR #2). `src/game/art/delivered.ts` flags all true.*
+
+- **Old Mossback's plate** is the legend's catch card and share card. Its catch link and DM preview still show no fish (canon §4: where, never what).
+- **Lily pads:** the painted 2x2 sheet. One instanced mesh per cell (4 draws, one shared material), so all four pads appear. The bud pad is rare (6%). The drawn stand-in is a matching 2x2 sheet, so the cell UVs work for both while the painting decodes.
+- **The lily pond's far shore** is `treeline-02` as a WebP (398 KB; the 2.7 MB PNG master is out of the precache). `LayeredTreeline` now takes a source per water.
+- **The old sinking lure:**
+  - On the found card.
+  - On its bank stone in the scene, as a sprite tilted to the camera.
+- **The bench plank:**
+  - On the bench card, under a pale wash, because the carving was hard to read on the busy grain (checked by capture). The cut is darker and deeper.
+  - Also the grain on the bench in the scene.
+- Every image is swapped in only after it decodes (`useArtTexture` in Shore.tsx).
+
+Checks: 91 unit, 20/20 phone-profile e2e. The lily pond is 45–50 draws and about 2.5k triangles. No console or page errors.

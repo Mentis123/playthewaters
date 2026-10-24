@@ -49,6 +49,7 @@ import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/
 import { Bench, CarriedSinker, LegendSwirl, LilyPads, ReedIslands, ShorePath, SinkerGlint, SinkerSign } from '@/components/game/scene/Shore';
 import { legendAtLight, legendSpookedBy, legendTakes, surfaceGap } from '@/game/waters/legend';
 import { padCoverAt, WATERS } from '@/game/waters/waters';
+import { ART_DELIVERED } from '@/game/art/delivered';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
 import type { Runtime, SceneProps, ScreenPoint } from '@/components/game/types';
 import type { FishSnapshot } from '@/game/fish/fishStateMachine';
@@ -1003,7 +1004,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} look={lookSetup.look === 'a2' ? 'a2' : 'alpha'} habits={lookSetup.look === 'alpha'} />
           <AlphaSky light={lightRef} />
           <Moon runtime={runtime} light={lightRef} />
-          <LayeredTreeline light={lightRef} />
+          <LayeredTreeline light={lightRef} src={lookSetup.look === 'alpha' && water === 'lily' && ART_DELIVERED.treeline02 ? '/assets/textures/treeline-02.webp' : undefined} />
           <AlphaWater runtime={runtime} light={lightRef} normalMap={waterNormalTexture} fishWater={fishWaterRef} shore={water === 'home'} waterId={lookSetup.look === 'alpha' ? water : 'home'} />
           <FarMist runtime={runtime} light={lightRef} />
           <WaterRipples ripples={ripples} />

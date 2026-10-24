@@ -2000,9 +2000,9 @@ code {
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.6;
-  font-size: 0.92rem;
-  color: rgba(40, 32, 24, 0.82);
-  /* Carved: dark in the cut, a light lip below it. */
-  text-shadow: 0 1px 0 rgba(255, 245, 225, 0.35), 0 -1px 0 rgba(0, 0, 0, 0.35);
+  font-size: 1rem;
+  color: rgba(26, 20, 14, 0.92);
+  /* Carved: dark in the cut, a light lip below it, a shadow in the cut. */
+  text-shadow: 0 1.5px 0 rgba(255, 248, 232, 0.55), 0 -1px 1px rgba(0, 0, 0, 0.45);
 }
 .bench-initials { font-weight: 400; font-style: italic; }

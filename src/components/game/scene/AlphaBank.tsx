@@ -320,13 +320,13 @@ function mixInto(out: Rgb, a: Rgb, b: Rgb, t: number): Rgb {
 // one); `?treeline=code` keeps the drawn pair. Swapped in only once DECODED (a
 // texture assigned before its image lands draws blank), so the drawn rows hold
 // until then and the first frame never waits on the image.
-function useTreelineArt(onReady: (texture: THREE.Texture) => void) {
+function useTreelineArt(src: string, onReady: (texture: THREE.Texture) => void) {
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     if (new URLSearchParams(window.location.search).get('treeline') === 'code') return undefined;
     let cancelled = false;
     let loaded: THREE.Texture | null = null;
-    new THREE.TextureLoader().load(TUNING.visual.treelineArt.src, (texture) => {
+    new THREE.TextureLoader().load(src, (texture) => {
       if (cancelled) {
         texture.dispose();
         return;
@@ -355,14 +355,15 @@ function useTreelineArt(onReady: (texture: THREE.Texture) => void) {
 
 // Two painted layers: a hazier back row pulled toward the fog colour (aerial
 // perspective) and a darker front row. The moon draws between sky and trees.
-export function LayeredTreeline({ light }: { light: LightRef }) {
+// `src` (A5): each water's own far shore; the home pond's by default.
+export function LayeredTreeline({ light, src = TUNING.visual.treelineArt.src }: { light: LightRef; src?: string }) {
   const back = useMemo(() => createTreelineLayer('back'), []);
   const front = useMemo(() => createTreelineLayer('front'), []);
   const backRef = useRef<THREE.MeshBasicMaterial>(null);
   const frontRef = useRef<THREE.MeshBasicMaterial>(null);
   const backMeshRef = useRef<THREE.Mesh>(null);
   const artRef = useRef(false);
-  useTreelineArt((texture) => {
+  useTreelineArt(src, (texture) => {
     artRef.current = true;
     if (frontRef.current) {
       frontRef.current.map = texture;
