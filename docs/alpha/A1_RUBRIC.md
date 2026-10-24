@@ -59,4 +59,4 @@ Each item is yes or no. **Pass: 22 of 26.** Items marked ★ are required regard
 
 | Date | Build | Round 1 (night) | Round 2 (dusk) | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|
-| | | | | / 26 | | |
+| 24 Oct 2026 | `0aa5fca` | not reported | not reported | not scored | — | **Owner-accepted by play, not by the blind gate.** The owner played it ("it works … I like the way the ripples looked"), reports having run `/ab`, but the picks live only in the phone's localStorage and were not reported, so the blind result is unrecorded. Owner moved on to A2. Owner also reported: no way to leave the pond back to the title (fixed in A2, rubric item 21). |
