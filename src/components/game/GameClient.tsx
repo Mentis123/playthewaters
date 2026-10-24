@@ -22,6 +22,7 @@ import { TUNING } from '@/game/tuning/tuning';
 import { track } from '@/game/telemetry/track';
 import { failureStory, generateStory } from '@/game/ui/storyGenerator';
 import { CatchResultCard } from '@/components/game/CatchResultCard';
+import { XRAY_COLORS } from '@/components/game/scene/XRay';
 import { DebugHud } from '@/components/game/DebugHud';
 import { GameScene } from '@/components/game/GameScene';
 import { GearSelect } from '@/components/game/GearSelect';
@@ -53,6 +54,7 @@ export function GameClient() {
   const searchParams = useSearchParams();
   const seed = searchParams.get('seed') ?? dailySeed();
   const queryDebug = searchParams.get('debug') === '1';
+  const queryXray = searchParams.get('xray') === '1';
   const [started, setStarted] = useState(false);
   const [splashStage, setSplashStage] = useState<SplashStage>('primary');
   const [debugOpen, setDebugOpen] = useState(queryDebug || (process.env.NODE_ENV === 'development' && TUNING.ui.debugDefaultDev));
@@ -1187,6 +1189,19 @@ export function GameClient() {
           dismissReady={resultDismissReady}
           onCastAgain={resetCast}
         />
+      ) : null}
+
+      {queryXray && started ? (
+        // Owner-only review lens legend (?xray=1, linked from /ab after picking).
+        <div className="xray-legend" aria-hidden="true">
+          <strong>X-ray</strong>
+          <span><i style={{ background: XRAY_COLORS.idle }} />idle</span>
+          <span><i style={{ background: XRAY_COLORS.feeding }} />feeding</span>
+          <span><i style={{ background: XRAY_COLORS.curious }} />after the lure</span>
+          <span><i style={{ background: XRAY_COLORS.waiting }} />waiting for a still lure</span>
+          <span><i style={{ background: XRAY_COLORS.spooked }} />spooked</span>
+          <span><i className="xray-ring" />home</span>
+        </div>
       ) : null}
 
       {restoring ? <div className="restore-overlay">Restoring...</div> : null}

@@ -40,9 +40,10 @@ import {
 import { Backdrop, Foreshore, Moon, PondWater, Reeds } from '@/components/game/scene/Environment';
 import { AlphaSky, AlphaTreeline, AlphaWater, LightDriver } from '@/components/game/scene/AlphaEnvironment';
 import { BankGround, BankStones, BankWeeds, FarMist, LayeredTreeline, Midges, SideReeds } from '@/components/game/scene/AlphaBank';
+import { XRayLayer } from '@/components/game/scene/XRay';
 import { AB_STORAGE_KEY, readLightOverride, readLook, resolveAbSearch } from '@/game/light/look';
 import { createLightSample, phaseOf, startPhaseForVisit } from '@/game/light/pondLight';
-import { feedingAmount, habitCueIntervalMultiplier, stillRingAmount } from '@/game/fish/habits';
+import { feedingAmount, habitCueIntervalMultiplier, stillNeededMs, stillRingAmount } from '@/game/fish/habits';
 import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
 import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/game/scene/silhouettes';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
@@ -80,7 +81,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     const override = readLightOverride(search);
     let initialPhase = override ? phaseOf(override) : startPhaseForVisit(getStoredPhase(), Math.random);
     if (!override && look !== 'classic') storePhase(initialPhase);
-    return { look, frozen: override !== null, initialPhase };
+    const xray = new URLSearchParams(search).get('xray') === '1' || new URLSearchParams(rawSearch).get('xray') === '1';
+    return { look, frozen: override !== null, initialPhase, xray };
   }, []);
   const lightRef = useRef(createLightSample());
   // Per-fish (x, z, radius, strength) for the water shader: fish drawn into the
@@ -237,18 +239,22 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         current.lureLandedAt = now;
         // The spook rule (A3): a lure landed on top of a fish sends it darting
         // to the far dark, visibly. Near, not on, still draws it in.
-        const spookedAt = spookFromSplash(current, gameState.target, lureMods(current.lureId).fearMult, lightRef.current.phase);
+        const spookedAt = spookFromSplash(current, gameState.target, lureMods(current.lureId).fearMult, lightRef.current.phase, now);
         if (spookedAt.length > 0) {
+          // A3.1: a spook is an event: a boil where each fish was, a splash
+          // you can hear and a tick you can feel. The V-wakes follow below.
+          audio.current.fishSplash(TUNING.audio.impactSplashIntensity * 0.8);
+          vibrate(TUNING.haptics.nibbleTick);
           setRipples((value) => [
             ...value,
             ...spookedAt.map((pos) => ({
               id: createId(),
               pos,
-              radius: TUNING.fish.genericCueRadiusM * 1.3,
+              radius: TUNING.habits.spookWakeRadiusM * 1.4,
               createdAt: now,
               durationMs: TUNING.fish.cueRippleDurationMs,
               falseCue: false,
-              cue: 'wake' as const
+              cue: 'ripple' as const
             }))
           ]);
         }
@@ -382,6 +388,33 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       return;
     }
 
+    // A3.1: bolting fish leave a V-wake behind them for a moment.
+    if (current.spookTrails.length > 0) {
+      const wakes: Array<{ x: number; z: number }> = [];
+      for (const trail of current.spookTrails) {
+        if (now >= trail.nextAt && now < trail.until) {
+          const snapshot = trail.index < 0 ? current.fish : current.decorFish[trail.index]?.snapshot;
+          if (snapshot) wakes.push({ x: snapshot.position.x, z: snapshot.position.z });
+          trail.nextAt = now + TUNING.habits.spookWakeEveryMs;
+        }
+      }
+      current.spookTrails = current.spookTrails.filter((trail) => now < trail.until);
+      if (wakes.length > 0) {
+        setRipples((value) => [
+          ...value,
+          ...wakes.map((pos) => ({
+            id: createId(),
+            pos,
+            radius: TUNING.habits.spookWakeRadiusM,
+            createdAt: now,
+            durationMs: TUNING.fish.cueRippleDurationMs,
+            falseCue: false,
+            cue: 'wake' as const
+          }))
+        ]);
+      }
+    }
+
     const previousFishKind: string = current.fish.state.kind;
     const equippedLure = lureMods(current.lureId);
     ensureHomes(current);
@@ -400,6 +433,27 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       habit: current.habits ? { feeding: feedingAmount(current.fish.instance.species, phase), stillMs } : undefined
     }, current.fish);
     updateHookedContactPoint(current, dt);
+
+    // A3.1: a fish circling a lure that is not still enough nudges at it, so
+    // the player can see that something wants it and is waiting.
+    if (current.habits && current.fish.state.kind === 'inspect') {
+      const needed = stillNeededMs(current.fish.instance.species, feedingAmount(current.fish.instance.species, phase));
+      if (needed > 0 && stillMs < needed && now - current.lastNudgeAt > TUNING.habits.waitingNudgeEveryMs) {
+        current.lastNudgeAt = now;
+        setRipples((value) => [
+          ...value,
+          {
+            id: createId(),
+            pos: { x: current.lurePos.x, z: current.lurePos.z },
+            radius: TUNING.lure.rippleRadiusOnTwitchM * 0.7,
+            createdAt: now,
+            durationMs: TUNING.fish.cueRippleDurationMs * 0.7,
+            falseCue: false,
+            cue: 'ripple'
+          }
+        ]);
+      }
+    }
 
     if (previousFishKind !== 'bite' && current.fish.state.kind === 'bite') {
       const openedAt = now;
@@ -741,6 +795,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <BankStones />
           <BankWeeds runtime={runtime} />
           <Midges runtime={runtime} light={lightRef} />
+          {lookSetup.xray ? <XRayLayer runtime={runtime} light={lightRef} /> : null}
         </>
       )}
       {Array.from({ length: TUNING.world.fishMaxVisible }, (_, i) => (
@@ -774,7 +829,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         </mesh>
       ))}
       <mesh ref={stillRingRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[TUNING.lure.lureRadiusM * 2.6, TUNING.lure.lureRadiusM * 3.1, 40]} />
+        <ringGeometry args={[TUNING.lure.lureRadiusM * 2.4, TUNING.lure.lureRadiusM * 3.3, 48]} />
         <meshBasicMaterial color="#e8e2cc" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
       <mesh ref={lureRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]} position={[TUNING.world.lureStart.x, TUNING.world.lureSurfaceY, TUNING.world.lureStart.z]}>

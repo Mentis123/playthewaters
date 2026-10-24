@@ -709,21 +709,33 @@ export const TUNING = {
     // roam by this factor and pulls it this many metres toward the near water.
     feedingRoamMul: 2.2,
     feedingShoreward: 1.8,
-    // Speed and curiosity off-feed (0) vs feeding (1).
-    speedOffFeed: 0.7,
-    speedFeeding: 1.25,
+    // Speed and curiosity off-feed (0) vs feeding (1). A3.1: widened (was
+    // 0.7 / 1.25) because the owner could not tell the ponds apart.
+    speedOffFeed: 0.55,
+    speedFeeding: 1.45,
     noticeOffFeed: 0.7,
     noticeFeeding: 1.3,
-    // Feeding fish leave cues this much more often (interval multiplier).
-    cueIntervalFeeding: 0.5,
+    // Cue interval multipliers: feeding fish ripple far more often, idle fish
+    // far less, so a busy patch of water reads at a glance (A3.1; was 0.5 / 1).
+    cueIntervalFeeding: 0.3,
+    cueIntervalOffFeed: 1.7,
     // The spook rule: a splash this close (× species fear × lure fear) sends
     // the fish to the far dark for a while. Feeding fish are bolder.
-    splashSpookRadiusM: 0.55,
+    splashSpookRadiusM: 0.75,
     splashSpookFeedingRelief: 0.35,
     spookHoldMinMs: 18000,
     spookHoldMaxMs: 34000,
     spookFarBandM: 1.3,
     spookSideReachM: 1.6,
+    // A3.1: a spook is an EVENT. The fish bolts at this multiple of its
+    // approach speed for this long, trailing a V-wake; fish within the scatter
+    // radius of it bolt too, for a shorter hold.
+    spookBurstMs: 1200,
+    spookBurstMul: 3.2,
+    spookWakeEveryMs: 160,
+    spookWakeRadiusM: 0.42,
+    scatterRadiusM: 1.6,
+    scatterHoldMul: 0.45,
     // The still lure: how long the lure must be dead still before this
     // species will commit, off-feed. Feeding discounts it.
     stillLureMs: {
@@ -738,7 +750,10 @@ export const TUNING = {
     stillGiveUpMs: 9000,
     // The ring around the lure: closes over this long of stillness.
     stillRingFullMs: 5200,
-    stillRingMaxOpacity: 0.32
+    stillRingMaxOpacity: 0.62,
+    // A3.1: a fish waiting for a still lure nudges at it: a small ring at the
+    // lure this often, so the player can see something wants it.
+    waitingNudgeEveryMs: 1300
   },
   haptics: {
     tapBegin: [10],

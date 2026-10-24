@@ -7,11 +7,11 @@ function currentCandidateTag() {
   // only falls back to it outside Next): bump it with each chapter, or /dev
   // shows the wrong gate and playtest answers carry the wrong version. Found
   // 24 Oct 2026: it still said v0.4 through A1, A2 and A3.
-  return 'v1.2-habits-candidate';
+  return 'v1.2.1-habits-visible-candidate';
 }
 
 function currentMilestone(tag) {
-  if (tag.startsWith('v1.2-')) {
+  if (tag.startsWith('v1.2-') || tag.startsWith('v1.2.')) {
     return 'a3-habits';
   }
 

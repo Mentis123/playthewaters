@@ -71,7 +71,24 @@ export function habitNoticeMultiplier(feeding: number): number {
 }
 
 export function habitCueIntervalMultiplier(feeding: number): number {
-  return 1 + (H.cueIntervalFeeding - 1) * feeding;
+  return H.cueIntervalOffFeed + (H.cueIntervalFeeding - H.cueIntervalOffFeed) * feeding;
+}
+
+// Which fish a splash sends bolting: any fish it landed on, then any fish
+// close to one of those (they scatter with it, for a shorter hold). Pure:
+// positions and per-fish spook radii in, [index, holdMul] out.
+export function splashScatter(positions: Vec2[], splash: Vec2, spookRadii: number[], spookable: boolean[]): Array<{ index: number; holdMul: number }> {
+  const hit: Array<{ index: number; holdMul: number }> = [];
+  positions.forEach((pos, index) => {
+    if (spookable[index] && distance(pos, splash) < spookRadii[index]) hit.push({ index, holdMul: 1 });
+  });
+  if (hit.length === 0) return hit;
+  const direct = hit.map((h) => positions[h.index]);
+  positions.forEach((pos, index) => {
+    if (!spookable[index] || hit.some((h) => h.index === index)) return;
+    if (direct.some((d) => distance(d, pos) < H.scatterRadiusM)) hit.push({ index, holdMul: H.scatterHoldMul });
+  });
+  return hit;
 }
 
 // The spook rule: did this splash land on top of the fish?

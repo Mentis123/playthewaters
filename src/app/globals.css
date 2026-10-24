@@ -1692,3 +1692,24 @@ code {
 .playtest-privacy { font-size: 12px; color: rgba(232, 223, 210, 0.6); margin-top: 18px; }
 .playtest-quote { font-size: 17px; line-height: 1.5; }
 .ab-pick:disabled { opacity: 0.45; }
+
+/* X-ray review lens legend (?xray=1) */
+.xray-legend {
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left));
+  top: max(10px, env(safe-area-inset-top));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(10, 14, 16, 0.72);
+  color: #e8dfd2;
+  font-size: 11px;
+  pointer-events: none;
+}
+.xray-legend span { display: flex; align-items: center; gap: 6px; }
+.xray-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.xray-legend i.xray-ring { border: 1.5px solid rgba(255, 255, 255, 0.7); background: transparent; }
+.ab-xray { list-style: none; padding: 0; display: grid; gap: 8px; }

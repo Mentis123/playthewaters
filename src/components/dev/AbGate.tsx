@@ -18,22 +18,23 @@ import type { LightName } from '@/game/light/pondLight';
 // the person holding the phone: what changed, and what to do in BOTH ponds to
 // feel the difference. Never say which pond is which.
 const GATE = {
-  chapter: 'A3',
-  title: 'Habits',
+  chapter: 'A3.1',
+  title: 'Habits you can actually see',
   rubric: 'docs/alpha/A3_RUBRIC.md',
   baseline: 'a2' as AbArm['look'],
   baselineLabel: 'A2 (the bank, fish wander anywhere)',
   candidateLabel: 'A3 (habits)',
   rounds: ['day', 'night'] as LightName[],
   reviewing:
-    'Not the looks this time: how the fish behave. In one of the two ponds the fish have homes (the stones, the reeds, the deep), ' +
-    'feed at certain lights, bolt if you cast right on top of them, and some only take a lure that is dead still. ' +
-    'Nothing on screen will tell you any of this.',
+    'How the fish behave, not the looks. Last time the two ponds felt the same (you were right: the habits were real but too subtle to see). ' +
+    'Now, in one pond, a fish you cast right on top of BOLTS with a splash, a V-wake and a tick, and the fish near it scatter; ' +
+    'busy fish ripple a lot and idle ones barely at all; and a fish that wants a still lure nudges at it while a ring closes around it. ' +
+    'In the other pond none of that happens.',
   tryThis: [
-    'Cast right on top of a shadow. Then cast a little short of one.',
-    'Watch where the shadows keep turning up for a minute or two before you cast.',
-    'Land the lure near a fish and leave it completely alone. Do not twitch it. Watch the water around the lure.',
-    'Play each pond for a few minutes. Day round first, then night: the fish may not be in the same places.'
+    'Cast right on top of a shadow. You should not be able to miss the difference.',
+    'Before casting, watch for 30 seconds: which patches of water are busy?',
+    'Land the lure a little short of a fish and leave it completely alone. Watch the lure.',
+    'After you have picked both rounds, open the X-ray links at the bottom to see what each pond was doing.'
   ]
 };
 const ROUNDS = GATE.rounds;
@@ -168,7 +169,23 @@ export function AbGate() {
               </li>
             ))}
           </ul>
-          <p>Threshold, set before the build: {GATE.candidateLabel} must win both rounds. Record this in {GATE.rubric} §4.</p>
+          <p>Threshold, set before the build: {GATE.candidateLabel} must win both rounds. Record this in {GATE.rubric}.</p>
+          <h2>X-ray (not blind)</h2>
+          <p>
+            The same ponds with a review lens: dots show what each fish is doing, rings show the homes. Use it to confirm a
+            difference exists.
+          </p>
+          <ul className="ab-xray">
+            {gate.rounds.map((round) =>
+              round.ponds.map((pond) => (
+                <li key={pond}>
+                  <a className="ab-open" href={`/game?pond=${pond}&xray=1`} target="_blank" rel="noopener">
+                    {round.light}: {table.tokens[pond]?.look === 'alpha' ? GATE.candidateLabel : GATE.baselineLabel}
+                  </a>
+                </li>
+              ))
+            )}
+          </ul>
           <button type="button" className="ab-pick" onClick={restart}>
             Run it again
           </button>

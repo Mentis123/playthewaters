@@ -205,6 +205,10 @@ export function updateFish(input: FishUpdateInput, fish: FishSnapshot): FishSnap
     nextState = { ...state, sinceMs: state.sinceMs + dtMs };
     target = state.targetPos;
     speed = TUNING.fish.approachSpeedMps * species.approachSpeedMultiplier;
+    // A3.1: a spook (a flee with a hold) starts as a bolt, not a stroll.
+    if (state.holdMs !== undefined && state.sinceMs < TUNING.habits.spookBurstMs) {
+      speed *= TUNING.habits.spookBurstMul;
+    }
 
     const fleeDuration = state.holdMs ??
       TUNING.fish.fleeDurationMs * hesitation(fish.instance.personality);

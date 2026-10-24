@@ -776,3 +776,28 @@ Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `
 - **Verified end to end**: bad origin 403, empty answer 400, no or wrong key 404; a real browser submit from this site's build landed in Neon and read back with the key; the results page hid it.
 
 **Bug found and fixed:** `next.config.mjs` hard-coded the candidate tag (`v0.4-far-water-candidate`) and overrode `src/lib/buildInfo.ts`, so **`/dev` showed the far-water checklist through A1, A2 and A3**, despite the DEVLOG entries saying the A1/A2/A3 checklists were live. The config is now the one source (`v1.2-habits-candidate` → `a3-habits`, with v1.0/v1.1 mapped), and `AGENTS.md` says to bump it there. `shell.spec` (which asserts `/dev` shows the current milestone's checklist) passes.
+
+## v1.2.1-habits-visible (2026-10-24)
+*Owner, after the A3 gate: "the pond one and two seemed the same for me… I couldn't really see any difference when I casted and how the fish reacted."*
+
+**Why the two ponds read the same (diagnosis, before any change):** the habits were running (the headless probe showed `flee` in A3 against `notice` in A2 on the same cast), but nothing on screen said so.
+- A spooked fish fled at its normal approach speed. From the bank, a fish leaving looks just like a fish wandering.
+- The flee left one wake 0.21 m across, under the splash's own rings.
+- Homes and feeding lights change things over minutes, and an A/B round lasts about one minute.
+- The still-lure ring peaked at a faint 0.3 opacity.
+
+So A3 was correct and impossible to tell apart from A2. A habit nobody can see fails the canon's gate the same way a missing habit does.
+
+**Shipped (A3 only; A2 and the baselines are unchanged and still byte-identical):**
+- **The bolt.** A spooked fish goes 3.2× faster for the first 1.2 s and leaves a V-wake trail every 160 ms. Its splash sound and a haptic tick fire the moment it spooks.
+- **The scatter.** The splash flushes every spookable fish within 1.6 m, not just the nearest. The ones further out hold off for less time (×0.45).
+- **Cue contrast.** A feeding fish shows a cue every 0.3× its usual interval and an off-feed fish every 1.7×, about 5.7× apart (was 2×). Speeds are 0.55× off-feed and 1.45× feeding.
+- **The spook radius** is 0.75 m (was 0.55).
+- **The wait.** A fish waiting for a still lure sends a small nudge ripple every 1.3 s while the lure is still moving. The still ring now peaks at 0.62 opacity.
+- **X-ray** (`/game?pond=…&xray=1`, owner lens): each fish gets a coloured dot (grey idle, gold feeding, green after the lure, blue waiting for a still lure, red spooked) and each home gets a ring, with a legend. Habits are visible on demand so the owner can check the rule fired before judging the feel.
+  - First build: the dots were drawn (+10 calls) but invisible. An opaque mesh draws in the opaque pass, then the transparent water paints over it, whatever its `renderOrder` or `depthTest` say. The fix was making them transparent so they sort after the water.
+- **`/ab` gate A3.1**: rounds day then night, A3.1 against A2. The brief says what changed, and each pond in the result panel has an X-ray link.
+
+**Checks:** 73 unit tests (bolt, scatter and cue-ratio added). Phone-profile e2e: a1-effective, a2-bank and shell all pass. Headless: the same cast gives `flee` + 1 spooked in A3 and `approach` + 0 spooked in A2. X-ray on is 42 draws / 5.2k triangles; off is 32 / 4.4k.
+
+**Not testable here:** whether it reads on the phone. That is the `/ab` rerun, then the five strangers.

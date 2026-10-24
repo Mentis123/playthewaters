@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { ProceduralAudio } from '@/game/audio/procedural';
 import { createInitialFish, type FishSnapshot } from '@/game/fish/fishStateMachine';
 import { speciesTuning, type FishCueKind } from '@/game/fish/species';
-import { feedingAmount, homeFor, splashSpooks, spookHoldMs, spookTarget } from '@/game/fish/habits';
+import { feedingAmount, homeFor, splashScatter, splashSpookRadius, spookHoldMs, spookTarget } from '@/game/fish/habits';
 import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, rodMods } from '@/game/gear/gear';
 import { add, clamp, clampToPond, distance, lerp, lerpVec, normalize, scale, seededRandom, sub, type Vec2 } from '@/game/math/vec';
 import { createVerletLine } from '@/game/physics/verletLine';
@@ -48,6 +48,8 @@ export function createRuntime(seed: string, spawnIndex = 0): Runtime {
     habits: false,
     lureLandedAt: 0,
     homeRng: seededRandom(`${seed}-a3-homes`),
+    spookTrails: [],
+    lastNudgeAt: 0,
     lureFlashUntil: 0,
     line: createVerletLine(TUNING.world.rodTip, lurePos),
     tension: 0,
@@ -546,30 +548,32 @@ export function lureStillMs(runtime: Runtime, now: number): number {
   return Math.max(0, now - Math.max(runtime.lureLandedAt, runtime.lureMovedUntil));
 }
 
-// The spook rule at the splash: any wandering or curious fish the lure landed
-// on darts to the far dark and stays away. Returns where each spooked fish was
-// (for the wake), so the scene can show it.
-export function spookFromSplash(runtime: Runtime, splash: Vec2, lureFearMult: number, phase: number): Vec2[] {
+// The spook rule at the splash (A3, made visible in A3.1): any wandering or
+// curious fish the lure landed on bolts for the far dark, and fish close to it
+// scatter with it. Returns the bolting fish's positions so the scene can mark
+// the moment; their V-wakes run from runtime.spookTrails.
+export function spookFromSplash(runtime: Runtime, splash: Vec2, lureFearMult: number, phase: number, now: number): Vec2[] {
+  if (!runtime.habits) return [];
+  const all = [runtime.fish, ...runtime.decorFish.map((d) => d.snapshot)];
+  const spookable = all.map((f) => ['wander', 'notice', 'approach', 'inspect'].includes(f.state.kind));
+  const radii = all.map((f) => splashSpookRadius(speciesTuning(f.instance.species).fearRadiusMultiplier, lureFearMult, feedingAmount(f.instance.species, phase)));
+  const hits = splashScatter(all.map((f) => f.position), splash, radii, spookable);
   const spooked: Vec2[] = [];
-  if (!runtime.habits) return spooked;
-  const apply = (snapshot: FishSnapshot): FishSnapshot => {
-    const kind = snapshot.state.kind;
-    if (kind !== 'wander' && kind !== 'notice' && kind !== 'approach' && kind !== 'inspect') return snapshot;
-    const species = speciesTuning(snapshot.instance.species);
-    const feeding = feedingAmount(snapshot.instance.species, phase);
-    if (!splashSpooks(snapshot.position, splash, species.fearRadiusMultiplier, lureFearMult, feeding)) return snapshot;
+  for (const { index, holdMul } of hits) {
+    const snapshot = all[index];
     spooked.push({ x: snapshot.position.x, z: snapshot.position.z });
-    return {
+    const next: FishSnapshot = {
       ...snapshot,
       state: {
         kind: 'flee',
         targetPos: spookTarget(snapshot.position, runtime.homeRng),
         sinceMs: 0,
-        holdMs: spookHoldMs(snapshot.instance.personality, runtime.homeRng)
+        holdMs: spookHoldMs(snapshot.instance.personality, runtime.homeRng) * holdMul
       }
     };
-  };
-  runtime.fish = apply(runtime.fish);
-  for (const decor of runtime.decorFish) decor.snapshot = apply(decor.snapshot);
+    if (index === 0) runtime.fish = next;
+    else runtime.decorFish[index - 1].snapshot = next;
+    runtime.spookTrails.push({ index: index - 1, until: now + TUNING.habits.spookBurstMs, nextAt: now });
+  }
   return spooked;
 }

@@ -48,6 +48,9 @@ export type Runtime = {
   habits: boolean;
   lureLandedAt: number;
   homeRng: () => number;
+  // A3.1: bolting fish leave a V-wake for a moment (index -1 = primary).
+  spookTrails: Array<{ index: number; until: number; nextAt: number }>;
+  lastNudgeAt: number;
   line: VerletLine;
   tension: number;
   rodOffset: Vec2;

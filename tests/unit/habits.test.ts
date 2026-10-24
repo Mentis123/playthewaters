@@ -137,3 +137,28 @@ test('the stillness ring closes with stillness and is fully open at zero', () =>
   assert.equal(stillRingAmount(TUNING.habits.stillRingFullMs), 1);
   assert.equal(stillRingAmount(TUNING.habits.stillRingFullMs * 3), 1);
 });
+
+test('A3.1: a spook is a bolt: much faster than an ordinary flee for its first second', async () => {
+  const bolt: FishSnapshot = { ...fishAt('moss_bass', 'stones', { x: 0, z: 0 }), state: { kind: 'flee', targetPos: { x: 0, z: -5 }, sinceMs: 0, holdMs: 20000 } };
+  const stroll: FishSnapshot = { ...fishAt('moss_bass', 'stones', { x: 0, z: 0 }), state: { kind: 'flee', targetPos: { x: 0, z: -5 }, sinceMs: 0 } };
+  const a = simulate(bolt, 1, { habit: { feeding: 0, stillMs: 0 } }, 'bolt');
+  const b = simulate(stroll, 1, { habit: { feeding: 0, stillMs: 0 } }, 'bolt');
+  assert.ok(Math.abs(a.position.z) > Math.abs(b.position.z) * 2, `bolt ${a.position.z.toFixed(2)} vs stroll ${b.position.z.toFixed(2)}`);
+});
+
+test('A3.1: fish close to a spooked fish scatter with it; far ones do not', async () => {
+  const { splashScatter } = await import('../../src/game/fish/habits');
+  const positions = [{ x: 0, z: 0 }, { x: 1, z: 0.2 }, { x: 3.5, z: 0 }];
+  const hit = splashScatter(positions, { x: 0.1, z: 0 }, [0.75, 0.75, 0.75], [true, true, true]);
+  assert.deepEqual(hit.map((h) => h.index).sort(), [0, 1]);
+  assert.equal(hit.find((h) => h.index === 0)!.holdMul, 1);
+  assert.ok(hit.find((h) => h.index === 1)!.holdMul < 1);
+  assert.deepEqual(splashScatter(positions, { x: 2, z: 2 }, [0.75, 0.75, 0.75], [true, true, true]), []);
+  // A fish that cannot spook (hooked, biting) is never swept up, even right beside the splash.
+  assert.deepEqual(splashScatter(positions, { x: 0.9, z: 0.2 }, [0.75, 0.75, 0.75], [false, true, true]).map((h) => h.index), [1]);
+});
+
+test('A3.1: busy (feeding) water ripples at least five times as often as idle water', async () => {
+  const { habitCueIntervalMultiplier } = await import('../../src/game/fish/habits');
+  assert.ok(habitCueIntervalMultiplier(0) / habitCueIntervalMultiplier(1) >= 5);
+});
