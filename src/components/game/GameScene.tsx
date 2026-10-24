@@ -54,7 +54,7 @@ const ASSETS = {
   lureDefault: '/assets/sprites/lure_default.webp'
 } as const;
 
-export function GameScene({ started, runtime, audio, setOverlay, setRipples, ripples, setRodOffset, setPixelRatio, onResult, onRestoringChange, onFocusActiveChange }: SceneProps) {
+export function GameScene({ started, runtime, audio, setOverlay, setRipples, ripples, setRodOffset, setPixelRatio, onResult, onRestoringChange, onFocusActiveChange, arrivalPhase }: SceneProps) {
   const fishRefs = useRef<Array<THREE.Mesh | null>>(
     Array.from({ length: TUNING.world.fishMaxVisible }, () => null)
   );
@@ -79,11 +79,16 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     });
     const look = readLook(search);
     const override = readLightOverride(search);
-    let initialPhase = override ? phaseOf(override) : startPhaseForVisit(getStoredPhase(), Math.random);
+    // A4: a catch link's light wins over the visitor's own stored light.
+    const initialPhase = override
+      ? phaseOf(override)
+      : arrivalPhase !== undefined
+        ? arrivalPhase
+        : startPhaseForVisit(getStoredPhase(), Math.random);
     if (!override && look !== 'classic') storePhase(initialPhase);
     const xray = new URLSearchParams(search).get('xray') === '1' || new URLSearchParams(rawSearch).get('xray') === '1';
     return { look, frozen: override !== null, initialPhase, xray };
-  }, []);
+  }, [arrivalPhase]);
   const lightRef = useRef(createLightSample());
   // Per-fish (x, z, radius, strength) for the water shader: fish drawn into the
   // water as well as on top of it. Written in the fish loop below, read by
@@ -172,9 +177,43 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     };
   }, [gl, onRestoringChange, recordGlContextLoss, runtime, setGlHandlersReady]);
 
+  // A4 arrival silhouette: where the sender's fish was hooked. Holds (with a
+  // slow breath) until the visitor starts fishing, then fades out.
+  const ghostRef = useRef<THREE.Mesh>(null);
+  const ghostSpeciesRef = useRef<string | null>(null);
+  function updateGhost(now: number) {
+    const mesh = ghostRef.current;
+    const ghost = runtime.current.ghost;
+    if (!mesh) return;
+    if (!ghost) {
+      mesh.visible = false;
+      return;
+    }
+    const fade = ghost.fadeFrom === null ? 1 : 1 - (now - ghost.fadeFrom) / TUNING.link.ghostFadeMs;
+    if (fade <= 0) {
+      mesh.visible = false;
+      runtime.current.ghost = null;
+      return;
+    }
+    const material = mesh.material as THREE.MeshBasicMaterial;
+    if (ghostSpeciesRef.current !== ghost.species) {
+      material.map = silhouettes.get(ghost.species) ?? null;
+      material.needsUpdate = true;
+      ghostSpeciesRef.current = ghost.species;
+      const species = speciesTuning(ghost.species);
+      mesh.scale.set(species.widthM, species.heightM, 1);
+    }
+    mesh.visible = true;
+    mesh.position.set(ghost.pos.x, TUNING.world.fishDepthY, ghost.pos.z);
+    const breath = 0.78 + 0.22 * Math.sin(now * 0.001 * Math.PI * 2 * TUNING.link.ghostPulseHz);
+    material.opacity = TUNING.link.ghostOpacity * breath * fade;
+  }
+
   useFrame((_, rawDt) => {
     // A3 habits belong to the current chapter's look only; baselines stay exact.
     runtime.current.habits = lookSetup.look === 'alpha';
+    runtime.current.lightPhase = lightRef.current.phase;
+    updateGhost(performance.now());
     if (!started || runtime.current.restoring) {
       return;
     }
@@ -828,6 +867,10 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <meshBasicMaterial map={genericSilhouette} color="#111718" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       ))}
+      <mesh ref={ghostRef} visible={false} renderOrder={1} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial color="#0b1112" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
       <mesh ref={stillRingRef} visible={false} renderOrder={2} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[TUNING.lure.lureRadiusM * 2.4, TUNING.lure.lureRadiusM * 3.3, 48]} />
         <meshBasicMaterial color="#e8e2cc" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />

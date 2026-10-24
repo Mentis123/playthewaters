@@ -755,6 +755,30 @@ export const TUNING = {
     // lure this often, so the player can see something wants it.
     waitingNudgeEveryMs: 1300
   },
+  // A4 the wall (docs/alpha/A4_RUBRIC.md). Weight from length by W = a·L^b
+  // (grams, cm), the fisheries length-weight relation, with per-species
+  // coefficients near their real-world cousins. Shown in lb and oz.
+  wall: {
+    weight: {
+      bronze_carp: { a: 0.0141, b: 3.0 },
+      moss_bass: { a: 0.0117, b: 3.1 },
+      moon_minnow: { a: 0.006, b: 3.0 },
+      old_kingfish: { a: 0.0186, b: 2.9 },
+      reed_pike: { a: 0.0049, b: 3.1 }
+    },
+    // The keeper swap note on the catch card shows for this long.
+    swapNoteMs: 3200,
+    // A released fish's ripple at the bank.
+    releaseRippleM: 0.6
+  },
+  // A4 the link: the arrival silhouette where the sender hooked the fish.
+  link: {
+    maxCodeChars: 400,
+    ghostOpacity: 0.55,
+    ghostPulseHz: 0.5,
+    // After "Fish here" the silhouette fades over this long.
+    ghostFadeMs: 9000
+  },
   haptics: {
     tapBegin: [10],
     nibbleTick: [15],

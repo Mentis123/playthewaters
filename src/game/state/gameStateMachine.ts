@@ -17,6 +17,13 @@ export type ResultCatch = {
   // they've ever landed, 'species' = their biggest of this species. Computed
   // against the local journal at the moment of the catch.
   personalBest?: 'first' | 'overall' | 'species';
+  // A4: what the link and the wall need. The journal id (keep/release refer
+  // to it), the light's phase, where it was hooked, and the pond it came from.
+  catchId?: string;
+  phase?: number;
+  hook?: Vec2;
+  seed?: string;
+  spawnIndex?: number;
 };
 
 export type GameState =

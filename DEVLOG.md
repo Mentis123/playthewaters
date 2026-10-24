@@ -801,3 +801,37 @@ So A3 was correct and impossible to tell apart from A2. A habit nobody can see f
 **Checks:** 73 unit tests (bolt, scatter and cue-ratio added). Phone-profile e2e: a1-effective, a2-bank and shell all pass. Headless: the same cast gives `flee` + 1 spooked in A3 and `approach` + 0 spooked in A2. X-ray on is 42 draws / 5.2k triangles; off is 32 / 4.4k.
 
 **Not testable here:** whether it reads on the phone. That is the `/ab` rerun, then the five strangers.
+
+## v1.3-wall (2026-10-24)
+*A3.1 passed the owner's blind gate ("Behavior is clear - passed"). A4 per canon §10: the wall and the link. Rubric committed first: `docs/alpha/A4_RUBRIC.md`.*
+
+**Shipped:**
+- **Keep or let go, one keeper per visit.** Every catch card asks Keep or Let go, and both go straight back to fishing.
+  - A second Keep in the same visit swaps: the card warns first ("Keeping this one puts it back"), and the pond says "On the wall. Your Bronze Carp went back in."
+  - Letting go leaves a ring where the fish went back in.
+  - A visit is one session. Pure logic is in `src/game/wall/wall.ts`; storage key `thewaters.wall.v1`.
+- **The wall.** A record board with one line per species: the heaviest one kept, its weight in lb and oz (`W = a·L^b`, per-species coefficients in `TUNING.wall`), water, light and lure, heaviest first.
+  - It opens from a board glyph beside the leave glyph, from "The wall →" on the catch card, and at `/wall`. "Every catch →" leads to the journal underneath.
+  - A released-legend line in a second colour is in the data model and the CSS; nothing draws it until legends exist (A5+).
+- **The catch link.** Share sends the card image plus `/c/<code>` (in the share text as well as the url field; without a share sheet the link is copied).
+  - The code is base64url JSON: seed, spawn, phase, species, size, hook point, lure, kept. Versioned, every field validated, capped at 400 characters. ~140 characters in practice.
+  - The visitor skips both title screens and lands on the sender's pond (the same primary fish in the same place), at the sender's light (still drifting), with the fish's silhouette breathing where it was hooked.
+  - The arrival card says what and where, never how (no lure). "Fish here" starts, and the silhouette fades over 9 s.
+  - A code that does not decode lands on the normal title screen.
+- **DM preview.** `/c/<code>/opengraph-image` (edge) draws the fish art, name, length, weight and light, never the lure; `metadataBase` is set so the image URL is absolute.
+- **`/ab` is in review mode** for A4. Features cannot be judged by a blind pair, so the page has the brief, seven steps, a sample link to today's pond, and the seven starred rubric checks as yes/no (AGENTS.md /ab rule updated: `MODE` in `src/app/ab/page.tsx`).
+- **Read-back:** `window.__waters.firstFrameMs`, ms from navigation start to the pond's first rendered frame.
+- `/dev` shows the A4 checklist (`v1.3-wall-candidate` → `a4-wall`).
+
+**Bug found on the way:** the game hides its canvas until the title screens are passed (`.game-canvas` at opacity 0), so the first arrival build drew the pond (13 draws) behind a flat teal screen. The canvas now shows at once for a link visitor. Found by a screenshot, not by a number: the probe said 13 draws while the picture said nothing.
+
+**Checks:** 82 unit tests (9 new: link round trip; 19 bad, truncated or hostile codes rejected without throwing; arrival line never names the lure; the keeper swap; let go; heaviest per species; weight; corrupt storage). Phone-profile e2e: 15 pass, including the new `a4-wall.spec` (cold link: sender's light ±0.02 and the same primary fish to 1e-6; broken link → title; keep, swap, let go, wall overlay, `/wall`).
+
+Planted defects, each caught:
+- No swap → the unit test fails.
+- No spawn bound → the hostile-code test fails.
+- The link's seed ignored → the e2e "same pond" test fails.
+
+Headless cold open (SwiftShader, no network throttle): first frame at 503–883 ms.
+
+**Not testable here:** the < 2 s gate on a real phone over a real network; the iMessage / WhatsApp preview rendering; the share sheet on iOS.

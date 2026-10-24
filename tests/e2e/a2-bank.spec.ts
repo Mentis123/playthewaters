@@ -61,7 +61,15 @@ test('/ab says what is being reviewed and what to try', async ({ page }) => {
   await expect(brief).toBeVisible();
   await expect(brief).toContainText('Reviewing');
   expect(await brief.locator('li').count()).toBeGreaterThan(1);
-  const hrefs = await page.locator('a.ab-open').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''));
-  expect(hrefs.length).toBe(4);
-  for (const href of hrefs) expect(href).not.toMatch(/look=|light=|classic|alpha/);
+  // /ab is a blind pair for a look chapter and a guided review for a
+  // feature chapter (AGENTS.md /ab rule); check whichever is live.
+  const sample = page.getByTestId('review-sample-link');
+  if (await sample.count()) {
+    expect(await sample.getAttribute('href')).toMatch(/^\/c\//);
+    await expect(page.getByTestId('review-checks')).toBeVisible();
+  } else {
+    const hrefs = await page.locator('a.ab-open').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''));
+    expect(hrefs.length).toBe(4);
+    for (const href of hrefs) expect(href).not.toMatch(/look=|light=|classic|alpha/);
+  }
 });

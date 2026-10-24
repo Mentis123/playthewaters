@@ -6,6 +6,8 @@ import { PwaUpdatePrompt } from '@/components/pwa/PwaUpdatePrompt';
 import './globals.css';
 
 export const metadata: Metadata = {
+  // Absolute base for share previews (A4 catch links' og:image).
+  metadataBase: new URL('https://playthewaters.vercel.app'),
   title: 'The Waters',
   description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
   manifest: '/manifest.webmanifest',

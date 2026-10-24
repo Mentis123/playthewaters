@@ -4,7 +4,7 @@ export type DevChecklistItem = {
 };
 
 export type DevChecklist = {
-  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank' | 'a3-habits';
+  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank' | 'a3-habits' | 'a4-wall';
   title: string;
   items: DevChecklistItem[];
 };
@@ -154,10 +154,24 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
       { id: 'a3-strangers', text: 'Five people, untold, 10 minutes each: does at least one habit get named by three of them?' },
       { id: 'a3-rubric', text: 'Score docs/alpha/A3_RUBRIC.md (18 items, pass 14, all starred) and record it in section 5.' }
     ]
+  },
+  'a4-wall': {
+    milestone: 'a4-wall',
+    title: 'A4 wall and link gate',
+    items: [
+      { id: 'a4-review', text: 'Run /ab on the iPhone (review mode): do the steps, answer the starred checks. Every one must be a yes.' },
+      { id: 'a4-cold', text: 'Open a catch link cold on a second phone: on the pond in under 2 s (window.__waters.firstFrameMs).' },
+      { id: 'a4-preview', text: 'Paste a catch link into a DM: the preview shows the fish, its name and size.' },
+      { id: 'a4-rubric', text: 'Score docs/alpha/A4_RUBRIC.md (18 items, pass 15, all starred) and record it in section 5.' }
+    ]
   }
 };
 
 export function getChecklist(milestone: string): DevChecklist {
+  if (milestone === 'a4-wall') {
+    return checklists['a4-wall'];
+  }
+
   if (milestone === 'a3-habits') {
     return checklists['a3-habits'];
   }

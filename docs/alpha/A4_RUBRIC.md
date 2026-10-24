@@ -56,4 +56,4 @@ Three surfaces from canon §6, nothing else:
 
 | Date | Build | Cold-open time | Owner review | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|
-| | | | | / 18 | | |
+| 24 Oct 2026 | candidate | headless 503–883 ms (SwiftShader, no throttle); phone pending | pending | / 18 | | pending owner review at `/ab` |

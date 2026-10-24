@@ -31,6 +31,8 @@ type WatersProbe = {
   drawingBuffer: [number, number];
   calls: number;
   triangles: number;
+  // A4 canon gate: ms from navigation start to the pond's first rendered frame.
+  firstFrameMs: number;
 };
 
 // Owns the light: advances it, writes scene background/fog, the two lights and
@@ -58,6 +60,7 @@ export function LightDriver({
   const dirRef = useRef<Rgb>([0, 0, 0]);
   const lastSaveRef = useRef(0);
   const lastProbeRef = useRef(0);
+  const firstFrameRef = useRef<number | null>(null);
   const sizeRef = useRef(new THREE.Vector2());
 
   useEffect(() => {
@@ -107,6 +110,7 @@ export function LightDriver({
     }
 
     const now = performance.now();
+    if (firstFrameRef.current === null) firstFrameRef.current = Math.round(now);
     if (!frozen && now - lastSaveRef.current > TUNING.light.saveEveryMs) {
       lastSaveRef.current = now;
       storePhase(phaseRef.current);
@@ -125,7 +129,8 @@ export function LightDriver({
         dpr: gl.getPixelRatio(),
         drawingBuffer: [sizeRef.current.x, sizeRef.current.y],
         calls: gl.info.render.calls,
-        triangles: gl.info.render.triangles
+        triangles: gl.info.render.triangles,
+        firstFrameMs: firstFrameRef.current ?? Math.round(now)
       };
       (window as Window & { __waters?: WatersProbe }).__waters = probe;
     }

@@ -1,6 +1,6 @@
 import type { ProceduralAudio } from '@/game/audio/procedural';
 import type { FishSnapshot } from '@/game/fish/fishStateMachine';
-import type { FishCueKind } from '@/game/fish/species';
+import type { FishCueKind, SpeciesId } from '@/game/fish/species';
 import type { LureId, RodId } from '@/game/gear/gear';
 import type { Vec2 } from '@/game/math/vec';
 import type { VerletLine } from '@/game/physics/verletLine';
@@ -51,6 +51,13 @@ export type Runtime = {
   // A3.1: bolting fish leave a V-wake for a moment (index -1 = primary).
   spookTrails: Array<{ index: number; until: number; nextAt: number }>;
   lastNudgeAt: number;
+  // A4: the light's phase, written by the scene every frame (a catch link
+  // carries it); where the fish was hooked; and the arrival silhouette a link
+  // visitor sees where the sender's fish was hooked (fadeFrom = when it began
+  // to fade, null while it holds).
+  lightPhase: number;
+  hookPos: Vec2 | null;
+  ghost: { species: SpeciesId; pos: Vec2; fadeFrom: number | null } | null;
   line: VerletLine;
   tension: number;
   rodOffset: Vec2;
@@ -151,4 +158,6 @@ export type SceneProps = {
   onResult: (outcome: 'catch' | FailureKind, peakTension: number, nearSnaps: number, hookedAt: number) => void;
   onRestoringChange: (restoring: boolean) => void;
   onFocusActiveChange: (active: boolean) => void;
+  // A4: a link visitor starts at the sender's light (still drifting).
+  arrivalPhase?: number;
 };

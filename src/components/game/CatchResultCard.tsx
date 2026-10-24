@@ -11,7 +11,9 @@ import {
   trophyLengthCm,
   trophySizeWord
 } from '@/game/fish/trophy';
+import { catchLinkPath } from '@/game/share/catchLink';
 import { shareCatch } from '@/game/share/shareCatch';
+import { isLureId } from '@/game/gear/gear';
 
 // Gear-era lures (22_THE_GEAR) plus the pre-gear 'default' kept for catches
 // already sitting in players' journals.
@@ -32,6 +34,24 @@ function fightLine(durationMs: number, nearSnaps: number): string {
   const struggle =
     nearSnaps >= 2 ? 'nearly snapped twice' : nearSnaps === 1 ? 'almost lost it once' : 'a steady fight';
   return `${duration} · ${struggle}`;
+}
+
+// A4: the catch link for a result that carries its pond (in-game catches do;
+// journal entries from before A4 do not, and share as an image only).
+function linkFor(result: ResultCatch): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  if (result.seed === undefined || result.spawnIndex === undefined || result.phase === undefined || !result.hook) return undefined;
+  if (!isKnownSpecies(result.species) || !isLureId(result.lure)) return undefined;
+  const path = catchLinkPath({
+    seed: result.seed,
+    spawnIndex: result.spawnIndex,
+    phase: result.phase,
+    species: result.species,
+    sizeScore: result.sizeScore,
+    hook: result.hook,
+    lure: result.lure
+  });
+  return `${window.location.origin}${path}`;
 }
 
 /** Moonlit side-profile trophy fish. Uses generated art if present, else procedural. */
@@ -74,6 +94,12 @@ type CatchResultCardProps = {
   journalLink?: { label: string; href: string } | null;
   className?: string;
   inline?: boolean;
+  // A4 keep or release: when given, a catch is answered with Keep / Let go
+  // (both go back to fishing) instead of "Cast again".
+  onKeep?: () => void;
+  onRelease?: () => void;
+  // Shown under the choice when keeping would swap this visit's keeper.
+  keepNote?: string | null;
 };
 
 export function CatchResultCard({
@@ -85,7 +111,10 @@ export function CatchResultCard({
   castAgainLabel = 'Cast again.',
   journalLink = { label: 'View journal →', href: '/journal' },
   className,
-  inline = false
+  inline = false,
+  onKeep,
+  onRelease,
+  keepNote
 }: CatchResultCardProps) {
   const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
   const classes = ['result-card', inline ? 'result-card--inline' : '', className].filter(Boolean).join(' ');
@@ -112,7 +141,7 @@ export function CatchResultCard({
   const handleShare = async () => {
     if (!result || shareState === 'working') return;
     setShareState('working');
-    setShareState(await shareCatch(result));
+    setShareState(await shareCatch(result, linkFor(result)));
   };
 
   return (
@@ -152,7 +181,39 @@ export function CatchResultCard({
       ) : (
         <p className="result-miss-text">{storyText}</p>
       )}
+      {showTrophy && onKeep && onRelease ? (
+        <>
+          <div className="result-actions result-actions--fate">
+            <button
+              type="button"
+              className="result-keep"
+              data-testid="result-keep"
+              disabled={!dismissReady}
+              onPointerDown={stop}
+              onClick={() => {
+                if (dismissReady) onKeep();
+              }}
+            >
+              Keep
+            </button>
+            <button
+              type="button"
+              className="result-release"
+              data-testid="result-release"
+              disabled={!dismissReady}
+              onPointerDown={stop}
+              onClick={() => {
+                if (dismissReady) onRelease();
+              }}
+            >
+              Let go
+            </button>
+          </div>
+          {keepNote ? <p className="result-keep-note">{keepNote}</p> : null}
+        </>
+      ) : null}
       <div className="result-actions">
+        {showTrophy && onKeep && onRelease ? null : (
         <button
           type="button"
           className="result-cast-again"
@@ -164,6 +225,7 @@ export function CatchResultCard({
         >
           {castAgainLabel}
         </button>
+        )}
         {showTrophy ? (
           <button
             type="button"

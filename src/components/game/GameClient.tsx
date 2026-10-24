@@ -23,6 +23,10 @@ import { track } from '@/game/telemetry/track';
 import { failureStory, generateStory } from '@/game/ui/storyGenerator';
 import { CatchResultCard } from '@/components/game/CatchResultCard';
 import { XRAY_COLORS } from '@/components/game/scene/XRay';
+import { WallBoard } from '@/components/game/WallBoard';
+import { arrivalLine, decodeCatchLink } from '@/game/share/catchLink';
+import { SPECIES_STORY_LABELS, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
+import { keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, wallLines, type Keeper } from '@/game/wall/wall';
 import { DebugHud } from '@/components/game/DebugHud';
 import { GameScene } from '@/components/game/GameScene';
 import { GearSelect } from '@/components/game/GearSelect';
@@ -50,9 +54,13 @@ import type {
   ViewportSize
 } from '@/components/game/types';
 
-export function GameClient() {
+export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   const searchParams = useSearchParams();
-  const seed = searchParams.get('seed') ?? dailySeed();
+  // A4: a catch link (/c/<code>, or ?catch=<code>) regrows the sender's pond.
+  // A code that does not decode is ignored: the normal title screen.
+  const arrival = useMemo(() => decodeCatchLink(arrivalCode ?? searchParams.get('catch')), [arrivalCode, searchParams]);
+  const seed = arrival?.seed ?? searchParams.get('seed') ?? dailySeed();
+  const baseSpawn = arrival?.spawnIndex ?? 0;
   const queryDebug = searchParams.get('debug') === '1';
   const queryXray = searchParams.get('xray') === '1';
   const [started, setStarted] = useState(false);
@@ -78,7 +86,14 @@ export function GameClient() {
   const pointerRef = useRef<PointerSnapshot | null>(null);
   const focusTimeoutRef = useRef<number | null>(null);
   const startedRef = useRef(false);
-  const spawnIndexRef = useRef(0);
+  const spawnIndexRef = useRef(baseSpawn);
+  // A4: the visit (one session) a keeper belongs to; the wall overlay; the
+  // short note on the pond after keep / let go.
+  const visitIdRef = useRef<string>('');
+  const [wallOpen, setWallOpen] = useState(false);
+  const [wallHighlight, setWallHighlight] = useState<string | null>(null);
+  const [pondNote, setPondNote] = useState<string | null>(null);
+  const pondNoteTimer = useRef<number | null>(null);
   const audio = useRef(new ProceduralAudio());
   const setGameState = useGameStore((state) => state.setGameState);
   const setFishState = useGameStore((state) => state.setFishState);
@@ -93,7 +108,7 @@ export function GameClient() {
   const debugMetrics = useGameStore((state) => state.debugMetrics);
   const glHandlersReady = useGameStore((state) => state.glHandlersReady);
 
-  const runtime = useRef<Runtime>(createRuntime(seed));
+  const runtime = useRef<Runtime>(createRuntime(seed, baseSpawn));
 
   // Pre-cast gear (22_THE_GEAR). gearRef is the always-current selection the
   // runtime + cast closures read; `gear` drives the picker UI. Saved gear loads on
@@ -205,8 +220,11 @@ export function GameClient() {
   // Back to the title screen with a fresh pond: the same reset a new seed
   // does. Used on mount/seed change and by the "leave the pond" glyph.
   const resetToTitle = useCallback(() => {
-    spawnIndexRef.current = 0;
-    runtime.current = createRuntime(seed);
+    spawnIndexRef.current = baseSpawn;
+    runtime.current = createRuntime(seed, baseSpawn);
+    if (arrival) {
+      runtime.current.ghost = { species: arrival.species, pos: { ...arrival.hook }, fadeFrom: null };
+    }
     stampGear();
     startedRef.current = false;
     setStarted(false);
@@ -214,7 +232,7 @@ export function GameClient() {
     setSeed(seed);
     setGameState({ kind: 'splash' });
     setFishState(runtime.current.fish.state);
-  }, [seed, setFishState, setGameState, setSeed, stampGear]);
+  }, [arrival, baseSpawn, seed, setFishState, setGameState, setSeed, stampGear]);
 
   useEffect(() => {
     resetToTitle();
@@ -265,7 +283,7 @@ export function GameClient() {
     }
 
     const preventTouch = (event: TouchEvent) => {
-      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"]')) {
+      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay')) {
         return;
       }
 
@@ -310,8 +328,9 @@ export function GameClient() {
     const orientation = screen.orientation as (ScreenOrientation & { lock?: (orientation: 'portrait') => Promise<void> }) | undefined;
     void orientation?.lock?.('portrait').catch(() => undefined);
     vibrate(TUNING.haptics.tapBegin);
-    sessionStore.startSession(seed);
+    visitIdRef.current = sessionStore.startSession(seed).id;
     track({ type: 'session_start' });
+    if (runtime.current.ghost) runtime.current.ghost.fadeFrom = performance.now();
     runtime.current.state = { kind: 'scouting', sinceMs: performance.now() };
     setGameState(runtime.current.state);
     setStarted(true);
@@ -369,7 +388,12 @@ export function GameClient() {
         durationMs: catchEntry.durationMs,
         nearSnaps: catchEntry.nearSnaps,
         peakTension: catchEntry.peakTension,
-        personalBest
+        personalBest,
+        catchId: catchEntry.id,
+        phase: runtime.current.lightPhase,
+        hook: runtime.current.hookPos ?? { ...runtime.current.fish.position },
+        seed,
+        spawnIndex: runtime.current.spawnIndex
       };
       sessionStore.recordCatch(catchEntry);
       track({ type: 'catch', catch: catchEntry });
@@ -396,7 +420,7 @@ export function GameClient() {
     setReeling(false);
     setTension(0);
     setGameState(runtime.current.state);
-  }, [sessionStore, setGameState, setReeling, setTension]);
+  }, [seed, sessionStore, setGameState, setReeling, setTension]);
 
   const resetCast = useCallback(() => {
     spawnIndexRef.current += 1;
@@ -412,6 +436,59 @@ export function GameClient() {
     setGameState(nextRuntime.state);
     setFishState(nextRuntime.fish.state);
   }, [seed, setFishState, setGameState, setReeling]);
+
+  const showPondNote = useCallback((text: string) => {
+    setPondNote(text);
+    if (pondNoteTimer.current !== null) window.clearTimeout(pondNoteTimer.current);
+    pondNoteTimer.current = window.setTimeout(() => setPondNote(null), TUNING.wall.swapNoteMs);
+  }, []);
+
+  // A4 keep or release (docs/alpha/A4_RUBRIC.md). Both go straight back to
+  // fishing. One keeper per visit: a second Keep swaps the first off the wall.
+  const keeperFromResult = useCallback((result: ResultCatch): Keeper | null => {
+    if (!result.catchId || !(SPECIES_IDS as string[]).includes(result.species)) return null;
+    return {
+      catchId: result.catchId,
+      visitId: visitIdRef.current || 'no-visit',
+      at: Date.now(),
+      species: result.species as SpeciesId,
+      sizeScore: result.sizeScore,
+      lure: result.lure,
+      phase: result.phase ?? 0.25,
+      water: 'home'
+    };
+  }, []);
+  const keepCatch = useCallback(() => {
+    const result = runtime.current.state.kind === 'result' ? runtime.current.state.catch : undefined;
+    const keeper = result ? keeperFromResult(result) : null;
+    if (keeper) {
+      const { wall, replaced } = keepFish(loadWall(), keeper);
+      saveWall(wall);
+      setWallHighlight(keeper.catchId);
+      showPondNote(replaced
+        ? `On the wall. Your ${SPECIES_STORY_LABELS[replaced.species]} went back in.`
+        : 'On the wall.');
+      vibrate(TUNING.haptics.catch);
+    }
+    resetCast();
+  }, [keeperFromResult, resetCast, showPondNote]);
+  const releaseCatch = useCallback(() => {
+    const result = runtime.current.state.kind === 'result' ? runtime.current.state.catch : undefined;
+    const keeper = result ? keeperFromResult(result) : null;
+    if (keeper) saveWall(releaseFish(loadWall(), keeper));
+    const at = result?.hook ?? runtime.current.fish.position;
+    resetCast();
+    // It swims off: a ring where it went back in.
+    addRipple(at, TUNING.wall.releaseRippleM, false);
+    showPondNote('Let go.');
+  }, [keeperFromResult, resetCast, showPondNote]);
+  // What a Keep would do, said before it is pressed: this visit's keeper.
+  const keepNote = useMemo(() => {
+    if (gameState.kind !== 'result' || gameState.outcome !== 'catch' || !visitIdRef.current) return null;
+    const current = keeperOfVisit(loadWall(), visitIdRef.current);
+    return current ? `You kept a ${SPECIES_STORY_LABELS[current.species]} this visit. Keeping this one puts it back.` : null;
+  }, [gameState]);
+  const wallData = useMemo(() => (wallOpen ? wallLines(loadWall()) : []), [wallOpen]);
 
   useEffect(() => {
     if (gameState.kind !== 'result') {
@@ -624,6 +701,7 @@ export function GameClient() {
 
     if (runtime.current.state.kind === 'bite_window') {
       runtime.current.fish.state = { kind: 'hooked', stamina: TUNING.fish.hookedInitialStamina, rage: runtime.current.rng() };
+      runtime.current.hookPos = { ...runtime.current.fish.position };
       runtime.current.tension = TUNING.tension.hookedInitialTension;
       runtime.current.hookJerkUntil = performance.now() + TUNING.timing.hookJerkMs;
       runtime.current.lureMovedUntil = performance.now() + TUNING.timing.hookJerkMs;
@@ -713,6 +791,16 @@ export function GameClient() {
         runtime.current.lureY = TUNING.world.lureSurfaceY;
         setGameState(runtime.current.state);
       },
+      // Land the current primary fish as a catch (A4 checks: keep/release,
+      // the wall and the link without a real fight).
+      forceCatch(tension = 0.6) {
+        if (runtime.current.state.kind === 'result') return;
+        runtime.current.hookPos = { ...runtime.current.fish.position };
+        finishResultRef.current?.('catch', tension, 0, performance.now() - 4000);
+      },
+      wall() {
+        return wallLines(loadWall());
+      },
       fish() {
         const r = runtime.current;
         const now = performance.now();
@@ -730,6 +818,8 @@ export function GameClient() {
       delete (window as Window & { __watersDebug?: typeof hook }).__watersDebug;
     };
   }, [queryDebug, setGameState]);
+  const finishResultRef = useRef<typeof finishResult | null>(null);
+  finishResultRef.current = finishResult;
 
   function reelTap() {
     if (runtime.current.state.kind !== 'hooked') {
@@ -910,6 +1000,7 @@ export function GameClient() {
       data-game-state={gameState.kind}
       data-fish-state={fishState.kind}
       data-started={started ? 'true' : 'false'}
+      data-arrival={arrival ? 'true' : 'false'}
       data-webgl-handlers={glHandlersReady ? 'ready' : 'pending'}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -935,6 +1026,7 @@ export function GameClient() {
             onResult={finishResult}
             onRestoringChange={setRestoring}
             onFocusActiveChange={setFocusActive}
+            arrivalPhase={arrival?.phase}
           />
         </Suspense>
       </Canvas>
@@ -1092,6 +1184,16 @@ export function GameClient() {
           <button
             type="button"
             className="gear-glyph prefs-glyph"
+            aria-label="The wall"
+            data-testid="open-wall"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => setWallOpen(true)}
+          >
+            {wallGlyph()}
+          </button>
+          <button
+            type="button"
+            className="gear-glyph prefs-glyph"
             aria-label="Leave the pond"
             data-testid="leave-pond"
             onPointerDown={(event) => event.stopPropagation()}
@@ -1102,7 +1204,29 @@ export function GameClient() {
         </div>
       ) : null}
 
-      {started ? null : splashStage === 'primary' ? (
+      {started ? null : arrival ? (
+        // A4: a catch link skips both title screens. The pond is already drawn
+        // behind this card; one tap is still needed to unlock sound.
+        <div
+          className="arrival-screen"
+          data-testid="tap-to-begin"
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+        >
+          <div className="arrival-card" data-testid="arrival-card">
+            <span className="arrival-kicker">The Waters</span>
+            <p className="arrival-line">{arrivalLine(arrival)}</p>
+            <p className="arrival-sub">Same water, same fish, same light. Where it was hooked is still in the water.</p>
+            <button type="button" className="arrival-go" data-testid="arrival-go" onClick={begin}>
+              Fish here
+            </button>
+            <span className="arrival-credit">
+              A Birb Labs artefact ·{' '}
+              <a href="https://www.vibeacademy.com.au/" target="_blank" rel="noreferrer">Vibe Academy</a>
+            </span>
+          </div>
+        </div>
+      ) : splashStage === 'primary' ? (
         <button
           className="splash-title-screen"
           type="button"
@@ -1188,7 +1312,25 @@ export function GameClient() {
           storyText={gameState.storyText}
           dismissReady={resultDismissReady}
           onCastAgain={resetCast}
+          onKeep={keepCatch}
+          onRelease={releaseCatch}
+          keepNote={keepNote}
+          journalLink={{ label: 'The wall →', href: '/wall' }}
         />
+      ) : null}
+
+      {pondNote && gameState.kind !== 'result' ? (
+        <div className="pond-note" role="status" data-testid="pond-note">{pondNote}</div>
+      ) : null}
+
+      {wallOpen ? (
+        <div
+          className="wall-overlay"
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+        >
+          <WallBoard lines={wallData} highlight={wallHighlight} onClose={() => setWallOpen(false)} />
+        </div>
       ) : null}
 
       {queryXray && started ? (
@@ -1300,6 +1442,18 @@ function soundGlyph(on: boolean) {
       ) : (
         <path d="M19 11l6 6M25 11l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       )}
+    </svg>
+  );
+}
+
+// The wall: a board with three lines on it.
+function wallGlyph() {
+  return (
+    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <rect x="6" y="5" width="16" height="18" rx="2" />
+        <path d="M10 10.5h8M10 14h8M10 17.5h5" opacity="0.7" />
+      </g>
     </svg>
   );
 }

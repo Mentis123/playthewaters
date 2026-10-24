@@ -1713,3 +1713,200 @@ code {
 .xray-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .xray-legend i.xray-ring { border: 1.5px solid rgba(255, 255, 255, 0.7); background: transparent; }
 .ab-xray { list-style: none; padding: 0; display: grid; gap: 8px; }
+
+/* ---- A4: keep or release, the wall, the arrival card (docs/alpha/A4_RUBRIC.md) ---- */
+.result-actions--fate { margin-top: 14px; }
+.result-keep,
+.result-release { min-width: 128px; }
+.result-keep {
+  background: rgba(200, 168, 92, 0.92);
+  color: #11181c;
+  border: 1px solid rgba(222, 190, 110, 1);
+  font-weight: 600;
+}
+.result-release {
+  background: transparent;
+  border: 1px solid rgba(201, 212, 220, 0.4);
+  color: rgba(232, 238, 243, 0.92);
+}
+.result-keep-note {
+  max-width: 300px;
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: rgba(201, 212, 220, 0.72);
+}
+.result-card--fate .result-actions:last-of-type { margin-top: 4px; }
+
+.pond-note {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 74px);
+  transform: translateX(-50%);
+  max-width: 82vw;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(8, 14, 17, 0.72);
+  color: rgba(232, 238, 243, 0.94);
+  font-size: 0.86rem;
+  text-align: center;
+  pointer-events: none;
+  animation: pond-note 3.2s ease both;
+  z-index: 6;
+}
+@keyframes pond-note {
+  0% { opacity: 0; transform: translate(-50%, -6px); }
+  10%, 80% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; }
+}
+
+.wall-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  background: rgba(3, 7, 9, 0.66);
+  overflow-y: auto;
+}
+.wall-board {
+  width: min(380px, 100%);
+  padding: 22px 20px 16px;
+  border-radius: 10px;
+  /* A dark oiled board with a lighter grain: the wall in the boathouse. */
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #2a2219 0%, #1c1711 100%);
+  border: 1px solid rgba(200, 168, 92, 0.35);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), inset 0 0 0 4px rgba(0, 0, 0, 0.18);
+  color: #efe6d2;
+}
+.wall-head { text-align: center; margin-bottom: 12px; }
+.wall-kicker {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 168, 92, 0.85);
+}
+.wall-title {
+  margin: 4px 0 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  font-size: 1.9rem;
+  letter-spacing: 0.04em;
+}
+.wall-empty {
+  margin: 18px 0 20px;
+  text-align: center;
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: rgba(239, 230, 210, 0.72);
+}
+.wall-lines { list-style: none; margin: 0; padding: 0; }
+.wall-line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 2px;
+  border-top: 1px solid rgba(200, 168, 92, 0.18);
+}
+.wall-line:first-child { border-top: none; }
+.wall-name { font-family: Georgia, serif; font-size: 1.12rem; }
+.wall-weight {
+  font-family: Georgia, serif;
+  font-size: 1.12rem;
+  color: rgba(222, 190, 110, 1);
+  text-align: right;
+}
+.wall-meta { grid-column: 1 / -1; font-size: 0.76rem; color: rgba(239, 230, 210, 0.62); }
+.wall-line--legend .wall-name,
+.wall-line--legend .wall-weight { color: #9fd2c8; }
+.wall-line--new { animation: wall-new 1.6s ease-out 1; }
+@keyframes wall-new {
+  from { background: rgba(222, 190, 110, 0.22); }
+  to { background: transparent; }
+}
+.wall-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+.wall-link { font-size: 0.82rem; color: rgba(200, 168, 92, 0.9); text-decoration: none; }
+.wall-close {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 168, 92, 0.5);
+  background: transparent;
+  color: #efe6d2;
+}
+.wall-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px;
+  background: radial-gradient(120% 80% at 50% 30%, #16242b, #070d11);
+}
+.wall-back { color: rgba(200, 168, 92, 0.9); text-decoration: none; font-size: 0.9rem; }
+
+.arrival-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px max(28px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 45%, rgba(3, 7, 9, 0.55));
+}
+.arrival-card {
+  width: min(380px, 100%);
+  padding: 18px 18px 14px;
+  border-radius: 14px;
+  background: rgba(8, 14, 17, 0.8);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(200, 168, 92, 0.32);
+  color: #e9eef3;
+  text-align: center;
+}
+.arrival-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(200, 168, 92, 0.9);
+}
+.arrival-line { margin: 8px 0 4px; font-family: Georgia, serif; font-size: 1.15rem; line-height: 1.35; }
+.arrival-sub { margin: 0 0 14px; font-size: 0.8rem; color: rgba(201, 212, 220, 0.72); }
+.arrival-go {
+  min-height: 46px;
+  min-width: 170px;
+  border-radius: 999px;
+  border: 1px solid rgba(222, 190, 110, 1);
+  background: rgba(200, 168, 92, 0.92);
+  color: #11181c;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.arrival-credit { display: block; margin-top: 12px; font-size: 0.7rem; color: rgba(201, 212, 220, 0.5); }
+.arrival-credit a { color: inherit; }
+.review-check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(201, 212, 220, 0.14);
+}
+.review-check p { margin: 0; }
+.review-answers { display: flex; gap: 10px; }
+/* A4: a link visitor sees the sender's pond behind the arrival card at once. */
+.game-root[data-arrival='true'] .game-canvas {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
