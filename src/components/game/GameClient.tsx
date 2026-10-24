@@ -59,7 +59,12 @@ export function GameClient() {
   const [overlay, setOverlay] = useState<Overlay>({ linePoints: [], rodTip: { x: 0, y: 0 }, lure: { x: 0, y: 0 }, aimTarget: null });
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [rodOffset, setRodOffset] = useState<Vec2>({ x: 0, z: 0 });
-  const [pixelRatio, setPixelRatio] = useState(1);
+  // Boot at the device's real ratio (capped). Starting at 1 regardless of
+  // device left every iPhone rendering at a third of its pixels, and the first
+  // 'degrade' step then RAISED resolution on a struggling phone.
+  const [pixelRatio, setPixelRatio] = useState(() =>
+    typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio, TUNING.performance.pixelRatioCap)
+  );
   const [restoring, setRestoring] = useState(false);
   const [landscape, setLandscape] = useState(false);
   const [viewport, setViewport] = useState<ViewportSize | null>(null);

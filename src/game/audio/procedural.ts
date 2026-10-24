@@ -38,6 +38,16 @@ export class ProceduralAudio {
     if (!this.ctx) {
       const Ctor = (window.AudioContext || (window as typeof window & { webkitAudioContext?: AudioContextCtor }).webkitAudioContext) as AudioContextCtor;
       this.ctx = new Ctor();
+      // iOS: without this the ring/silent switch mutes Web Audio while HTML
+      // audio keeps playing, so a phone on silent hears nothing at all.
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+      if (session) {
+        try {
+          session.type = 'playback';
+        } catch {
+          // Older WebKit exposes the object but rejects the write.
+        }
+      }
       this.master = this.ctx.createGain();
       this.ambient = this.ctx.createGain();
       this.sfx = this.ctx.createGain();

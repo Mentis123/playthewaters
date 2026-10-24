@@ -66,6 +66,8 @@ test('performance degradation ladder is ordered', () => {
   assert.ok(TUNING.performance.fpsFloor < TUNING.performance.fpsRecovery,
     'hysteresis requires recovery above the floor');
   assert.ok(TUNING.performance.pixelRatioMin <= TUNING.performance.pixelRatioCap);
+  assert.ok(TUNING.performance.fpsSampleCap > TUNING.performance.fpsRecovery,
+    'fps samples capped at or below fpsRecovery can never trigger recovery');
   assert.ok(TUNING.performance.pixelRatioStep > 0);
 });
 

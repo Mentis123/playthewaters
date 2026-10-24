@@ -322,7 +322,9 @@ export function updatePerformance(
   recordPixelRatioDegradation: () => void
 ) {
   const now = performance.now();
-  const fps = 1 / Math.max(dt, 1 / TUNING.performance.fpsRecovery);
+  // Cap at fpsSampleCap, NOT fpsRecovery: capped at the recovery threshold the
+  // measured rate could never exceed it and a degraded phone stayed degraded.
+  const fps = 1 / Math.max(dt, 1 / TUNING.performance.fpsSampleCap);
   runtime.minFps = Math.min(runtime.minFps, fps);
   runtime.fpsSamples.push({ at: now, fps });
   runtime.fpsSamples = runtime.fpsSamples.filter((sample) => now - sample.at < TUNING.timing.debugFiveSecondMs);

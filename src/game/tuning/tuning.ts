@@ -451,7 +451,7 @@ export const TUNING = {
     // Ceiling on a single simulation step. A long frame (tab switch back, GC
     // pause) otherwise delivers one huge dt that can tunnel straight through a
     // bite window or snap the line in a single step.
-    maxFrameDtSeconds: 0.1,
+    maxFrameDtSeconds: 0.05,
     tapFadeMs: 600,
     wordmarkFadeMs: 800,
     resultTextDelayMs: 800,
@@ -470,6 +470,9 @@ export const TUNING = {
   performance: {
     fpsFloor: 30,
     fpsRecovery: 55,
+    // Ceiling on a single frame's measured fps (ProMotion is 120). Must sit
+    // above fpsRecovery or recovery can never trigger.
+    fpsSampleCap: 120,
     degradeHoldMs: 5000,
     recoverHoldMs: 10000,
     pixelRatioCap: 2,

@@ -686,3 +686,16 @@ Append after every milestone. Format:
 **Shipped:**
 - Replaced the boomerang with a real server-level redirect: `redirects()` in `next.config.mjs` maps `/ → /game` (307, `permanent: false`) before any React renders — verified `/` now returns `307` + `location: /game` with an empty body in both `next dev` and `next start`. Deleted the now-dead `src/app/page.tsx`.
 - Repro'd the fixed cold-start in a mobile Chromium harness: entering via `/` follows a single HTTP redirect to `/game`, reaches `scouting`, and stays put (no remount, no cycle). typecheck + lint + 48 unit tests green.
+
+## pipeline-fixes (2026-10-24)
+*Four defects found while comparing Reel against Birb's mobile discipline for the rebuild memo (`docs/rebuild/01_THE_POND_WE_REMEMBER.md`). Each verified in source before touching it.*
+
+- **Boot DPR was stuck at 1.** `GameClient.tsx` fed `useState(1)` to `<Canvas dpr>` while `runtime.ts` believed `min(devicePixelRatio, cap)`; nothing set the React state until a degrade, which then moved 2 → 1.5 and *raised* resolution on a struggling phone. Now initialised from the device ratio.
+- **Quality recovery could never fire.** The sampler capped measured fps at `fpsRecovery` (55) and recovery required `> 55`. New `TUNING.performance.fpsSampleCap` (120) with an invariant test that it sits above `fpsRecovery`.
+- **dt clamp halved** `maxFrameDtSeconds` 0.1 → 0.05: bite windows and snap are dt-sensitive.
+- **iPhone had no haptics** (`haptics.ts` bailed without `navigator.vibrate`). Fallback: a hidden `<input type="checkbox" switch>` clicked programmatically, which fires the native tick on iOS 18+. Unverified on glass whether it fires outside a tap.
+- **Silent-switch iPhones heard nothing**: `navigator.audioSession.type = 'playback'` set when the context is created.
+
+Left alone: `preserveDrawingBuffer: true` (two e2e specs read `toDataURL`; costs bandwidth on iOS tile GPUs, revisit with a screenshot path that doesn't need it) and the per-frame `filter/map` allocation in the fps sampler.
+
+Gates: typecheck, lint, 48 unit tests, production build. **Not yet gated on the iPhone.**
