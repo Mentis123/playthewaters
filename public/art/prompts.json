@@ -182,8 +182,10 @@
       ],
       "format": "png",
       "alpha": true,
-      "status": "wanted",
-      "chapter": "A5"
+      "status": "delivered",
+      "chapter": "A5",
+      "deliveredBy": "Codex (built-in imagegen)",
+      "date": "2026-10-25"
     },
     {
       "id": "old-sinker",
