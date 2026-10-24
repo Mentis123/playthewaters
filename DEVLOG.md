@@ -836,6 +836,12 @@ Headless cold open (SwiftShader, no network throttle): first frame at 503–883 
 
 **Not testable here:** the < 2 s gate on a real phone over a real network; the iMessage / WhatsApp preview rendering; the share sheet on iOS.
 
+## Art delivery (2026-10-24)
+
+Delivered all ten prompts using built-in imagegen, in owner priority order, plus four PNG icon derivatives. Six water cards use the owner reference photographs. Exact delivery paths and dimensions follow public/art/prompts.json; WebP and JPEG exports use quality 85. Treeline retains generated alpha; icons are opaque. All prompt statuses record deliveredBy and date.
+
+Validation: decoded all 14 output files, checked formats and exact dimensions, confirmed transparent treeline pixels and opaque icon exports, and visually inspected generated compositions. This is an asset delivery, not a chapter candidate: no game code, A/B gate, candidate tag or approval changed. In-game tinting, treeline repeat seam, real-iPhone icon appearance and chapter comparisons remain for the game agent and owner. Full gameplay milestone validation is not claimed.
+
 ## v1.3.1-wall (2026-10-24), owner's first phone pass on A4
 *"No spot seen?" and "when I go to keep a second it doesn't ask about letting the other go and give me a confirmation."*
 
