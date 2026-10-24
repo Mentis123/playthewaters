@@ -699,3 +699,6 @@ Append after every milestone. Format:
 Left alone: `preserveDrawingBuffer: true` (two e2e specs read `toDataURL`; costs bandwidth on iOS tile GPUs, revisit with a screenshot path that doesn't need it) and the per-frame `filter/map` allocation in the fps sampler.
 
 Gates: typecheck, lint, 48 unit tests, production build. **Not yet gated on the iPhone.**
+
+## alpha-canon (2026-10-24)
+Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `docs/goalpack/23_ALPHA_CANON.md` is now the authoritative canon for ALPHA and wins over earlier goalpack files where they conflict (amends `14`, `22`, `08`, `13` as listed in its §8 and §10). `00_OVERVIEW` and `AGENTS.md` point to it. Name research in `docs/rebuild/03_THE_NAME.md`: "The Waters" is usable with a wordmark and coined handle; the owner decides. Nothing built yet; A1 (light and water) is the next chapter.

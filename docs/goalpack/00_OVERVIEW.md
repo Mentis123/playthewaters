@@ -1,5 +1,7 @@
 # 00_OVERVIEW
 
+> **ALPHA (24 Oct 2026):** `23_ALPHA_CANON.md` is the authoritative canon for the rebuild and wins over every earlier file where they conflict. Read it second, after the paragraph below. The design behind it is in `docs/rebuild/`.
+
 ## Operating principle (read this first, every time)
 
 The agent's job is **not** to build a fishing game.
@@ -67,3 +69,4 @@ Single water. Ambient. Tactile. Mysterious. The fish are not labelled. The water
 21. `20_ROADMAP.md` — the forward chapter sequence and standing build method (supersedes `03`'s milestone ordering)
 22. `21_THE_REVEAL.md` — identity/size hidden in the dark, resolving as a fish is reeled into clear water (completes `19`'s pillar 3)
 23. `22_THE_GEAR.md` — Chapter 8: two rods + three lures as pre-cast sidegrades that deepen the distance gamble (never an upgrade ladder)
+24. `23_ALPHA_CANON.md` — **the alpha canon**: six waters on one shoreline, one drifting light per visit, the legend contract, found objects (the sinking lure), the wall and the link, pond of the day, chapters A1–A10 with gates and tags. Amends `14`, `22`, `08`, `13` where stated

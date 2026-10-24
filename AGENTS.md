@@ -2,7 +2,7 @@
 
 This repo contains **Reel Mobile**, a mobile-first browser fishing game.
 
-Before coding, read `docs/goalpack/00_OVERVIEW.md`.
+Before coding, read `docs/goalpack/00_OVERVIEW.md`, then `docs/goalpack/23_ALPHA_CANON.md` (the alpha canon; it wins over earlier goalpack files where they conflict).
 
 ## Priorities (in order)
 1. Make the north-star paragraph in `00_OVERVIEW.md` happen on a real iPhone.
@@ -21,7 +21,7 @@ Before coding, read `docs/goalpack/00_OVERVIEW.md`.
 - Vercel deploy target
 
 ## Rules
-- Do not add scope from `docs/goalpack/14_DO_NOT_BUILD.md`.
+- Do not add scope from `docs/goalpack/14_DO_NOT_BUILD.md` as amended by `23_ALPHA_CANON.md` §8.
 - Keep all feel constants in `src/game/tuning/tuning.ts`.
 - Update `DEVLOG.md` after every milestone.
 - Run validation from `docs/goalpack/12_VALIDATION.md` before declaring work complete.
