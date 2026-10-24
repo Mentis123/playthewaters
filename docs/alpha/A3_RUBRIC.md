@@ -48,4 +48,4 @@ A3 makes the home pond **learnable**. Nothing in it is labelled, explained or sh
 
 | Date | Build | Round 1 (day) | Round 2 (night) | Strangers | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|---|
-| | | | | / 5 | / 18 | | |
+| 24 Oct 2026 | `b4c84ec` (A3.1) | **A3.1** | **A3.1** | pending (`/playtest`) | not scored | — | **Blind gate PASSED** (owner: "Behavior is clear - passed"). The first A3 build read the same as A2; A3.1 made the habits visible (DEVLOG v1.2.1). Strangers gate still open. |
