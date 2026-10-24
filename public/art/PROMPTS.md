@@ -50,6 +50,31 @@ One card per water, for the site and for the moment each water is discovered. **
 - **Deliver:** `public/assets/textures/treeline-01.png` · **2048 × 512** · PNG **with transparency** (sky fully transparent)
 - **Prompt:** *A horizontal strip of a far shoreline treeline seen across a pond at eye level: layered red-barked pines and soft maples, darker and more detailed in the front row, hazier behind, a mossy low bank at the very bottom. Neutral, evenly lit (no strong sun direction, no baked sky colour): the game tints it per light. Transparent background above and between the trees. Tileable left to right.*
 
+## A5 prompts (the lily pond and the walk), added 24 Oct 2026
+
+### 11. `legend-01`: a very large old fish, trophy plate
+- **Deliver:** `public/assets/fish/old_mossback.webp` · **900 × 506** · WebP with **transparency**, matching the five existing plates in `public/assets/fish/` (side profile, head left, transparent background, moonlit palette).
+- **Prompt:** *A side-profile trophy plate of an enormous, ancient pond carp, head to the left, on a transparent background. Its back is dark olive-bronze, its scales heavy and worn, with soft green weed growing along its back like moss, a torn fin edge, a pale scarred lip and old, calm eyes. Painterly realism matching the other fish plates: the same scale, lighting and soft moonlit shading. No text, no water, no background.*
+- This is the only prompt that shows a fish as a fish: it is the catch card, not the pond.
+
+### 12. `lilypads`: lily pad sprite sheet
+- **Deliver:** `public/assets/sprites/lilypads.webp` · **1024 × 1024** · WebP with **transparency**, a 2 × 2 grid of four separate pads, each centred in its 512 × 512 cell, seen from directly above.
+- **Prompt:** *Four individual water lily pads seen from straight above on a transparent background, arranged in a 2x2 grid with space between them: round leaves with a notch, muted green with brown-purple edges, one slightly torn, one with a small closed white bud, waxy surface with soft highlights. Evenly lit, no shadows, no water, no text.*
+
+### 13. `treeline-02`: the lily pond's far shore
+- **Deliver:** `public/assets/textures/treeline-02.png` · **2048 × 512** · PNG **with transparency** (sky fully transparent).
+- **Reference:** `docs/reference/ponds/04-lily-pond.jpg` (the hillside behind the pond).
+- **Prompt:** *A horizontal strip of a forested hillside seen across a pond at eye level: tall straight larches and spruce in the middle, a big round broadleaf tree on the left, a low wooden fence and a small pavilion roof far left, fresh spring greens, darker in the front row and hazier behind. Neutral, even light (the game tints it per light). Transparent sky above and between the trees. Tileable left to right.*
+
+### 14. `old-sinker`: the found lure
+- **Deliver:** `public/assets/sprites/old_sinker.webp` · **512 × 512** · WebP with **transparency**.
+- **Prompt:** *An old hand-made brass fishing lure lying on its side, seen slightly from above on a transparent background: a heavy teardrop body, green verdigris in the grooves, a rusted hook, a short tangle of faded line. Small and precious-looking, like something found in the mud. Painterly realism, soft light, no text.*
+
+### 15. `bench-wood`: weathered bench plank
+- **Deliver:** `public/assets/textures/bench-wood.webp` · **1600 × 600** · WebP.
+- **Prompt:** *A close-up, straight-on photograph-like painting of the top plank of an old wooden park bench by a pond: silver-grey weathered wood, deep grain, a few lichen spots, soft overcast light, filling the whole frame. Leave a calm, even band across the middle where words could be carved (do NOT carve or write any letters). No text.*
+- The words are carved over it in code.
+
 ## Status
 
-The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all ten are `delivered`. Wired in: `icon`, `og` (as `public/og-title.jpg` with the title set over it), `splash`, `treeline-01` (as a WebP). Waiting for their chapters: the six water cards.
+The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all ten are `delivered`. Wired in: `icon`, `og` (as `public/og-title.jpg` with the title set over it), `splash`, `treeline-01` (as a WebP). Waiting for their chapters: the six water cards (water-02 is used in A5). The A5 prompts (11–15) are `wanted`.

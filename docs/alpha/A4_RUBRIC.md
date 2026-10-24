@@ -56,4 +56,4 @@ Three surfaces from canon §6, nothing else:
 
 | Date | Build | Cold-open time | Owner review | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|
-| 24 Oct 2026 | candidate | headless 503–883 ms (SwiftShader, no throttle); phone pending | pending | / 18 | | pending owner review at `/ab` |
+| 24 Oct 2026 | `1add449` (A4.1 + art) | headless 503–883 ms; owner's phone: opened and read fine | **passed** (owner: "A4 passed") | not scored | yes | **PASSED.** First phone pass found two defects (no visible spot; a second keep did not ask), fixed in A4.1 before the pass. |
