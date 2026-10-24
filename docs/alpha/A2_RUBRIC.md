@@ -50,4 +50,4 @@ Scope note, stated before the build: the **wake pool** (instanced ripple rings) 
 
 | Date | Build | Round 1 (day) | Round 2 (dusk) | Rubric | ★ all yes | Verdict |
 |---|---|---|---|---|---|---|
-| | | | | / 22 | | |
+| 24 Oct 2026 | `479d7dd` | **A2** | **A2** | not scored | — | **Blind gate PASSED** (owner report: "A2 won both rounds"). Rubric not scored; owner moved on to A3. |
