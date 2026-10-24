@@ -13,7 +13,7 @@
     { "id": "water-03", "deliver": "public/art/waters/03-stone-pool.webp", "reference": "docs/reference/ponds/03-clear-stone-pool.jpg", "light": "dawn", "size": [1080, 1350], "format": "webp", "status": "delivered", "deliveredBy": "Codex (built-in imagegen)", "date": "2026-10-24" },
     { "id": "water-04", "deliver": "public/art/waters/04-castle-moat.webp", "reference": "docs/reference/ponds/02-castle-moat.jpg", "light": "day", "size": [1080, 1350], "format": "webp", "status": "delivered", "deliveredBy": "Codex (built-in imagegen)", "date": "2026-10-24" },
     { "id": "water-05", "deliver": "public/art/waters/05-fog-lake.webp", "reference": "docs/reference/ponds/05-fog-lake-pov.jpg", "light": "dawn-fog", "size": [1080, 1350], "format": "webp", "status": "delivered", "deliveredBy": "Codex (built-in imagegen)", "date": "2026-10-24" },
-    { "id": "water-06", "deliver": "public/art/waters/06-cattail-marsh.webp", "reference": "docs/reference/ponds/06-cattail-marsh.jpg", "light": "dusk-wind", "size": [1080, 1350], "format": "webp", "status": "wanted" },
+    { "id": "water-06", "deliver": "public/art/waters/06-cattail-marsh.webp", "reference": "docs/reference/ponds/06-cattail-marsh.jpg", "light": "dusk-wind", "size": [1080, 1350], "format": "webp", "status": "delivered", "deliveredBy": "Codex (built-in imagegen)", "date": "2026-10-24" },
     { "id": "treeline-01", "deliver": "public/assets/textures/treeline-01.png", "size": [2048, 512], "format": "png-alpha", "chapter": "A2", "status": "delivered", "deliveredBy": "Codex (built-in imagegen)", "date": "2026-10-24" }
   ]
 }
