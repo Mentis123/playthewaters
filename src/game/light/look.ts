@@ -1,12 +1,15 @@
 import { isLightName, type LightName } from '@/game/light/pondLight';
 
-// Which look the scene renders. `alpha` is the A1 water and drifting light;
-// `classic` is the v0.4 scene, kept verbatim as the blind-gate baseline
-// (docs/alpha/A1_RUBRIC.md). Pure: callers pass location.search.
-export type Look = 'alpha' | 'classic';
+// Which look the scene renders. `alpha` is the current chapter (A2: the bank
+// on top of A1's light and water). Earlier chapters stay reachable verbatim as
+// blind-gate baselines: `a1` is A1 as shipped (docs/alpha/A2_RUBRIC.md),
+// `classic` is the v0.4 scene (docs/alpha/A1_RUBRIC.md). Pure: callers pass
+// location.search.
+export type Look = 'alpha' | 'a1' | 'classic';
 
 export function readLook(search: string): Look {
-  return new URLSearchParams(search).get('look') === 'classic' ? 'classic' : 'alpha';
+  const value = new URLSearchParams(search).get('look');
+  return value === 'classic' || value === 'a1' ? value : 'alpha';
 }
 
 // `?light=dawn|day|dusk|night` pins the light and stops the drift: for review,
@@ -40,7 +43,7 @@ export function resolveAbSearch(search: string, readTable: () => string | null):
   const arm = table?.tokens?.[token];
   params.delete('pond');
   if (arm) {
-    if (arm.look === 'classic') params.set('look', 'classic');
+    if (arm.look !== 'alpha') params.set('look', arm.look);
     params.set('light', arm.light);
   }
   const rest = params.toString();

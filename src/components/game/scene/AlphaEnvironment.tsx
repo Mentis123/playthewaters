@@ -20,7 +20,7 @@ function setSrgb(color: THREE.Color, rgb: Rgb): void {
 }
 
 type WatersProbe = {
-  look: 'alpha';
+  look: 'alpha' | 'a1';
   light: string;
   phase: number;
   frozen: boolean;
@@ -39,12 +39,14 @@ export function LightDriver({
   runtime,
   light,
   initialPhase,
-  frozen
+  frozen,
+  look = 'alpha'
 }: {
   runtime: React.MutableRefObject<Runtime>;
   light: LightRef;
   initialPhase: number;
   frozen: boolean;
+  look?: 'alpha' | 'a1';
 }) {
   const { gl, scene } = useThree();
   const phaseRef = useRef(initialPhase);
@@ -110,7 +112,7 @@ export function LightDriver({
       lastProbeRef.current = now;
       gl.getDrawingBufferSize(sizeRef.current);
       const probe: WatersProbe = {
-        look: 'alpha',
+        look,
         light: sample.name,
         phase: sample.phase,
         frozen,
@@ -241,12 +243,15 @@ export function AlphaWater({
   runtime,
   light,
   normalMap,
-  fishWater
+  fishWater,
+  shore = false
 }: {
   runtime: React.MutableRefObject<Runtime>;
   light: LightRef;
   normalMap: THREE.Texture;
   fishWater: React.MutableRefObject<THREE.Vector4[]>;
+  // A2: darken the water toward the stones (the wet edge). Off for `?look=a1`.
+  shore?: boolean;
 }) {
   const W = TUNING.water;
   const uniforms = useMemo(() => ({
@@ -268,8 +273,9 @@ export function AlphaWater({
     uReflect: { value: 0 },
     uGlareReduction: { value: TUNING.input.focusGlareReduction },
     uCausticFocusMul: { value: TUNING.visual.causticFocusMultiplier },
-    uFish: { value: fishWater.current }
-  }), [normalMap, fishWater]);
+    uFish: { value: fishWater.current },
+    uShore: { value: shore ? 1 : 0 }
+  }), [normalMap, fishWater, shore]);
   const dirRef = useRef<Rgb>([0, 0, 0]);
   const treeBase = useMemo(() => {
     const value = parseInt(W.treelineReflectBase.slice(1), 16);
@@ -342,6 +348,7 @@ export function AlphaWater({
           uniform float uGlareReduction;
           uniform float uCausticFocusMul;
           uniform vec4 uFish[FISH_SLOTS];
+          uniform float uShore;
           varying vec2 vUv;
           varying vec3 vWorld;
 
@@ -412,7 +419,13 @@ export function AlphaWater({
             body += uSunColor * caustic * 0.5;
             body *= 1.0 - clamp(fishShade, 0.0, 1.0) * ${W.fishShadowStrength.toFixed(3)};
 
+            // A2 wet edge: the water darkens and reflects less as it reaches
+            // the stones, so they sit IN the water rather than on top of it.
+            float shoreEdge = uShore * smoothstep(${(TUNING.bank.edgeZ - TUNING.bank.shoreBandM).toFixed(3)}, ${TUNING.bank.edgeZ.toFixed(3)}, vWorld.z);
+            body *= 1.0 - shoreEdge * ${TUNING.bank.shoreDarken.toFixed(3)};
+
             float weight = clamp(uReflect * (fresnel * ${W.reflectGain.toFixed(3)} + ${W.reflectFloor.toFixed(3)}), 0.0, ${W.reflectMax.toFixed(3)});
+            weight *= 1.0 - shoreEdge * 0.5;
             vec3 col = mix(body, refl, weight);
 
             // Glint: a sharp core and a broad sheen, so it has a body and does

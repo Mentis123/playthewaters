@@ -4,7 +4,7 @@ export type DevChecklistItem = {
 };
 
 export type DevChecklist = {
-  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light';
+  milestone: 'm0' | 'm1' | 'm1.5' | 'm2' | 'm3' | 'm3.1' | 'm3.2' | 'far-water' | 'a1-light' | 'a2-bank';
   title: string;
   items: DevChecklistItem[];
 };
@@ -126,10 +126,28 @@ export const checklists: Record<DevChecklist['milestone'], DevChecklist> = {
       { id: 'a1-phone', text: 'Sharp image, bite tick on the iPhone, sound with the silent switch on, no heat after 10 minutes.' },
       { id: 'a1-rubric', text: 'Score docs/alpha/A1_RUBRIC.md (26 items, pass 22, all starred) and record the result in its section 4.' }
     ]
+  },
+  'a2-bank': {
+    milestone: 'a2-bank',
+    title: 'A2 bank gate',
+    items: [
+      { id: 'a2-blind', text: 'Run /ab on the iPhone: day then dusk, A2 (the bank) against A1. A2 must win BOTH.' },
+      { id: 'a2-stones', text: 'The near edge is a row of rounded stones (photo 01), never hiding a fish, the lure or the line.' },
+      { id: 'a2-light', text: 'Bank, stones, reeds and far trees all follow the light: dark at night, warm at dusk.' },
+      { id: 'a2-air', text: 'Mist on the far water at dawn, none at day; midges at dusk and night, never read as cues.' },
+      { id: 'a2-leave', text: 'The leave glyph (top right while reading the water) returns to the title; starting again works.' },
+      { id: 'a2-feel', text: 'Cast, bite, fight, reveal and cue readability unchanged from A1.' },
+      { id: 'a2-phone', text: 'No frame drops or extra heat over 10 minutes.' },
+      { id: 'a2-rubric', text: 'Score docs/alpha/A2_RUBRIC.md (22 items, pass 18, all starred) and record it in section 4.' }
+    ]
   }
 };
 
 export function getChecklist(milestone: string): DevChecklist {
+  if (milestone === 'a2-bank') {
+    return checklists['a2-bank'];
+  }
+
   if (milestone === 'a1-light') {
     return checklists['a1-light'];
   }

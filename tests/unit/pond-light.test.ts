@@ -96,6 +96,8 @@ test('look and light overrides parse only known values', async () => {
   assert.equal(readLook(''), 'alpha');
   assert.equal(readLook('?look=classic'), 'classic');
   assert.equal(readLook('?look=CLASSIC'), 'alpha');
+  assert.equal(readLook('?look=a1'), 'a1');
+  assert.equal(readLook('?look=a9'), 'alpha');
   assert.equal(readLightOverride('?light=dusk&seed=2'), 'dusk');
   assert.equal(readLightOverride('?light=noon'), null);
   assert.equal(readLightOverride(''), null);
@@ -109,4 +111,6 @@ test('blind tokens resolve to their arm and never leak the look into the URL', a
   assert.equal(resolveAbSearch('?pond=nope', () => table), '');
   assert.equal(resolveAbSearch('?pond=k7x', () => '{broken'), '');
   assert.equal(resolveAbSearch('?light=day', () => table), '?light=day');
+  const a2 = JSON.stringify({ tokens: { p1: { look: 'a1', light: 'day' } } });
+  assert.equal(resolveAbSearch('?pond=p1', () => a2), '?look=a1&light=day');
 });

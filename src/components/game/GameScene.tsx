@@ -36,6 +36,7 @@ import {
 } from '@/components/game/runtime';
 import { Backdrop, Foreshore, Moon, PondWater, Reeds } from '@/components/game/scene/Environment';
 import { AlphaSky, AlphaTreeline, AlphaWater, LightDriver } from '@/components/game/scene/AlphaEnvironment';
+import { BankGround, BankStones, BankWeeds, FarMist, LayeredTreeline, Midges, SideReeds } from '@/components/game/scene/AlphaBank';
 import { AB_STORAGE_KEY, readLightOverride, readLook, resolveAbSearch } from '@/game/light/look';
 import { createLightSample, phaseOf, startPhaseForVisit } from '@/game/light/pondLight';
 import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
@@ -73,7 +74,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
     const look = readLook(search);
     const override = readLightOverride(search);
     let initialPhase = override ? phaseOf(override) : startPhaseForVisit(getStoredPhase(), Math.random);
-    if (!override && look === 'alpha') storePhase(initialPhase);
+    if (!override && look !== 'classic') storePhase(initialPhase);
     return { look, frozen: override !== null, initialPhase };
   }, []);
   const lightRef = useRef(createLightSample());
@@ -669,9 +670,9 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <Reeds runtime={runtime} />
           <Foreshore />
         </>
-      ) : (
+      ) : lookSetup.look === 'a1' ? (
         <>
-          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} />
+          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} look="a1" />
           <AlphaSky light={lightRef} />
           <Moon runtime={runtime} light={lightRef} />
           <AlphaTreeline light={lightRef} />
@@ -679,6 +680,21 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
           <WaterRipples ripples={ripples} />
           <Reeds runtime={runtime} />
           <Foreshore light={lightRef} />
+        </>
+      ) : (
+        <>
+          <LightDriver runtime={runtime} light={lightRef} initialPhase={lookSetup.initialPhase} frozen={lookSetup.frozen} />
+          <AlphaSky light={lightRef} />
+          <Moon runtime={runtime} light={lightRef} />
+          <LayeredTreeline light={lightRef} />
+          <AlphaWater runtime={runtime} light={lightRef} normalMap={waterNormalTexture} fishWater={fishWaterRef} shore />
+          <FarMist runtime={runtime} light={lightRef} />
+          <WaterRipples ripples={ripples} />
+          <SideReeds runtime={runtime} />
+          <BankGround light={lightRef} />
+          <BankStones />
+          <BankWeeds runtime={runtime} />
+          <Midges runtime={runtime} light={lightRef} />
         </>
       )}
       {Array.from({ length: TUNING.world.fishMaxVisible }, (_, i) => (

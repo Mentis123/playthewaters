@@ -10,11 +10,12 @@ export type Rgb = [number, number, number];
 
 const COLOR_FIELDS = [
   'skyZenith', 'skyHorizon', 'fog', 'waterShallow', 'waterDeep', 'waterFar',
-  'treeline', 'bank', 'ambient', 'key'
+  'treeline', 'bank', 'ambient', 'key', 'ground'
 ] as const;
 const NUMBER_FIELDS = [
   'ambientIntensity', 'keyIntensity', 'exposure', 'glint', 'sheen', 'caustic', 'reflect',
-  'celestialElevation', 'celestialAzimuth', 'sunVisibility', 'moonVisibility', 'stars'
+  'celestialElevation', 'celestialAzimuth', 'sunVisibility', 'moonVisibility', 'stars',
+  'mist', 'midges'
 ] as const;
 
 type ColorField = (typeof COLOR_FIELDS)[number];

@@ -182,3 +182,159 @@ export function createMoonTexture(): THREE.Texture {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
+// A2 far shore (reference photo 01): two layers. `back` is a hazier, taller
+// row of pines and maples; `front` is darker, with red-barked pine trunks, a
+// mossy low bank and a little waterline mist. Painted in mid greens so the
+// light's treeline tint (a multiplier) can carry them to any light.
+// Transparent ground: the sky shows through.
+function paintPine(ctx: CanvasRenderingContext2D, x: number, baseY: number, height: number, rng: () => number, trunk: string, crown: string): void {
+  const lean = (rng() - 0.5) * height * 0.18;
+  ctx.strokeStyle = trunk;
+  ctx.lineWidth = Math.max(1.5, height * 0.02);
+  ctx.beginPath();
+  ctx.moveTo(x, baseY);
+  ctx.quadraticCurveTo(x + lean * 0.3, baseY - height * 0.5, x + lean, baseY - height);
+  ctx.stroke();
+  // Pine crowns in photo 01 are flat, cloud-like layers along the upper trunk.
+  ctx.fillStyle = crown;
+  const layers = 3 + Math.floor(rng() * 3);
+  for (let i = 0; i < layers; i += 1) {
+    const t = 0.45 + (i / layers) * 0.55;
+    const cx = x + lean * t + (rng() - 0.5) * height * 0.12;
+    const cy = baseY - height * t;
+    paintFoliageCluster(ctx, cx, cy, height * (0.3 - i * 0.03), height * 0.09, 11, rng);
+  }
+}
+
+export function createTreelineLayer(layer: 'back' | 'front'): THREE.Texture {
+  if (typeof document === 'undefined') {
+    return new THREE.Texture();
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  if (ctx) {
+    const rng = seededRandom(`a2-treeline-${layer}`);
+    if (layer === 'back') {
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#5c7259';
+      for (let x = -60; x < w + 60; x += 70) {
+        paintFoliageCluster(ctx, x + rng() * 50, h * (0.5 + rng() * 0.08), 120, 110, 16, rng);
+      }
+      for (let x = 20; x < w; x += 110 + rng() * 80) {
+        paintPine(ctx, x, h * 0.72, h * (0.34 + rng() * 0.12), rng, '#5d4a40', '#53684f');
+      }
+    } else {
+      // Maple masses, darker and lower.
+      ctx.globalAlpha = 0.97;
+      ctx.fillStyle = '#34482d';
+      for (let x = -60; x < w + 60; x += 85) {
+        paintFoliageCluster(ctx, x + rng() * 60, h * (0.68 + rng() * 0.06), 140, 95, 18, rng);
+      }
+      // Red-barked pines standing in front of them.
+      for (let x = 40; x < w; x += 150 + rng() * 120) {
+        paintPine(ctx, x, h * 0.9, h * (0.42 + rng() * 0.16), rng, '#4a3128', '#2f4429');
+      }
+      // Lit crowns catching the light.
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = '#7f9a5a';
+      for (let x = -40; x < w + 40; x += 120) {
+        paintFoliageCluster(ctx, x + rng() * 60, h * (0.6 + rng() * 0.06), 70, 30, 12, rng);
+      }
+      // Mossy low bank along the waterline.
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#2a3a24';
+      for (let x = -40; x < w + 40; x += 60) {
+        paintFoliageCluster(ctx, x + rng() * 40, h * (0.92 + rng() * 0.04), 70, 26, 10, rng);
+      }
+      // Waterline mist.
+      ctx.globalAlpha = 1;
+      const mist = ctx.createLinearGradient(0, h * 0.9, 0, h);
+      mist.addColorStop(0, 'rgba(38, 56, 64, 0)');
+      mist.addColorStop(1, 'rgba(38, 56, 64, 0.8)');
+      ctx.fillStyle = mist;
+      ctx.fillRect(0, h * 0.9, w, h * 0.1);
+    }
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  return map;
+}
+
+// A2 bank ground (photo 01's foreground): grass and clover between and behind
+// the stones, damp and darker at the water's edge. Canvas top = water edge.
+export function createBankTexture(): THREE.Texture {
+  if (typeof document === 'undefined') {
+    return new THREE.Texture();
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  if (ctx) {
+    const rng = seededRandom('a2-bank');
+    const base = ctx.createLinearGradient(0, 0, 0, h);
+    base.addColorStop(0, '#3a4a33');
+    base.addColorStop(0.15, '#4c6338');
+    base.addColorStop(1, '#5d7a3f');
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, w, h);
+    // Soil showing through near the water.
+    ctx.fillStyle = 'rgba(70, 58, 42, 0.5)';
+    for (let i = 0; i < 260; i += 1) {
+      ctx.beginPath();
+      ctx.ellipse(rng() * w, rng() * h * 0.3, 2 + rng() * 6, 1 + rng() * 3, rng() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Clover: small three-leaf clusters.
+    for (let i = 0; i < 520; i += 1) {
+      const x = rng() * w;
+      const y = h * 0.1 + rng() * h * 0.9;
+      const r = 2.5 + rng() * 3.5;
+      ctx.fillStyle = rng() < 0.5 ? 'rgba(96, 132, 66, 0.85)' : 'rgba(74, 108, 52, 0.85)';
+      for (let k = 0; k < 3; k += 1) {
+        const a = (k / 3) * Math.PI * 2 + rng();
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.6, r * 0.62, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // Grass blades.
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 1400; i += 1) {
+      const x = rng() * w;
+      const y = h * 0.06 + rng() * h * 0.94;
+      const len = 4 + rng() * 12;
+      ctx.strokeStyle = rng() < 0.6 ? 'rgba(122, 156, 82, 0.7)' : 'rgba(60, 86, 44, 0.7)';
+      ctx.lineWidth = 1 + rng();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (rng() - 0.5) * 5, y - len);
+      ctx.stroke();
+    }
+    // Small white flowers (photo 01 has a few in the weeds).
+    ctx.fillStyle = 'rgba(236, 232, 218, 0.85)';
+    for (let i = 0; i < 40; i += 1) {
+      ctx.beginPath();
+      ctx.arc(rng() * w, h * 0.2 + rng() * h * 0.8, 1.6 + rng() * 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Damp, darker band at the water's edge.
+    const wet = ctx.createLinearGradient(0, 0, 0, h * 0.14);
+    wet.addColorStop(0, 'rgba(18, 26, 24, 0.7)');
+    wet.addColorStop(1, 'rgba(18, 26, 24, 0)');
+    ctx.fillStyle = wet;
+    ctx.fillRect(0, 0, w, h * 0.14);
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.anisotropy = 4;
+  return map;
+}

@@ -565,7 +565,8 @@ export const TUNING = {
         treeline: '#a39ea6', bank: '#9a8a78', ambient: '#c9b9b0', key: '#ffd3ae',
         ambientIntensity: 0.75, keyIntensity: 1.1, exposure: 1.0,
         glint: 0.7, sheen: 0.3, caustic: 0.12, reflect: 0.9,
-        celestialElevation: 9, celestialAzimuth: -38, sunVisibility: 1, moonVisibility: 0, stars: 0.05
+        celestialElevation: 9, celestialAzimuth: -38, sunVisibility: 1, moonVisibility: 0, stars: 0.05,
+        mist: 0.85, midges: 0.1, ground: '#a39a96'
       },
       day: {
         skyZenith: '#6b9cc4', skyHorizon: '#d7e6e4', fog: '#8fa69c',
@@ -573,7 +574,8 @@ export const TUNING = {
         treeline: '#f2f4ea', bank: '#b9aa86', ambient: '#e8efe6', key: '#fff6e2',
         ambientIntensity: 1.05, keyIntensity: 1.6, exposure: 1.0,
         glint: 0.2, sheen: 0.1, caustic: 0.3, reflect: 0.7,
-        celestialElevation: 52, celestialAzimuth: 18, sunVisibility: 1, moonVisibility: 0, stars: 0
+        celestialElevation: 52, celestialAzimuth: 18, sunVisibility: 1, moonVisibility: 0, stars: 0,
+        mist: 0, midges: 0, ground: '#cfd3c2'
       },
       dusk: {
         skyZenith: '#34405f', skyHorizon: '#e0875b', fog: '#3a3540',
@@ -581,7 +583,8 @@ export const TUNING = {
         treeline: '#8f727a', bank: '#8c7464', ambient: '#a99aa8', key: '#ffb07a',
         ambientIntensity: 0.7, keyIntensity: 1.05, exposure: 1.05,
         glint: 1.15, sheen: 0.45, caustic: 0.08, reflect: 0.95,
-        celestialElevation: 6, celestialAzimuth: 24, sunVisibility: 1, moonVisibility: 0.15, stars: 0.12
+        celestialElevation: 6, celestialAzimuth: 24, sunVisibility: 1, moonVisibility: 0.15, stars: 0.12,
+        mist: 0.25, midges: 1, ground: '#7d6863'
       },
       night: {
         skyZenith: '#0c1820', skyHorizon: '#2b3d47', fog: '#101c20',
@@ -589,7 +592,8 @@ export const TUNING = {
         treeline: '#7f9092', bank: '#6e6656', ambient: '#9fb2b4', key: '#c8d4dc',
         ambientIntensity: 0.85, keyIntensity: 0.9, exposure: 0.95,
         glint: 0.7, sheen: 0.3, caustic: 0.2, reflect: 0.85,
-        celestialElevation: 26, celestialAzimuth: -22, sunVisibility: 0, moonVisibility: 1, stars: 1
+        celestialElevation: 26, celestialAzimuth: -22, sunVisibility: 0, moonVisibility: 1, stars: 1,
+        mist: 0.45, midges: 0.55, ground: '#3d4b4e'
       }
     }
   },
@@ -629,6 +633,45 @@ export const TUNING = {
     fishShadowStrength: 0.38,
     fishShadowRadiusMul: 0.75,
     fishBulgeSlope: 0.05
+  },
+  // A2 — the bank (23_ALPHA_CANON §10, reference photo 01). The near edge of
+  // the water is a row of rounded stones half in the water; weeds and clover
+  // on the bank; reeds at the side banks; layered far trees; mist and midges
+  // driven by the light (light.keys.*.mist / .midges).
+  bank: {
+    // World z of the water's visible near edge (where the bank plane meets
+    // y = 0); the old Foreshore placement, now named.
+    edgeZ: 2.5,
+    stoneCount: 17,
+    stoneSpanX: 4.9,
+    // Stone half-extents (m): low boulders with gaps between, like photo 01
+    // (first pass at 0.26-0.5 wide / 0.16-0.32 tall read as a solid wall).
+    stoneWidthMin: 0.2,
+    stoneWidthMax: 0.38,
+    stoneHeightMin: 0.12,
+    stoneHeightMax: 0.23,
+    stoneDepthMin: 0.17,
+    stoneDepthMax: 0.3,
+    // Stones sit ON the edge, a touch back, so they hide as little of the
+    // castable near water as possible (A2 rubric item 6).
+    stoneEdgeOffsetZ: 0.06,
+    stoneEdgeJitterZ: 0.1,
+    weedTuftCount: 150,
+    weedBladeCount: 7,
+    weedHeightMin: 0.07,
+    weedHeightMax: 0.2,
+    weedSway: 0.12,
+    reedClumpCount: 40,
+    reedSway: 0.07,
+    // Water darkens over this many metres before the stones (the wet edge).
+    shoreBandM: 0.45,
+    shoreDarken: 0.35,
+    // Far-tree layers: the back row is pulled toward the fog colour.
+    treeBackHaze: 0.45,
+    mistBankCount: 9,
+    mistOpacity: 0.85,
+    midgeCount: 120,
+    midgeSizePx: 2.6
   },
   haptics: {
     tapBegin: [10],

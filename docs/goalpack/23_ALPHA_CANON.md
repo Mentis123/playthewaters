@@ -162,6 +162,8 @@ Each chapter ends at the iPhone gate (`16`) and ships behind the current build u
 | A6–A9 Waters 3–6 | `v1.5-stonepool`, `v1.6-moat`, `v1.7-marsh`, `v1.8-foglake` | One water per chapter, each with legend and find. | Same as A5. |
 | A10 Pond of the day and the ending | `v1.9-day-candidate` | Shared daily seed; the home pond's legend; the last line. | Two people compare notes on the same day's pond without prompting. |
 
+**Review URL (owner, 24 Oct 2026):** every chapter's blind gate is served at **`/ab`** on the live site, comparing the new chapter against the previous one; earlier chapters stay reachable as `?look=` baselines (`classic` = v0.4, `a1`, …).
+
 Build method is the standing one (`20_ROADMAP` §Build approach, `18_ULTRACODE_PARADIGM`), with three additions from the Birb repo's discipline:
 
 - **Every gate has a planted defect that must fail it** before the gate is trusted.

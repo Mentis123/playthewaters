@@ -199,7 +199,9 @@ export function GameClient() {
     }
   }, [gameState.kind, gearHelpOpen]);
 
-  useEffect(() => {
+  // Back to the title screen with a fresh pond: the same reset a new seed
+  // does. Used on mount/seed change and by the "leave the pond" glyph.
+  const resetToTitle = useCallback(() => {
     spawnIndexRef.current = 0;
     runtime.current = createRuntime(seed);
     stampGear();
@@ -210,6 +212,19 @@ export function GameClient() {
     setGameState({ kind: 'splash' });
     setFishState(runtime.current.fish.state);
   }, [seed, setFishState, setGameState, setSeed, stampGear]);
+
+  useEffect(() => {
+    resetToTitle();
+  }, [resetToTitle]);
+
+  const leavePond = useCallback(() => {
+    track({ type: 'session_end' });
+    void audio.current.suspend();
+    if (document.fullscreenElement) {
+      void document.exitFullscreen?.().catch(() => undefined);
+    }
+    resetToTitle();
+  }, [resetToTitle]);
 
   useEffect(() => {
     return () => {
@@ -1037,6 +1052,16 @@ export function GameClient() {
           >
             {hapticsGlyph(prefs.haptics)}
           </button>
+          <button
+            type="button"
+            className="gear-glyph prefs-glyph"
+            aria-label="Leave the pond"
+            data-testid="leave-pond"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={leavePond}
+          >
+            {leaveGlyph()}
+          </button>
         </div>
       ) : null}
 
@@ -1225,6 +1250,19 @@ function soundGlyph(on: boolean) {
       ) : (
         <path d="M19 11l6 6M25 11l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       )}
+    </svg>
+  );
+}
+
+// A path back up the bank: an arrow leaving the water line.
+function leaveGlyph() {
+  return (
+    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 20c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0" opacity="0.55" />
+        <path d="M14 15V6" />
+        <path d="M10 10l4-4 4 4" />
+      </g>
     </svg>
   );
 }

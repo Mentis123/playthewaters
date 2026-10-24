@@ -727,3 +727,24 @@ Owner approved the six rebuild decisions from `docs/rebuild/02_THE_WATERS.md`. `
 **Not done / known:** the bank strip is still the v0.4 texture (A2). Under SwiftShader the drift advances slower than real time because each frame's step is clamped to `maxFrameDtSeconds`; on a 60 fps phone it runs at the designed rate. `preserveDrawingBuffer` still true (e2e reads pixels).
 
 **Gate:** the owner's iPhone, `/ab` then the rubric, recorded in `docs/alpha/A1_RUBRIC.md` §4. Candidate only; `-approved` is the owner's tag.
+
+## A2 — the bank (2026-10-24) · `v1.1-bank-candidate`
+*Chapter A2 of `23_ALPHA_CANON` §10. Rubric committed before the build (`docs/alpha/A2_RUBRIC.md`). A1's result recorded honestly in its rubric: owner-accepted by play; the `/ab` picks live only on the owner's phone and were not reported.*
+
+**Owner reports fixed first:** there was no way to leave the pond. A leave glyph (top right, idle-only beside sound and haptics) returns to the title through the same reset a new seed does (`resetToTitle`), suspends audio, exits fullscreen, records `session_end`. e2e-tested, and watched failing with the glyph made a no-op.
+
+**Shipped (`src/components/game/scene/AlphaBank.tsx`, one draw call each, built once, animated in the shader from one clock, no per-frame allocation):**
+- **Stones** along the water's edge (photo 01): 17 lumpy rounded boulders from one smoothed, displaced icosahedron, instance-coloured greys, lichen flecks and moss on top in the shader, wet and darker where they meet the water. Seated just back from the edge so they hide as little castable water as possible.
+- **Bank ground**: a new painted grass-and-clover texture with a few white flowers and a damp edge, tinted per light by a new `ground` field (the first pass stayed lawn-green at night).
+- **Weeds**: 150 tufts of single-triangle blades on the bank, swaying by instance position (never in lockstep), height-weighted so roots stay planted.
+- **Side reeds**: blades with shader sway replace A1's CPU-rewritten cones (which allocated every frame). Far-margin reeds removed: they stood up into the treeline as stray lines.
+- **Layered far trees**: back row hazier (pulled toward the fog), front row darker with red-barked pines with flat cloud crowns (photo 01), both tinted per light.
+- **Wet shore** in the water shader: water darkens and reflects less over the last 0.45 m before the stones (`uShore`, A2 only).
+- **Far mist** (light `mist`: dawn 0.85, day 0, dusk 0.25, night 0.45) as patchy instanced banks; **midges** (light `midges`) as one additive points draw with clamped size.
+- **Look ladder**: `?look=a1` renders A1 exactly (the A2 gate baseline), `?look=classic` v0.4; the read-back reports which. `/ab` now gates A2 vs A1 at day and dusk on the same URL (standing rule in `AGENTS.md`).
+
+**Tuned by capture, three rounds:** first stones read as a solid wall with polka-dot lichen (smaller, gaps, finer lichen); ground ignored the light (new `ground` tint); dawn mist invisible over dawn water. Mist was then **measured**, not eyeballed: far-band luma A2 vs A1 = dawn +20, day 0, dusk +6, night +6, so it works and is light-correct, but it still reads as a haze rather than distinct banks. The weakest element; rubric items 12–13 will judge it.
+
+**Deferred, stated in the rubric before the build:** the wake pool (instanced ripple rings) moves to A3 with the cue/habits work.
+
+**Measured (SwiftShader, 390×844 @2x):** 28–31 draws, ~4.4k triangles (budget 100 / 80k), zero page errors at all four lights. e2e: 8/8 (a1-effective ×5, a2-bank ×3). **No phone number yet.**
