@@ -871,3 +871,9 @@ Checks: 83 unit tests (visit: survives a reload, expires, rejects a clock that r
     - The light's multiplier is applied twice to the painting: it is evenly lit and much brighter than the drawn rows, so with a single multiplier it glowed at night. Now it reads as painted by day and as silhouettes at dusk and night.
 
 Checks: 83 unit, 15 phone-profile e2e, no page errors.
+
+## A5 art delivery (2026-10-25)
+
+Delivered legend-01, lilypads, treeline-02, old-sinker and bench-wood using built-in imagegen. The ancient carp follows the existing trophy plates; the lily-pond shore uses the owner reference photo. Files follow the exact paths, dimensions and formats in public/art/prompts.json, with delivery author and date recorded. Four cutouts retain alpha; bench wood is opaque. WebP exports use quality 85 with full alpha quality.
+
+Validation: all five files decoded and passed size, format and transparency checks. The 2x2 lily sheet has clear central dividers (two resampling pixels at alpha 1/255, no visible overlap). Inspected cutouts against game-colour backgrounds; revised treeline edges for a more continuous repeat. Assets only: game wiring, in-game tint and scale, chapter comparison and phone approval remain with the game agent and owner. No gameplay candidate or full milestone validation claimed. Prompts remain documented in public/art/PROMPTS.md.
