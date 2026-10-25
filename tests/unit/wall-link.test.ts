@@ -177,3 +177,11 @@ test('a catch on the old sinking lure never displaces a line made without it', (
   const only = keepFish(emptyWall(), { ...keeper('sunk', 'v2', 0.95), lure: 'old_sinker' }).wall;
   assert.equal(wallLines(only)[0].lure, 'old_sinker', 'alone, it shows, marked by its lure');
 });
+
+test('every share ends with the hashtag, exactly once', async () => {
+  const { withHashtag, HASHTAG } = await import('../../src/game/share/hashtag');
+  assert.equal(HASHTAG, '#PlayTheWaters');
+  assert.equal(withHashtag('Landed a carp.'), 'Landed a carp. #PlayTheWaters');
+  assert.equal(withHashtag('Landed a carp. #PlayTheWaters'), 'Landed a carp. #PlayTheWaters');
+  assert.equal(withHashtag(''), '#PlayTheWaters');
+});

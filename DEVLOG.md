@@ -950,3 +950,21 @@ Budget at the lily pond: 37–54 draws, 2.0–2.8k triangles. No console or page
 - Every image is swapped in only after it decodes (`useArtTexture` in Shore.tsx).
 
 Checks: 91 unit, 20/20 phone-profile e2e. The lily pond is 45–50 draws and about 2.5k triangles. No console or page errors.
+
+## shares and the three-finger QR (2026-10-25)
+*Owner: "make sure every share for social … includes the hashtag … #PlayTheWaters", and "add the three finger tap from the start page… a little note about the three finger tap".*
+
+- **`#PlayTheWaters` ends every share.** One source (`src/game/share/hashtag.ts`, `withHashtag`, never doubled).
+  - It is on the catch share's text, on the copied link when there is no share sheet, and on the QR card's share.
+  - It is drawn on the catch card image itself, beside the address. That footer still said "REEL MOBILE" (the retired name); it is "The Waters" now.
+- **Three fingers anywhere** (Q on a keyboard) open a QR card for the game:
+  - "Scan to play", the code, the name and the address, plus Share and Close.
+  - It is mounted in the root layout, so it works on every page.
+  - The URL is pinned to production (a preview address is useless to the person scanning).
+  - The second finger of the three no longer flips the debug readout (it waits 140 ms and checks for the QR first).
+- **The note** sits under "Tap to continue" on the title: "Three fingers anywhere: a QR code to share the game".
+- **The home screen:** a proposal, not built, in `docs/alpha/HOME_PLAN.md` (the boathouse).
+
+Checks: 92 unit tests (`withHashtag`). 22/22 phone-profile e2e, including the new `share.spec`:
+- A real three-finger touch through CDP opens the QR, and its share text ends with the hashtag.
+- A catch share carries the `/c/` link and ends with `#PlayTheWaters`.

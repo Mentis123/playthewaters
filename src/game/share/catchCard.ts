@@ -1,4 +1,5 @@
 import { SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
+import { HASHTAG } from '@/game/share/hashtag';
 import {
   SPECIES_ART,
   drawSpeciesTrophy,
@@ -114,11 +115,11 @@ export async function renderCatchCard(c: CatchCardData): Promise<Blob | null> {
   ctx.stroke();
 
   ctx.fillStyle = 'rgba(200, 168, 92, 0.92)';
-  ctx.font = '600 38px Georgia, "Times New Roman", serif';
-  ctx.fillText('REEL MOBILE', cx, 1262);
-  ctx.fillStyle = 'rgba(201, 212, 220, 0.45)';
-  ctx.font = '400 26px system-ui, -apple-system, sans-serif';
-  ctx.fillText('playthewaters.vercel.app', cx, 1304);
+  ctx.font = 'italic 600 40px Georgia, "Times New Roman", serif';
+  ctx.fillText('The Waters', cx, 1258);
+  ctx.fillStyle = 'rgba(201, 212, 220, 0.6)';
+  ctx.font = '500 26px system-ui, -apple-system, sans-serif';
+  ctx.fillText(`playthewaters.vercel.app  ·  ${HASHTAG}`, cx, 1302);
 
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png');

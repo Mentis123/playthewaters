@@ -698,7 +698,12 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     }
 
     if (event.pointerType === 'touch' && event.isPrimary === false) {
-      setDebugOpen((value) => !value);
+      // A second finger toggles the readout, unless it was the start of a
+      // three-finger tap (the QR, components/ui/QrTap): wait a moment and
+      // check before toggling.
+      window.setTimeout(() => {
+        if (!document.querySelector('[data-testid="qr-tap"]')) setDebugOpen((value) => !value);
+      }, 140);
       return;
     }
 
@@ -1453,6 +1458,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
             <span className="splash-title-tag">six waters, one shore</span>
           </div>
           <span className="splash-hint">Tap to continue</span>
+          <span className="splash-qr-note" data-testid="qr-note">Three fingers anywhere: a QR code to share the game</span>
         </button>
       ) : (
         // A div, not a <button>: the card nests links and OfflineStatus's

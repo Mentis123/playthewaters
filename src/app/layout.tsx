@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { PwaRegister } from '@/components/pwa/PwaRegister';
 import { PwaUpdatePrompt } from '@/components/pwa/PwaUpdatePrompt';
+import { QrTap } from '@/components/ui/QrTap';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {children}
         <PwaRegister />
         <PwaUpdatePrompt />
+        <QrTap />
       </body>
     </html>
   );

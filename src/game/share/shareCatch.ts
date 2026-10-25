@@ -1,6 +1,7 @@
 import { track } from '@/game/telemetry/track';
 import { speciesLabel } from '@/game/fish/trophy';
 import { renderCatchCard, type CatchCardData } from '@/game/share/catchCard';
+import { withHashtag } from '@/game/share/hashtag';
 
 export type ShareResult = 'shared' | 'downloaded' | 'failed';
 
@@ -26,7 +27,7 @@ export async function shareCatch(c: CatchCardData, url?: string): Promise<ShareR
       await nav.share({
         files: [file],
         title: 'The Waters',
-        text: url ? `Landed a ${speciesLabel(c.species)} on The Waters. Stand where I stood: ${url}` : `Landed a ${speciesLabel(c.species)} on The Waters.`,
+        text: withHashtag(url ? `Landed a ${speciesLabel(c.species)} on The Waters. Stand where I stood: ${url}` : `Landed a ${speciesLabel(c.species)} on The Waters.`),
         ...(url ? { url } : {})
       });
       return 'shared';
@@ -48,7 +49,7 @@ export async function shareCatch(c: CatchCardData, url?: string): Promise<ShareR
   URL.revokeObjectURL(objectUrl);
   if (url) {
     try {
-      await nav?.clipboard?.writeText(url);
+      await nav?.clipboard?.writeText(withHashtag(url));
     } catch {
       // Clipboard blocked: the image still downloaded.
     }
