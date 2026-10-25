@@ -75,6 +75,31 @@ One card per water, for the site and for the moment each water is discovered. **
 - **Prompt:** *A close-up, straight-on photograph-like painting of the top plank of an old wooden park bench by a pond: silver-grey weathered wood, deep grain, a few lichen spots, soft overcast light, filling the whole frame. Leave a calm, even band across the middle where words could be carved (do NOT carve or write any letters). No text.*
 - The words are carved over it in code.
 
+## A5.1 + A6 prompts (the bag, and the stone pool), added 25 Oct 2026
+
+### 16. `board-wood`: the boathouse board (the bag and the wall)
+- **Deliver:** `public/assets/textures/board-wood.webp` · **1024 × 1024** · WebP, **tileable** on all four edges.
+- **Prompt:** *Straight-on, evenly lit close-up of dark, oiled boathouse wall planks: horizontal boards of old cedar, warm brown-black, a soft sheen of age, faint saw marks and two or three old nail holes, narrow dark gaps between boards. Seamlessly tileable left-right and top-bottom. No text, no objects, no strong light direction.*
+- Used behind the tackle bag and the wall board (both are drawn in code today).
+
+### 17. `treeline-03`: the stone pool's back wall
+- **Deliver:** `public/assets/textures/treeline-03.png` · **2048 × 512** · PNG **with transparency** (sky fully transparent).
+- **Reference:** `docs/reference/ponds/03-clear-stone-pool.jpg`.
+- **Prompt:** *A horizontal strip seen at eye level across a small clear pool: a low wall of dark volcanic boulders with moss in the cracks, a thin white waterfall falling over the rocks a little right of centre, Japanese maples and ferns above the rocks, darker at the bottom where the rocks meet the water. Neutral, even light (the game tints it per light). Transparent sky above and between the trees. Tileable left to right.*
+
+### 18. `flagstones`: the stone pool's floor
+- **Deliver:** `public/assets/textures/flagstones.webp` · **1024 × 1024** · WebP, **tileable**.
+- **Reference:** `docs/reference/ponds/03-clear-stone-pool.jpg` (the floor under the clear water).
+- **Prompt:** *Straight-down view of a shallow pool floor of irregular pale grey flagstones with thin dark joints and a little green algae along the joints, seen through perfectly clear still water, evenly lit, no caustics (the game draws its own), no fish, no shadows. Seamlessly tileable. No text.*
+
+### 19. `shrine-bell`: a small bell by the pool
+- **Deliver:** `public/assets/sprites/shrine-bell.webp` · **512 × 512** · WebP with **transparency**.
+- **Prompt:** *A small weathered bronze bell with green patina hanging from a short dark wooden crossbar on a single post, seen from the front and slightly below, on a transparent background. Generic and simple: not a specific temple, religion or real place. Soft even light, painterly realism, no text.*
+
+### 20. `legend-02`: the stone pool's old fish, trophy plate
+- **Deliver:** `public/assets/fish/old_pale.webp` · **900 × 506** · WebP with **transparency**, matching the other plates in `public/assets/fish/` (side profile, head left).
+- **Prompt:** *A side-profile trophy plate of an enormous, very old pond fish, head to the left, on a transparent background: pale gold to almost white scales, long translucent trailing fins like silk, a few faded orange patches, small calm eyes, an old scar near the gill. Painterly realism matching the other plates' scale and lighting. No text, no water, no background.*
+
 ## Status
 
-The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all ten are `delivered`. Wired in: `icon`, `og` (as `public/og-title.jpg` with the title set over it), `splash`, `treeline-01` (as a WebP). Waiting for their chapters: the six water cards (water-02 is used in A5). The A5 prompts (11–15) are `wanted`.
+The live status of each prompt is in `/art/prompts.json`. As of 24 Oct 2026 all ten are `delivered`. Wired in: `icon`, `og` (as `public/og-title.jpg` with the title set over it), `splash`, `treeline-01` (as a WebP). Waiting for their chapters: the six water cards (water-02 is used in A5). The A5 prompts (11–15) are delivered and wired in. Prompts 16–20 (the bag board, and water 3, the stone pool) are `wanted`.

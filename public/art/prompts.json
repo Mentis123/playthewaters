@@ -213,6 +213,68 @@
       "chapter": "A5",
       "deliveredBy": "Codex (built-in imagegen)",
       "date": "2026-10-25"
+    },
+    {
+      "id": "board-wood",
+      "deliver": "public/assets/textures/board-wood.webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "format": "webp",
+      "tileable": true,
+      "status": "wanted",
+      "chapter": "A5.1"
+    },
+    {
+      "id": "treeline-03",
+      "deliver": "public/assets/textures/treeline-03.png",
+      "reference": "docs/reference/ponds/03-clear-stone-pool.jpg",
+      "size": [
+        2048,
+        512
+      ],
+      "format": "png",
+      "alpha": true,
+      "status": "wanted",
+      "chapter": "A6"
+    },
+    {
+      "id": "flagstones",
+      "deliver": "public/assets/textures/flagstones.webp",
+      "reference": "docs/reference/ponds/03-clear-stone-pool.jpg",
+      "size": [
+        1024,
+        1024
+      ],
+      "format": "webp",
+      "tileable": true,
+      "status": "wanted",
+      "chapter": "A6"
+    },
+    {
+      "id": "shrine-bell",
+      "deliver": "public/assets/sprites/shrine-bell.webp",
+      "size": [
+        512,
+        512
+      ],
+      "format": "webp",
+      "alpha": true,
+      "status": "wanted",
+      "chapter": "A6"
+    },
+    {
+      "id": "legend-02",
+      "deliver": "public/assets/fish/old_pale.webp",
+      "size": [
+        900,
+        506
+      ],
+      "format": "webp",
+      "alpha": true,
+      "status": "wanted",
+      "chapter": "A6"
     }
   ]
 }
