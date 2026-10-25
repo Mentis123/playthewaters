@@ -1044,3 +1044,5 @@ Checks: 92 unit tests (`withHashtag`). 22/22 phone-profile e2e, including the ne
   - progress survives a reload;
   - a Yes shows on `/ab`.
 - The whole tour was driven headless on an iPhone 13 viewport against a production build, with captures at each stop: every do stop completed, no page errors, no horizontal overflow.
+
+**Fix, same day:** the owner tapped Start the tour and the new tab never loaded. The tab opened by the link (and by `window.open` for "From the top") was the only new thing on that path, and the server, the service worker and Chromium all served it correctly. iPhone tabs opened that way can stay blank, so both now open the tour in the same tab, and the card carries a small `/ab` link back. WebKit is not in this sandbox, so the iPhone itself is unverified until the owner retries.

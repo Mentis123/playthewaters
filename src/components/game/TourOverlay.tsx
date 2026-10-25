@@ -215,6 +215,7 @@ export function TourOverlay({ tour, api }: { tour: Tour; api: TourApi }) {
                   ))
                 : null}
               <span className="tour-spacer" />
+              <a className="tour-ab" href="/ab" data-testid="tour-ab">/ab</a>
               <button type="button" className="tour-btn" onClick={() => go(index - 1)} disabled={index === 0} data-testid="tour-back" aria-label="Back">
                 ‹
               </button>

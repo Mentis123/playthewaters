@@ -2307,3 +2307,4 @@ code {
 [data-tour] .prefs-strip { top: calc(var(--tour-h, 0px) + 10px); }
 [data-tour] .pond-note { top: calc(var(--tour-h, 0px) + 12px); }
 [data-tour] .bag-sheet { max-height: calc(100dvh - var(--tour-h, 0px) - 12px); }
+.tour-ab { color: rgba(200, 168, 92, 0.85); font-size: 12px; padding: 8px 4px; text-decoration: none; }

@@ -13,9 +13,11 @@ test('no tour without ?tour', async ({ page }) => {
 test('the tour walks, points, and answers land on /ab', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  // /ab opens the tour in the same tab (a new tab can stay blank on an iPhone).
   await page.goto('/ab');
-  await expect(page.getByTestId('ab-tour-link')).toHaveAttribute('href', /tour=A5\.1/);
-  await page.goto('/game?water=home&tour=A5.1');
+  await expect(page.getByTestId('ab-tour-link')).not.toHaveAttribute('target', /.+/);
+  await page.getByTestId('ab-tour-link').click();
+  await expect(page).toHaveURL(/\/game\?water=home&tour=A5\.1/);
   const card = page.getByTestId('tour-card');
   await expect(card).toHaveAttribute('data-stop', 'title');
   await page.getByTestId('tap-to-begin').first().click();

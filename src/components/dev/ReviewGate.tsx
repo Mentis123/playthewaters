@@ -66,11 +66,12 @@ export function ReviewGate() {
         <p className="ab-lede">
           The game opens with a card at the top that walks you through every check: it sets each scene up, points at the
           thing, and asks the check right there. Next moves on; tap the card&apos;s top line to fold it away. Your answers
-          land on this page. It starts at the home pond and resumes where you left off.
+          land on this page. It opens in this tab, starts at the home pond and resumes where you left off; the last step links back here.
         </p>
         <div className="ab-ponds">
           <div className="ab-pond">
-            <a className="ab-open" href={TOUR_LINK} target="_blank" rel="noopener" data-testid="ab-tour-link">
+            {/* Same tab: a new tab opened from a tap or from script can stay blank on an iPhone (25 Oct 2026). */}
+            <a className="ab-open" href={TOUR_LINK} data-testid="ab-tour-link">
               Start the tour
             </a>
             <button
@@ -83,7 +84,7 @@ export function ReviewGate() {
                 } catch {
                   // Nothing saved.
                 }
-                window.open(TOUR_LINK, '_blank', 'noopener');
+                window.location.assign(TOUR_LINK);
               }}
             >
               From the top
