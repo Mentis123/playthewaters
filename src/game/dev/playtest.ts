@@ -43,3 +43,19 @@ export function deviceLabel(ua: string, width: number, height: number): string {
   const kind = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'other';
   return `${kind} ${width}x${height}`;
 }
+
+// GEAR_REVISIT §4.5: what gear people actually use, without a new field on
+// the server: the rod they last chose and the lures their catches came on.
+export function gearSummary(rodId: string, lures: string[]): string {
+  const counts = new Map<string, number>();
+  for (const lure of lures) counts.set(lure, (counts.get(lure) ?? 0) + 1);
+  const caught = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([lure, n]) => `${lure} ${n}`).join(', ');
+  return `rod ${rodId}; caught on: ${caught || 'nothing yet'}`;
+}
+
+// The optional lure answer rides at the top of the free comment.
+export function commentWithLure(lure: string, comment: string): string {
+  const l = lure.trim();
+  if (!l) return comment;
+  return comment.trim() ? `Lure: ${l}\n\n${comment}` : `Lure: ${l}`;
+}

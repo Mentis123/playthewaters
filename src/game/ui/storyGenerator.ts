@@ -12,7 +12,9 @@ const LURE_LABELS: Record<string, string> = {
   default: 'moss-green lure',
   natural: 'natural lure',
   popper: 'popper',
-  sinker: 'sinker'
+  sinker: 'quiet lure',
+  quiet: 'quiet lure',
+  old_sinker: 'old sinking lure'
 };
 
 export function generateStory(catchEntry: Catch): string {

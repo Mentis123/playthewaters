@@ -29,3 +29,12 @@ test('device label never carries the full user agent', () => {
   const label = deviceLabel('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', 390, 844);
   assert.equal(label, 'iPhone 390x844');
 });
+
+test('gear rides in the device line and the lure answer tops the comment', async () => {
+  const { gearSummary, commentWithLure } = await import('../../src/game/dev/playtest');
+  assert.equal(gearSummary('long', ['natural', 'popper', 'natural']), 'rod long; caught on: natural 2, popper 1');
+  assert.equal(gearSummary('short', []), 'rod short; caught on: nothing yet');
+  assert.equal(commentWithLure('the quiet one, it never spooked', 'fun'), 'Lure: the quiet one, it never spooked\n\nfun');
+  assert.equal(commentWithLure('', 'fun'), 'fun');
+  assert.equal(commentWithLure('popper', ''), 'Lure: popper');
+});

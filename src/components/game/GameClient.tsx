@@ -35,7 +35,7 @@ import { SPECIES_STORY_LABELS, SPECIES_IDS, type SpeciesId } from '@/game/fish/s
 import { endVisit, formatWeight, keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, touchVisit, wallLines, weightGrams, type Keeper } from '@/game/wall/wall';
 import { DebugHud } from '@/components/game/DebugHud';
 import { GameScene } from '@/components/game/GameScene';
-import { GearSelect } from '@/components/game/GearSelect';
+import { GearSelect, lureGlyph } from '@/components/game/GearSelect';
 import { RodReel, rodPathFromScreen } from '@/components/game/RodReel';
 import {
   canPendingTouchBecomeCast,
@@ -951,7 +951,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     runtime.current.lureVelocity = { x: 0, z: 0 };
     runtime.current.lureY = TUNING.world.lureSurfaceY;
     sessionStore.recordCast();
-    track({ type: 'cast' });
+    track({ type: 'cast', rodId: runtime.current.rodId, lureId: runtime.current.lureId });
     audio.current.castWhoosh(cast.power);
     setGameState(runtime.current.state);
   };
@@ -1276,6 +1276,20 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
             height: `${(overlay.aimRingRy ?? 0) * 2}px`
           }}
         />
+      ) : null}
+
+      {aimPreview && overlay.aimTarget ? (
+        // The lure you are about to throw, at the aim point: the choice is in
+        // your hand while you aim, not only in the strip (GEAR_REVISIT §4.3).
+        <span
+          className="aim-lure"
+          aria-hidden="true"
+          data-testid="aim-lure"
+          data-lure={runtime.current.lureId}
+          style={{ transform: `translate(${overlay.aimTarget.x}px, ${overlay.aimTarget.y}px) translate(-50%, -50%)` }}
+        >
+          {lureGlyph(runtime.current.lureId)}
+        </span>
       ) : null}
 
       {previewDots.map((dot) => (

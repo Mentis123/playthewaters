@@ -3,7 +3,7 @@ import type { Catch, Failure } from '@/game/persistence/sessionStore';
 export type TrackEvent =
   | { type: 'session_start' }
   | { type: 'session_end' }
-  | { type: 'cast' }
+  | { type: 'cast'; rodId?: string; lureId?: string }
   | { type: 'bite_window_open' }
   | { type: 'hook_attempt'; result: 'success' | 'early' | 'late' }
   | { type: 'catch'; catch: Catch }

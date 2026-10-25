@@ -48,7 +48,7 @@ import { getStoredPhase, storePhase } from '@/game/persistence/lightStore';
 import { createGenericSilhouette, createSpeciesSilhouettes } from '@/components/game/scene/silhouettes';
 import { Bench, CarriedSinker, LegendSwirl, LilyPads, ReedIslands, ShorePath, SinkerGlint, SinkerSign } from '@/components/game/scene/Shore';
 import { legendAtLight, legendSpookedBy, legendTakes, surfaceGap } from '@/game/waters/legend';
-import { padCoverAt, WATERS } from '@/game/waters/waters';
+import { lureBiasAt, padCoverAt, WATERS } from '@/game/waters/waters';
 import { ART_DELIVERED } from '@/game/art/delivered';
 import { WaterRipples } from '@/components/game/scene/WaterRipples';
 import type { Runtime, SceneProps, ScreenPoint } from '@/components/game/types';
@@ -105,6 +105,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
   const { camera, gl, size } = useThree();
   const cameraShakenRef = useRef(false);
   const walkingRef = useRef(false);
+  const sinkTrailAtRef = useRef(0);
   const reducedMotionRef = useRef(false);
   useEffect(() => {
     reducedMotionRef.current =
@@ -446,7 +447,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         current.lureLandedAt = now;
         // The spook rule (A3): a lure landed on top of a fish sends it darting
         // to the far dark, visibly. Near, not on, still draws it in.
-        const spookedAt = spookFromSplash(current, gameState.target, lureMods(current.lureId).fearMult, lightRef.current.phase, now);
+        const spookedAt = spookFromSplash(current, gameState.target, lureMods(current.lureId).fearMult * lureBiasAt(current.water, current.lureId).fear, lightRef.current.phase, now);
         if (spookedAt.length > 0) {
           // A3.1: a spook is an event: a boil where each fish was, a splash
           // you can hear and a tick you can feel. The V-wakes follow below.
@@ -467,14 +468,16 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         }
         current.state = { kind: 'lure_idle', lurePos: gameState.target, sinceMs: now, lastTwitchAt: current.lastTwitchAt };
         current.lureY = TUNING.world.lureSurfaceY;
-        audio.current.lurePlop(gameState.power);
-        audio.current.fishSplash(TUNING.audio.impactSplashIntensity);
+        // Each lure lands in its own voice (the popper loud, the quiet lure a plip).
+        const show = TUNING.gear.lureShow[current.lureId];
+        audio.current.lurePlop(gameState.power, show.plop);
+        audio.current.fishSplash(TUNING.audio.impactSplashIntensity * show.plop);
         setRipples((value) => [
           ...value,
           {
             id: createId(),
             pos: gameState.target,
-            radius: TUNING.lure.rippleRadiusOnImpactM,
+            radius: TUNING.lure.rippleRadiusOnImpactM * show.splash,
             createdAt: now,
             durationMs: TUNING.fish.cueRippleDurationMs,
             falseCue: false,
@@ -492,6 +495,22 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
         // The old sinking lure goes to the bottom (deeper than the others).
         const floor = current.lureId === 'old_sinker' ? TUNING.world.lureSinkDepthY * 1.8 : TUNING.world.lureSinkDepthY;
         current.lureY = Math.max(floor, current.lureY - TUNING.lure.lureSinkRate * lureMods(current.lureId).sinkMult * dt);
+        // The found lure is seen going down: small rings where it sinks.
+        if (current.lureId === 'old_sinker' && current.lureY > floor + 0.01 && now - sinkTrailAtRef.current > TUNING.gear.sinkTrailEveryMs) {
+          sinkTrailAtRef.current = now;
+          setRipples((value) => [
+            ...value,
+            {
+              id: createId(),
+              pos: { x: current.lurePos.x, z: current.lurePos.z },
+              radius: TUNING.lure.rippleRadiusOnTwitchM * 0.45,
+              createdAt: now,
+              durationMs: TUNING.fish.cueRippleDurationMs * 0.6,
+              falseCue: false,
+              cue: 'ripple'
+            }
+          ]);
+        }
       }
       updateRodControl(current, dt);
       if (gameState.kind === 'rod_control') {
@@ -643,8 +662,8 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
       hooked: current.state.kind === 'hooked',
       rng: current.rng,
       // The equipped lure draws/spooks only the player's primary fish.
-      lureAttractMult: equippedLure.attractMult,
-      lureFearMult: equippedLure.fearMult,
+      lureAttractMult: equippedLure.attractMult * lureBiasAt(current.water, current.lureId).attract,
+      lureFearMult: equippedLure.fearMult * lureBiasAt(current.water, current.lureId).fear,
       habit: current.habits ? { feeding: feedingAmount(current.fish.instance.species, phase), stillMs, water: current.water } : undefined
     }, current.fish);
     updateHookedContactPoint(current, dt);

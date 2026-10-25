@@ -43,6 +43,9 @@ export type WaterDef = {
   // The light this water's legend shows at (canon §3: every legend only at
   // some lights).
   legendLights: LightName[];
+  // How this water tilts the lures (docs/alpha/GEAR_REVISIT.md §4.2): small
+  // multipliers on a lure's draw and fear here. Data, never labelled.
+  lureBias: Partial<Record<string, { attract?: number; fear?: number }>>;
 };
 
 export const WATERS: Record<WaterId, WaterDef> = {
@@ -55,7 +58,8 @@ export const WATERS: Record<WaterId, WaterDef> = {
     water: { deep: '', far: '', shallow: '', clarity: 1, reflect: 1 },
     pads: [],
     reedIslands: [],
-    legendLights: []
+    legendLights: [],
+    lureBias: {}
   },
   lily: {
     id: 'lily',
@@ -91,9 +95,18 @@ export const WATERS: Record<WaterId, WaterDef> = {
       { x: -0.4, z: -5.2, radius: 0.65 },
       { x: -1.45, z: 0.9, radius: 0.38 }
     ],
-    legendLights: ['dawn', 'dusk']
+    legendLights: ['dawn', 'dusk'],
+    // Cover: the quiet lure can be worked by the pads without flushing them;
+    // the popper's racket pulls a fish out from under one.
+    lureBias: { quiet: { fear: 0.8 }, popper: { attract: 1.2 } }
   }
 };
+
+// A lure's draw and fear at this water (1/1 where the water has no opinion).
+export function lureBiasAt(water: WaterId, lureId: string): { attract: number; fear: number } {
+  const bias = WATERS[water].lureBias[lureId];
+  return { attract: bias?.attract ?? 1, fear: bias?.fear ?? 1 };
+}
 
 // Pad island centre at time t (seconds): a slow figure-of-eight sway.
 export function padIslandCentre(island: PadIsland, tSeconds: number, out: { x: number; z: number }) {

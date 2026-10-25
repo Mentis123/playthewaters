@@ -460,9 +460,11 @@ export const TUNING = {
     rods: {
       // The long rod (default): reaches the far dark, today's exact feel.
       long: { rangeMult: 1, accuracyMult: 1, lineStrengthMult: 1 },
-      // The short rod: can't reach the dark, lands near-exact, fights on a tight
-      // margin (snaps easier). A deliberate renunciation of the long gamble.
-      short: { rangeMult: 0.6, accuracyMult: 0.5, lineStrengthMult: 0.82 }
+      // The short rod: reaches the edge of the dark and no further, lands
+      // near-exact. Reach is the whole price (docs/alpha/GEAR_REVISIT.md §4.4):
+      // at 0.6 it ended short of every hidden fish, and its weaker line was a
+      // tax discovered mid-fight.
+      short: { rangeMult: 0.75, accuracyMult: 0.5, lineStrengthMult: 1 }
     },
     lures: {
       // The natural lure (default): balanced draw and nerve, today's exact feel.
@@ -471,12 +473,26 @@ export const TUNING = {
       // radius (spooks easily — twitchy to handle).
       popper: { attractMult: 1.6, fearMult: 1.5, sinkMult: 0.6, twitchMult: 1.3 },
       // The quiet lure: won't spook even worked close (small fear) but draws only
-      // from nearby (small attraction) — demands you place it true.
-      sinker: { attractMult: 0.7, fearMult: 0.6, sinkMult: 1.5, twitchMult: 0.85 },
+      // from nearby (small attraction) — demands you place it true. Was
+      // "sinker" until 25 Oct 2026; it no longer sinks, so the found old
+      // sinking lure is the only thing that reaches the bottom (GEAR_REVISIT §4.1).
+      quiet: { attractMult: 0.7, fearMult: 0.6, sinkMult: 1, twitchMult: 0.85 },
       // A5 the old sinking lure (canon §5): FOUND, never in the strip. Goes to
       // the bottom and lies dead still; barely draws, barely spooks.
       old_sinker: { attractMult: 0.55, fearMult: 0.4, sinkMult: 2.4, twitchMult: 0.45 }
-    }
+    },
+    // How each lure LOOKS and SOUNDS landing (GEAR_REVISIT §4.3): the choice
+    // read on the water, not only in the strip. splash scales the landing
+    // ring, plop the landing sound. The natural lure is 1/1 (today's feel).
+    lureShow: {
+      natural: { splash: 1, plop: 1 },
+      popper: { splash: 1.45, plop: 1.5 },
+      quiet: { splash: 0.55, plop: 0.45 },
+      old_sinker: { splash: 0.8, plop: 0.75 }
+    },
+    // The found lure going down: a small ring every this-many ms until it
+    // reaches the bottom.
+    sinkTrailEveryMs: 320
   },
   timing: {
     msPerSecond: 1000,

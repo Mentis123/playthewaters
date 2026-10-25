@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { CURRENT_CANDIDATE_TAG } from '@/lib/buildInfo';
-import { deviceLabel, FEEDBACK_ENDPOINT } from '@/game/dev/playtest';
+import { commentWithLure, deviceLabel, FEEDBACK_ENDPOINT, gearSummary } from '@/game/dev/playtest';
+import { getGear } from '@/game/persistence/gearStore';
+import { getJournal } from '@/game/persistence/catchJournal';
 
 // The five-strangers playtest (docs/alpha/A3_RUBRIC.md §3.2). Shared by the
 // owner as a private link. The open question comes FIRST and alone, so the
@@ -32,6 +34,7 @@ export function PlaytestForm() {
   const [again, setAgain] = useState('');
   const [broken, setBroken] = useState('');
   const [comment, setComment] = useState('');
+  const [lure, setLure] = useState('');
   const [website, setWebsite] = useState('');
   const [error, setError] = useState('');
 
@@ -64,10 +67,10 @@ export function PlaytestForm() {
           fun,
           again,
           broken,
-          comment,
+          comment: commentWithLure(lure, comment),
           website,
           build: sha ? `${CURRENT_CANDIDATE_TAG}@${sha.slice(0, 7)}` : CURRENT_CANDIDATE_TAG,
-          device: deviceLabel(navigator.userAgent, window.screen.width, window.screen.height)
+          device: `${deviceLabel(navigator.userAgent, window.screen.width, window.screen.height)} · ${gearSummary(getGear().rodId, getJournal().catches.map((c) => c.lure))}`
         })
       });
       const result = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -187,6 +190,10 @@ export function PlaytestForm() {
           <label className="playtest-field">
             Anything broken, confusing or annoying?
             <textarea className="playtest-text" value={broken} onChange={(e) => setBroken(e.target.value)} rows={3} maxLength={2000} />
+          </label>
+          <label className="playtest-field">
+            Which lure did you end up using most, and why?
+            <textarea className="playtest-text" value={lure} onChange={(e) => setLure(e.target.value)} rows={2} maxLength={600} data-testid="playtest-lure" />
           </label>
           <label className="playtest-field">
             Anything else you want to tell me?

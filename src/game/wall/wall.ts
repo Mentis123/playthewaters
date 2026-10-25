@@ -1,6 +1,7 @@
 import { SPECIES_IDS, SPECIES_STORY_LABELS, type SpeciesId } from '@/game/fish/species';
 import { trophyLengthCm } from '@/game/fish/trophy';
 import { nearestLight, type LightName } from '@/game/light/pondLight';
+import { migrateLureId } from '@/game/gear/gear';
 import { TUNING } from '@/game/tuning/tuning';
 
 // A4 the wall (23_ALPHA_CANON §4.4, §6.2; docs/alpha/A4_RUBRIC.md).
@@ -128,10 +129,12 @@ export function migrateWall(parsed: unknown): WallData {
   if (value && value.schemaVersion === 1 && Array.isArray(value.keepers)) {
     return {
       schemaVersion: 1,
-      keepers: value.keepers.filter(
-        (k): k is Keeper =>
-          !!k && typeof k.catchId === 'string' && typeof k.visitId === 'string' && (SPECIES_IDS as string[]).includes(k.species)
-      )
+      keepers: value.keepers
+        .filter(
+          (k): k is Keeper =>
+            !!k && typeof k.catchId === 'string' && typeof k.visitId === 'string' && (SPECIES_IDS as string[]).includes(k.species)
+        )
+        .map((k) => (typeof k.lure === 'string' ? { ...k, lure: migrateLureId(k.lure) } : k))
     };
   }
   return emptyWall();

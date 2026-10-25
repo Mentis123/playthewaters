@@ -23,7 +23,7 @@ export const ROD_LABELS: Record<RodId, string> = {
 export const LURE_LABELS: Record<LureId, string> = {
   natural: 'Natural',
   popper: 'Popper',
-  sinker: 'Sinker',
+  quiet: 'Quiet',
   old_sinker: 'Old sinking lure'
 };
 
@@ -34,6 +34,13 @@ export const STRIP_LURE_IDS = LURE_IDS.filter((id) => id !== 'old_sinker');
 export function isRodId(id: string): id is RodId {
   return (ROD_IDS as string[]).includes(id);
 }
+// Lure ids that were renamed, mapped forward so saved gear, old journal and
+// wall rows and old catch links keep working.
+export const LEGACY_LURE_IDS: Record<string, LureId> = { sinker: 'quiet' };
+export function migrateLureId(id: string): string {
+  return LEGACY_LURE_IDS[id] ?? id;
+}
+
 export function isLureId(id: string): id is LureId {
   return (LURE_IDS as string[]).includes(id);
 }

@@ -2048,3 +2048,12 @@ code {
 .qr-tap-url { font-size: 0.8rem; color: rgba(239, 230, 210, 0.6); }
 .qr-tap-actions { display: flex; gap: 10px; margin-top: 8px; }
 .qr-tap-actions button { min-width: 110px; min-height: 44px; border-radius: 999px; }
+.aim-lure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  color: rgba(243, 230, 212, 0.9);
+  pointer-events: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}

@@ -55,3 +55,13 @@ The starting multipliers are first guesses (`19_THE_FAR_WATER`: starting values 
 - short-rod range cap (does it still feel worth bringing? can it reach enough water?) and its accuracy/snap deltas (precise-but-fragile should feel like a real tension, not a punishment);
 - loud-lure draw vs. spook balance (rescues a loose cast without trivialising the gamble);
 - quiet-lure draw floor (demands placement without feeling dead).
+
+## Amendment, 25 Oct 2026 (docs/alpha/GEAR_REVISIT.md)
+
+After A3–A5 (habits, the wall, the found sinking lure, a second water) the gear was re-evaluated. Changes, all data in `TUNING.gear`:
+
+- **The quiet lure is "Quiet", not "Sinker", and it no longer sinks** (`sinkMult` 1.0). The only lure that reaches the bottom is the found old sinking lure, which is what the home pond's sign forbids and the bench hints at. Saved gear, wall rows and catch links made with `sinker` are carried forward to `quiet`.
+- **The short rod's whole price is reach**: `rangeMult` 0.75 (to the reveal edge, never the deep band), `lineStrengthMult` 1.0 (the hidden weaker line is gone). Its water is the stone pool (A6).
+- **Each lure lands in its own voice** (`lureShow`: the popper's splash and plop 1.45×/1.5×, the quiet lure's 0.55×/0.45×) and the lure being thrown is drawn at the aim point. The found lure leaves small rings as it sinks.
+- **Waters tilt the lures** (`WATERS[*].lureBias`, ±20% at most, never labelled). The home pond has none; the lily pond eases the quiet lure's fear and lifts the popper's draw.
+- Gear is recorded in telemetry (`cast` events) and the playtest form (device line + a lure question).

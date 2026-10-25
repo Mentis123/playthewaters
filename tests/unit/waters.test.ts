@@ -15,7 +15,7 @@ test('the legend is present on odd visits from the third, never before', () => {
 test('the legend takes only the old sinking lure, dead still, close, at its light', () => {
   const ok = { lureId: 'old_sinker', stillMs: TUNING.legend.stillMs, distance: 0.5, atLight: true, state: present };
   assert.equal(legendTakes(ok), true);
-  assert.equal(legendTakes({ ...ok, lureId: 'sinker' }), false, 'the strip sinker is not it');
+  assert.equal(legendTakes({ ...ok, lureId: 'quiet' }), false, 'the strip quiet lure is not it');
   assert.equal(legendTakes({ ...ok, stillMs: TUNING.legend.stillMs - 1 }), false, 'a lure that moved');
   assert.equal(legendTakes({ ...ok, distance: TUNING.legend.takeRadiusM + 0.01 }), false);
   assert.equal(legendTakes({ ...ok, atLight: false }), false);
@@ -51,4 +51,19 @@ test('waters and visit counts', () => {
 
 test('the legend is catchable at all: a lure can land outside its spook ring and inside its take ring', () => {
   assert.ok(TUNING.legend.takeRadiusM > TUNING.legend.spookRadiusM + 0.3, 'take must exceed spook by a castable margin');
+});
+
+test('lure bias: the home pond has no opinion; the lily pond tilts the quiet lure and the popper', async () => {
+  const { lureBiasAt } = await import('../../src/game/waters/waters');
+  for (const lure of ['natural', 'popper', 'quiet', 'old_sinker']) {
+    assert.deepEqual(lureBiasAt('home', lure), { attract: 1, fear: 1 }, `home ${lure}`);
+  }
+  assert.ok(lureBiasAt('lily', 'quiet').fear < 1);
+  assert.ok(lureBiasAt('lily', 'popper').attract > 1);
+  assert.deepEqual(lureBiasAt('lily', 'natural'), { attract: 1, fear: 1 });
+  // Small: a tilt, never a different lure.
+  for (const lure of ['popper', 'quiet']) {
+    const b = lureBiasAt('lily', lure);
+    assert.ok(Math.abs(b.attract - 1) <= 0.25 && Math.abs(b.fear - 1) <= 0.25);
+  }
 });

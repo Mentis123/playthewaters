@@ -1,6 +1,6 @@
 import { SPECIES_IDS, SPECIES_STORY_LABELS, type SpeciesId } from '@/game/fish/species';
 import { trophyLengthCm } from '@/game/fish/trophy';
-import { isLureId, type LureId } from '@/game/gear/gear';
+import { isLureId, migrateLureId, type LureId } from '@/game/gear/gear';
 import { nearestLight, type LightName } from '@/game/light/pondLight';
 import { TUNING } from '@/game/tuning/tuning';
 import { isWaterId, type WaterId } from '@/game/waters/waters';
@@ -83,6 +83,7 @@ export function decodeCatchLink(code: string | null | undefined): CatchLink | nu
   if (typeof wire.f !== 'string' || !(SPECIES_IDS as string[]).includes(wire.f)) return null;
   if (!isInt(wire.z, 0, 1000)) return null;
   if (!isInt(wire.x, -HOOK_LIMIT_CM, HOOK_LIMIT_CM) || !isInt(wire.y, -HOOK_LIMIT_CM, HOOK_LIMIT_CM)) return null;
+  if (typeof wire.l === 'string') wire.l = migrateLureId(wire.l);
   if (typeof wire.l !== 'string' || !isLureId(wire.l)) return null;
   if (wire.k !== undefined && wire.k !== 0 && wire.k !== 1) return null;
   if (wire.w !== undefined && !isWaterId(wire.w)) return null;

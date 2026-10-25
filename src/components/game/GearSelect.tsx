@@ -14,7 +14,7 @@ function rodGlyph(id: RodId) {
   );
 }
 
-function lureGlyph(id: LureId) {
+export function lureGlyph(id: LureId) {
   // Abstract procedural marks (moonlit palette), not tackle imagery (14_DO_NOT_BUILD).
   return (
     <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
@@ -26,8 +26,16 @@ function lureGlyph(id: LureId) {
           <path d="M7 14a7 7 0 0 1 14 0" />
           <path d="M4 14a10 10 0 0 1 20 0" opacity="0.55" />
         </g>
-      ) : (
+      ) : id === 'old_sinker' ? (
+        // The found lure: the heavy teardrop that goes to the bottom.
         <path d="M14 6 C18 12 18 18 14 22 C10 18 10 12 14 6 Z" fill="currentColor" />
+      ) : (
+        // The quiet lure: a small dull nymph, barely a mark (no longer a
+        // teardrop sinker; the only sinking lure is the one you find).
+        <g fill="currentColor">
+          <ellipse cx="14" cy="14" rx="2.6" ry="5" />
+          <path d="M14 9 L11.5 6 M14 9 L16.5 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
+        </g>
       )}
     </svg>
   );
@@ -73,13 +81,13 @@ export function GearSelect({
           <h3>Rods</h3>
           <ul>
             <li><span className="gear-explainer-glyph" aria-hidden="true">{rodGlyph('long')}</span><span><b>Long</b> — reaches the far dark. The whole gamble.</span></li>
-            <li><span className="gear-explainer-glyph" aria-hidden="true">{rodGlyph('short')}</span><span><b>Short</b> — lands near and exact, but the line snaps sooner.</span></li>
+            <li><span className="gear-explainer-glyph" aria-hidden="true">{rodGlyph('short')}</span><span><b>Short</b> — lands near and exact, but never reaches the dark.</span></li>
           </ul>
           <h3>Lures</h3>
           <ul>
             <li><span className="gear-explainer-glyph" aria-hidden="true">{lureGlyph('natural')}</span><span><b>Natural</b> — an even read of the water.</span></li>
             <li><span className="gear-explainer-glyph" aria-hidden="true">{lureGlyph('popper')}</span><span><b>Popper</b> — a loud draw that pulls fish in, and spooks them just as fast.</span></li>
-            <li><span className="gear-explainer-glyph" aria-hidden="true">{lureGlyph('sinker')}</span><span><b>Sinker</b> — a quiet draw; place it true and it won&rsquo;t scare a thing.</span></li>
+            <li><span className="gear-explainer-glyph" aria-hidden="true">{lureGlyph('quiet')}</span><span><b>Quiet</b> — a small draw; place it true and it won&rsquo;t scare a thing.</span></li>
           </ul>
         </div>
       ) : null}

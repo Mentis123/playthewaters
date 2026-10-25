@@ -1,4 +1,4 @@
-import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, isLureId, isRodId, type LureId, type RodId } from '@/game/gear/gear';
+import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, isLureId, isRodId, type LureId, type RodId, migrateLureId } from '@/game/gear/gear';
 
 // The player's pre-cast gear choice, persisted across sessions (22_THE_GEAR).
 // SSR-guarded + schema-validated + try/catch like catchJournal — gear is
@@ -24,7 +24,7 @@ export function getGear(): GearSelection {
     const parsed = JSON.parse(raw) as Partial<GearSelection>;
     return {
       rodId: typeof parsed.rodId === 'string' && isRodId(parsed.rodId) ? parsed.rodId : fallback.rodId,
-      lureId: typeof parsed.lureId === 'string' && isLureId(parsed.lureId) ? parsed.lureId : fallback.lureId
+      lureId: typeof parsed.lureId === 'string' && isLureId(migrateLureId(parsed.lureId)) ? (migrateLureId(parsed.lureId) as GearSelection['lureId']) : fallback.lureId
     };
   } catch {
     return fallback;

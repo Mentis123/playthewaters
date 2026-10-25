@@ -108,9 +108,10 @@ export class ProceduralAudio {
     this.noiseBurst(TUNING.audio.whooshMs, TUNING.audio.sfxGain * power, 'lowpass', 2000, 500);
   }
 
-  lurePlop(velocity: number) {
-    this.tone(180 + velocity * 80, 90, TUNING.audio.plopMs, 'sine', TUNING.audio.sfxGain);
-    this.noiseBurst(TUNING.audio.plopMs, TUNING.audio.sfxGain * 0.35, 'lowpass', 900, 220);
+  // `loudness` (25 Oct 2026): the lure's own voice; 1 is the natural lure.
+  lurePlop(velocity: number, loudness = 1) {
+    this.tone(180 + velocity * 80, 90, TUNING.audio.plopMs, 'sine', TUNING.audio.sfxGain * loudness);
+    this.noiseBurst(TUNING.audio.plopMs, TUNING.audio.sfxGain * 0.35 * loudness, 'lowpass', 900, 220);
   }
 
   lureTwitch() {
