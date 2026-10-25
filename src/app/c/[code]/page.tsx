@@ -18,7 +18,7 @@ export function generateMetadata({ params }: Props): Metadata {
   const title = link.species === 'old_mossback'
     ? `Something very big, ${lightWord(link.phase)}`
     : `A ${trophyLengthCm(link.species, link.sizeScore)} cm ${name}, ${lightWord(link.phase)}`;
-  const description = 'Caught on The Waters, a fishing game. Tap to fish the same pond.';
+  const description = 'Caught on The Waters, a fishing game by Mentis. Tap to fish the same pond.';
   return {
     title: `${title} · The Waters`,
     description,

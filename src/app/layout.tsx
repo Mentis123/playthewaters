@@ -13,13 +13,15 @@ export const metadata: Metadata = {
   description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
   manifest: '/manifest.webmanifest',
   applicationName: 'The Waters',
+  authors: [{ name: 'Adam Rappaport (Mentis)', url: 'https://adamrappaport.vercel.app' }],
+  creator: 'Adam Rappaport (Mentis)',
   // The site's link preview: the painted shoreline (public/art/PROMPTS.md
   // `og`) with the title set over its dark left side, saved once as a JPEG
   // (public/og-title.jpg, ~150 KB; chat apps drop large previews). Catch links
   // have their own (src/app/c/[code]/opengraph-image.tsx).
   openGraph: {
     title: 'The Waters',
-    description: 'Six waters, one shore. A fishing game for your phone, in the browser.',
+    description: 'Six waters, one shore. A fishing game for your phone, in the browser. By Mentis.',
     siteName: 'The Waters',
     images: [{ url: '/og-title.jpg', width: 1200, height: 630, alt: 'The Waters: six waters, one shore' }]
   },

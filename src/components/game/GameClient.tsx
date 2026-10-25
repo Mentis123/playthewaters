@@ -23,6 +23,7 @@ import { track } from '@/game/telemetry/track';
 import { failureStory, generateStory } from '@/game/ui/storyGenerator';
 import { CatchResultCard } from '@/components/game/CatchResultCard';
 import { XRAY_COLORS } from '@/components/game/scene/XRay';
+import { AUTHOR } from '@/lib/author';
 import { WallBoard } from '@/components/game/WallBoard';
 import { ART_DELIVERED } from '@/game/art/delivered';
 import { arriveAt, loadShore, saveShore, type Shore } from '@/game/persistence/shoreStore';
@@ -57,7 +58,6 @@ import type {
   Ripple,
   Runtime,
   ScreenPoint,
-  SplashStage,
   ViewportSize
 } from '@/components/game/types';
 
@@ -95,7 +95,6 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   const queryDebug = searchParams.get('debug') === '1';
   const queryXray = searchParams.get('xray') === '1';
   const [started, setStarted] = useState(false);
-  const [splashStage, setSplashStage] = useState<SplashStage>('primary');
   const [debugOpen, setDebugOpen] = useState(queryDebug || (process.env.NODE_ENV === 'development' && TUNING.ui.debugDefaultDev));
   const [aimPreview, setAimPreview] = useState<AimPreview | null>(null);
   const [overlay, setOverlay] = useState<Overlay>({ linePoints: [], rodTip: { x: 0, y: 0 }, lure: { x: 0, y: 0 }, aimTarget: null });
@@ -270,7 +269,6 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     stampGear();
     startedRef.current = false;
     setStarted(false);
-    setSplashStage('primary');
     setSeed(seed);
     setGameState({ kind: 'splash' });
     setFishState(runtime.current.fish.state);
@@ -383,19 +381,6 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     // arriveAtWater and stampGear read refs and stable setters only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, sessionStore, setGameState]);
-
-  const advanceSplash = useCallback(() => {
-    if (startedRef.current) {
-      return;
-    }
-
-    if (splashStage === 'primary') {
-      setSplashStage('secondary');
-      return;
-    }
-
-    begin();
-  }, [begin, splashStage]);
 
   const finishResult = useCallback((outcome: 'catch' | FailureKind, peakTension: number, nearSnaps: number, hookedAt: number) => {
     if (runtime.current.state.kind === 'result') {
@@ -1440,48 +1425,20 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
               Start fishing
             </button>
             <span className="arrival-credit">
-              A Birb Labs artefact ·{' '}
-              <a href="https://www.vibeacademy.com.au/" target="_blank" rel="noreferrer">Vibe Academy</a>
+              Made by{' '}
+              <a href={AUTHOR.url} target="_blank" rel="noreferrer">{AUTHOR.name}</a>
+              {' · A Birb Labs artefact'}
             </span>
           </div>
         </div>
-      ) : splashStage === 'primary' ? (
-        <button
-          className="splash-title-screen"
-          type="button"
-          aria-label="Continue to Vibe Academy splash"
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onPointerUp={(event) => {
-            event.stopPropagation();
-          }}
-          // onClick is the SOLE advance trigger (covers touch, mouse and
-          // keyboard). Advancing from onPointerUp as well double-fired per
-          // tap on Chromium: pointerup advanced to the credits screen, then
-          // the same tap's synthesized click advanced again through the
-          // re-rendered closure — skipping the credits screen entirely.
-          onClick={advanceSplash}
-          data-testid="tap-to-begin"
-        >
-          {/* Code-built title card until the commissioned splash lands
-              (public/art/PROMPTS.md, prompt "splash"). The old neon
-              REEL MOBILE art is retired with the name. */}
-          <div className="splash-title-card" role="img" aria-label="The Waters">
-            <span className="splash-title-name">The Waters</span>
-            <span className="splash-title-tag">six waters, one shore</span>
-          </div>
-          <span className="splash-hint">Tap to continue</span>
-          <span className="splash-qr-note" data-testid="qr-note">Three fingers anywhere: a QR code to share the game</span>
-        </button>
       ) : (
-        // A div, not a <button>: the card nests links and OfflineStatus's
-        // clear-cache button, and interactive elements inside a <button> are
-        // invalid HTML (React hydration warning, broken a11y tree). The whole
-        // screen stays tappable via onClick; the "Tap to start" pill below is
-        // the real, keyboard-focusable button.
+        // The title IS the start (25 Oct 2026, docs/alpha/ATTRIBUTION.md): one
+        // tap and you are at the water (the tap still unlocks sound). The old
+        // full-screen credit card is gone; the credit lives on this screen,
+        // on every share, and in the tackle bag's About. A div, not a
+        // <button>, because the credit line holds links.
         <div
-          className="splash-credit-screen"
+          className="splash-title-screen"
           onPointerDown={(event) => {
             event.stopPropagation();
           }}
@@ -1491,37 +1448,24 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
           onClick={begin}
           data-testid="tap-to-begin"
         >
-          <span className="splash-credit-card">
-            <span className="splash-kicker">Birb Labs Artefact</span>
-            <span className="splash-title">Build yours at Vibe Academy</span>
-            <span className="splash-copy">
-              From the mind of Mentis. A small playable pond, shipped as a
-              breakable toy for builders to inspect, remix, and learn from.
-            </span>
-            <span className="splash-links">
-              <a
-                href="https://www.vibeacademy.com.au/"
-                target="_blank"
-                rel="noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                Vibe Academy
-              </a>
-              <a
-                href="https://x.com/adam_x_mentis"
-                target="_blank"
-                rel="noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                Mentis
-              </a>
-            </span>
-            <OfflineStatus />
-            <IosInstallHint />
+          <div className="splash-title-card" role="img" aria-label="The Waters">
+            <span className="splash-title-name">The Waters</span>
+            <span className="splash-title-tag">six waters, one shore</span>
+          </div>
+          <span className="splash-credit-line" data-testid="credit-line">
+            Made by{' '}
+            <a href={AUTHOR.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              {AUTHOR.name}
+            </a>
+            {' · '}
+            <a href={AUTHOR.labsUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+              A Birb Labs artefact
+            </a>
           </span>
-          <button type="button" className="splash-hint" aria-label="Enter the pond" onClick={begin}>
-            Tap to start
+          <button type="button" className="splash-hint" aria-label="Go to the water" onClick={(event) => { event.stopPropagation(); begin(); }}>
+            Tap to fish
           </button>
+          <span className="splash-qr-note" data-testid="qr-note">Three fingers anywhere: a QR code to share the game</span>
         </div>
       )}
 

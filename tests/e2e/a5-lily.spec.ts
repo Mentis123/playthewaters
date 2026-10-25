@@ -22,7 +22,6 @@ type Probe = { calls: number; triangles: number };
 async function enter(page: Page, query: string) {
   await page.goto(`/game${query}${query.includes('?') ? '&' : '?'}debug=1`, { waitUntil: 'domcontentloaded' });
   await page.getByTestId('tap-to-begin').first().tap();
-  await page.getByTestId('tap-to-begin').first().tap();
   await page.waitForFunction(() => Boolean((window as unknown as { __watersDebug?: unknown }).__watersDebug), null, { timeout: 15_000 });
   await page.waitForTimeout(1500);
 }

@@ -41,7 +41,6 @@ test('a catch share ends with #PlayTheWaters and carries the catch link', async 
   await captureShares(page);
   await page.goto('/game?debug=1', { waitUntil: 'domcontentloaded' });
   await page.getByTestId('tap-to-begin').first().tap();
-  await page.getByTestId('tap-to-begin').first().tap();
   await page.waitForFunction(() => Boolean((window as unknown as { __watersDebug?: unknown }).__watersDebug), null, { timeout: 15_000 });
   await page.evaluate(() => (window as unknown as { __watersDebug: { forceCatch: (t: number) => void } }).__watersDebug.forceCatch(0.7));
   await page.locator('.result-share').waitFor();

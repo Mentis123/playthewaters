@@ -67,6 +67,9 @@ export default async function Image({ params }: { params: { code: string } }) {
         {art ? <img src={art} width={640} height={360} style={{ marginTop: 6 }} alt="" /> : <div style={{ height: 360, display: 'flex' }} />}
         <div style={{ fontSize: 76, marginTop: -8, display: 'flex' }}>{name}</div>
         <div style={{ fontSize: 34, color: '#c8d2da', marginTop: 8, display: 'flex' }}>{detail}</div>
+        <div style={{ fontSize: 22, color: 'rgba(201,212,220,0.6)', marginTop: 18, display: 'flex' }}>
+          playthewaters.vercel.app · by Mentis · #PlayTheWaters
+        </div>
       </div>
     ),
     size

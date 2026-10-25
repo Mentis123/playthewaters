@@ -2057,3 +2057,23 @@ code {
   pointer-events: none;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
+
+/* ---- Attribution on the title (docs/alpha/ATTRIBUTION.md) ---- */
+.splash-credit-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(12vh + 18px);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: rgba(243, 230, 212, 0.7);
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+.splash-credit-line a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(243, 230, 212, 0.35);
+  text-underline-offset: 3px;
+}

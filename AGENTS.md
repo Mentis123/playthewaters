@@ -1,5 +1,7 @@
 # AGENTS.md
 
+**Author:** Adam Rappaport (Mentis), https://adamrappaport.vercel.app. Credit and links live in `src/lib/author.ts`; keep them on the title, every share and the About card (`docs/alpha/ATTRIBUTION.md`). Every social share ends with `#PlayTheWaters` (`src/game/share/hashtag.ts`).
+
 This repo contains **The Waters** (working title until 24 Oct 2026: Reel Mobile), a mobile-first browser fishing game. Live: https://playthewaters.vercel.app.
 
 **Art:** image prompts, sizes and delivery paths are in `public/art/PROMPTS.md` and `public/art/prompts.json` (served at `/art/PROMPTS.md`). Image agents deliver there; the game agent wires art in behind an A/B.

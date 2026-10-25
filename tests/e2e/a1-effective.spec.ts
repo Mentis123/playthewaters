@@ -52,7 +52,6 @@ for (const light of ['dawn', 'day', 'dusk', 'night']) {
     page.on('pageerror', (error) => errors.push(String(error)));
     await page.goto(`/game?light=${light}`, { waitUntil: 'domcontentloaded' });
     await page.getByTestId('tap-to-begin').tap();
-    await page.getByTestId('tap-to-begin').tap();
     await expect(page.locator('canvas')).toBeVisible();
     await page.waitForFunction(() => Boolean((window as Window & { __waters?: unknown }).__waters), null, { timeout: 15_000 });
     await page.waitForTimeout(800);

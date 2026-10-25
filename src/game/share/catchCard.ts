@@ -1,5 +1,6 @@
 import { SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
 import { HASHTAG } from '@/game/share/hashtag';
+import { AUTHOR } from '@/lib/author';
 import {
   SPECIES_ART,
   drawSpeciesTrophy,
@@ -119,7 +120,7 @@ export async function renderCatchCard(c: CatchCardData): Promise<Blob | null> {
   ctx.fillText('The Waters', cx, 1258);
   ctx.fillStyle = 'rgba(201, 212, 220, 0.6)';
   ctx.font = '500 26px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`playthewaters.vercel.app  ·  ${HASHTAG}`, cx, 1302);
+  ctx.fillText(`playthewaters.vercel.app  ·  by ${AUTHOR.name}  ·  ${HASHTAG}`, cx, 1302);
 
   return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), 'image/png');

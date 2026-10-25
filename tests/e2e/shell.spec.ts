@@ -62,8 +62,7 @@ test('M1 vertical slice smoke', async ({ page }) => {
   // pre-hydration tap lands on inert server-rendered DOM and is lost (flaky
   // on a cold dev-server compile).
   await expect(page.getByTestId('game-route')).toHaveAttribute('data-webgl-handlers', 'ready', { timeout: 30_000 });
-  await page.getByTestId('tap-to-begin').tap();
-  await expect(page.getByText('Build yours at Vibe Academy')).toBeVisible();
+  await expect(page.getByTestId('credit-line')).toContainText('Made by Mentis');
   await page.getByTestId('tap-to-begin').tap();
   await expect(page.getByTestId('tap-to-begin')).toBeHidden();
   await expect(page.locator('canvas')).toBeVisible();

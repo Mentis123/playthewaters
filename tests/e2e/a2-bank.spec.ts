@@ -5,7 +5,6 @@ import { expect, test } from '@playwright/test';
 async function enterPond(page: import('@playwright/test').Page, query = '') {
   await page.goto(`/game${query}`, { waitUntil: 'domcontentloaded' });
   await page.getByTestId('tap-to-begin').tap();
-  await page.getByTestId('tap-to-begin').tap();
   await expect(page.locator('canvas')).toBeVisible();
   await page.waitForFunction(() => Boolean((window as Window & { __waters?: unknown }).__waters), null, { timeout: 15_000 });
 }
@@ -17,7 +16,6 @@ test('the leave glyph returns to the title, and the pond can be entered again', 
   await page.getByTestId('leave-pond').tap();
   await expect(page.getByRole('img', { name: 'The Waters' })).toBeVisible();
   await expect(page.getByTestId('leave-pond')).toHaveCount(0);
-  await page.getByTestId('tap-to-begin').tap();
   await page.getByTestId('tap-to-begin').tap();
   await expect(page.getByTestId('leave-pond')).toBeVisible();
   expect(errors).toEqual([]);

@@ -1,6 +1,8 @@
 # The Waters
 
-*Six waters, one shore.* Working title until 24 Oct 2026: Reel Mobile. Live at **https://playthewaters.vercel.app**. The alpha canon is `docs/goalpack/23_ALPHA_CANON.md`; art prompts for agents are in `public/art/PROMPTS.md` (served at `/art/PROMPTS.md`).
+*Six waters, one shore.* **Made by Adam Rappaport (Mentis)** — https://adamrappaport.vercel.app · A Birb Labs artefact · Learn to build things like this at [Vibe Academy](https://www.vibeacademy.com.au/). Share with **#PlayTheWaters**. Forks: please keep this credit.
+
+Working title until 24 Oct 2026: Reel Mobile. Live at **https://playthewaters.vercel.app**. The alpha canon is `docs/goalpack/23_ALPHA_CANON.md`; art prompts for agents are in `public/art/PROMPTS.md` (served at `/art/PROMPTS.md`).
 
 
 A mobile-first browser fishing game about one body of water that stretches away from you to a far shore.
