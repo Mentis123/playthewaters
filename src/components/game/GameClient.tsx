@@ -9,7 +9,7 @@ import { IosInstallHint } from '@/components/pwa/IosInstallHint';
 import { OfflineStatus } from '@/components/pwa/OfflineStatus';
 import { ProceduralAudio } from '@/game/audio/procedural';
 import { type FishCueKind } from '@/game/fish/species';
-import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, lureMods, rodMods } from '@/game/gear/gear';
+import { DEFAULT_LURE_ID, DEFAULT_ROD_ID, isLureId, isRodId, lureMods, rodMods } from '@/game/gear/gear';
 import { personalBestFor } from '@/game/fish/personalBest';
 import { setHapticsEnabled, vibrate } from '@/game/haptics/haptics';
 import { defaultPrefs, getPrefs, setPrefs, type Prefs } from '@/game/persistence/prefsStore';
@@ -39,6 +39,8 @@ import { DebugHud } from '@/components/game/DebugHud';
 import { GameScene } from '@/components/game/GameScene';
 import { GearSelect, lureGlyph } from '@/components/game/GearSelect';
 import { RodReel, rodPathFromScreen } from '@/components/game/RodReel';
+import { TourOverlay, type TourApi } from '@/components/game/TourOverlay';
+import { tourFor } from '@/game/tour/tours';
 import {
   canPendingTouchBecomeCast,
   clampRodOffset,
@@ -94,6 +96,10 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     return next;
   }, []);
   const queryDebug = searchParams.get('debug') === '1';
+  // The review tour (?tour=<chapter>, docs/alpha/TOUR.md) drives the same
+  // review hooks as ?debug=1, without the debug panel.
+  const tour = useMemo(() => tourFor(searchParams.get('tour')), [searchParams]);
+  const reviewHooks = queryDebug || tour !== null;
   const queryXray = searchParams.get('xray') === '1';
   const [started, setStarted] = useState(false);
   const [debugOpen, setDebugOpen] = useState(queryDebug || (process.env.NODE_ENV === 'development' && TUNING.ui.debugDefaultDev));
@@ -327,7 +333,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     }
 
     const preventTouch = (event: TouchEvent) => {
-      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay, .found-card, .bag-overlay')) {
+      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay, .found-card, .bag-overlay, .tour-card')) {
         return;
       }
 
@@ -968,7 +974,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   // checks drive the landing path (promotion, the A3 spook rule, the still-lure
   // clock) without faking perspective-correct drags.
   useEffect(() => {
-    if (!queryDebug) return;
+    if (!reviewHooks) return;
     const hook = {
       castAt(x: number, z: number) {
         const now = performance.now();
@@ -1023,9 +1029,86 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     return () => {
       delete (window as Window & { __watersDebug?: typeof hook }).__watersDebug;
     };
-  }, [queryDebug, setGameState]);
+  }, [reviewHooks, setGameState]);
   const finishResultRef = useRef<typeof finishResult | null>(null);
   finishResultRef.current = finishResult;
+
+  // The review tour's view of the game (TourOverlay): React state through a
+  // ref so the tour's poll reads this render's values, and its scene setups
+  // through the same paths a player's taps take.
+  const tourView = useRef({ started, bagOpen, walking, shore, gear });
+  tourView.current = { started, bagOpen, walking, shore, gear };
+  const applyGearRef = useRef(applyGear);
+  applyGearRef.current = applyGear;
+  const tourApi = useMemo<TourApi>(() => ({
+    probe() {
+      const r = runtime.current;
+      const v = tourView.current;
+      return {
+        started: v.started,
+        water: r.water,
+        state: r.state.kind,
+        walking: v.walking,
+        bagOpen: v.bagOpen,
+        kept: loadWall().keepers.filter((k) => !k.released).map((k) => k.catchId).sort().join(','),
+        foundSinker: v.shore.foundSinker || forceSinker,
+        seenBench: v.shore.seenBench,
+        snagged: r.snagged,
+        lureId: r.lureId,
+        rodId: r.rodId
+      };
+    },
+    shorePoint(key) {
+      const at = runtime.current.targets[key];
+      return at ? { x: at.x, y: at.y } : null;
+    },
+    setup(step) {
+      const r = runtime.current;
+      const v = tourView.current;
+      switch (step.kind) {
+        case 'gear': {
+          // Review convenience: an idle lure comes home so the next cast is
+          // with the new gear. Never during a bite, a fight or a result.
+          if (r.state.kind === 'lure_idle' && !r.snagged) {
+            r.lureVisible = false;
+            r.state = { kind: 'scouting', sinceMs: performance.now() };
+            setGameState(r.state);
+          }
+          if (r.state.kind !== 'scouting' || v.walking) return false;
+          if (!isRodId(step.rodId ?? v.gear.rodId) || !isLureId(step.lureId ?? v.gear.lureId)) return true;
+          applyGearRef.current({ rodId: (step.rodId ?? v.gear.rodId) as GearSelection['rodId'], lureId: (step.lureId ?? v.gear.lureId) as GearSelection['lureId'] });
+          return true;
+        }
+        case 'catch': {
+          if (v.walking || v.bagOpen) return false;
+          if (r.state.kind === 'result') return true;
+          if (r.state.kind !== 'scouting' && r.state.kind !== 'lure_idle') return false;
+          r.hookPos = { ...r.fish.position };
+          finishResultRef.current?.('catch', 0.6, 0, performance.now() - 4000);
+          return true;
+        }
+        case 'bag': {
+          if (!step.open) {
+            setBagOpen(false);
+            return true;
+          }
+          if (r.state.kind !== 'scouting' || v.walking) return false;
+          setBagOpen(true);
+          if (step.scrollTo) {
+            const target = step.scrollTo;
+            window.setTimeout(() => document.querySelector(target)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120);
+          }
+          return true;
+        }
+        case 'surface-legend': {
+          if (!r.legend) return false;
+          r.legend.nextSurfaceAt = 0;
+          return true;
+        }
+      }
+      return true;
+    }
+  }), [forceSinker, setGameState]);
 
   function reelTap() {
     if (runtime.current.state.kind !== 'hooked') {
@@ -1207,6 +1290,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       data-fish-state={fishState.kind}
       data-started={started ? 'true' : 'false'}
       data-arrival={arrival ? 'true' : 'false'}
+      data-tour={tour ? tour.id : undefined}
       data-webgl-handlers={glHandlersReady ? 'ready' : 'pending'}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -1380,7 +1464,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         <GearSelect gear={shore.sinkerTied && foundSinker ? { ...gear, lureId: 'old_sinker' } : gear} onSelect={applyGear} explainerOpen={gearHelpOpen} onExplainerOpenChange={setGearHelpOpen} />
       ) : null}
 
-      {started && gameState.kind === 'scouting' && !walking ? (
+      {started && gameState.kind === 'scouting' && !walking && !bagOpen ? (
         // A5.1: one glyph, top right: the tackle bag (wall, logbook, trophies,
         // found, bring someone, settings, about). The pond stays the
         // interface; everything that is yours is one tap away.
@@ -1606,6 +1690,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
           seed={seed}
         />
       ) : null}
+      {tour ? <TourOverlay tour={tour} api={tourApi} /> : null}
     </main>
   );
 

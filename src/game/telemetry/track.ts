@@ -19,6 +19,12 @@ export type TrackEvent =
   // real players ever hit it before raising the cap or paginating the view.
   | { type: 'journal_rotation' };
 
+export const TRACK_EVENT = 'waters:track';
+
 export function track(event: TrackEvent): void {
   console.log('[track]', event);
+  // The review tour (docs/alpha/TOUR.md) listens to the same stream.
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+    window.dispatchEvent(new CustomEvent(TRACK_EVENT, { detail: event }));
+  }
 }

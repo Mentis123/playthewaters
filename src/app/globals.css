@@ -2230,3 +2230,80 @@ code {
   18%, 70% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; }
 }
+
+/* ---- The review tour (?tour=, docs/alpha/TOUR.md) ---- */
+.tour-card {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100vw - 16px));
+  z-index: 90;
+  color: #efe6d2;
+  background: rgba(14, 20, 22, 0.94);
+  border: 1px solid rgba(200, 168, 92, 0.55);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  font: 14px/1.4 system-ui, -apple-system, sans-serif;
+  touch-action: manipulation;
+}
+.tour-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 12px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tour-step { color: #c8a85c; font-weight: 600; font-size: 12px; white-space: nowrap; }
+.tour-title { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tour-chevron { color: #c8a85c; }
+.tour-body { padding: 0 12px 8px; }
+.tour-line { margin: 0 0 4px; font-size: 13.5px; }
+.tour-line a { color: #c8a85c; }
+.tour-status { margin: 0 0 4px; font-size: 12.5px; color: rgba(239, 230, 210, 0.6); font-style: italic; }
+.tour-status.is-done { color: #9fd2a8; font-style: normal; }
+.tour-check { margin: 4px 0 6px; padding: 5px 9px; border-left: 2px solid #c8a85c; font-size: 12.5px; color: rgba(239, 230, 210, 0.85); }
+.tour-nav { display: flex; align-items: center; gap: 6px; }
+.tour-spacer { flex: 1; }
+.tour-pick, .tour-btn {
+  min-height: 36px;
+  min-width: 44px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 168, 92, 0.55);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tour-pick.is-picked { background: #c8a85c; color: #141c20; border-color: #c8a85c; }
+.tour-btn:disabled { opacity: 0.4; }
+.tour-btn--next.is-ready { background: #c8a85c; color: #141c20; border-color: #c8a85c; font-weight: 600; }
+.tour-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 89;
+  border: 3px solid #f2cf72;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(242, 207, 114, 0.25), 0 0 18px rgba(242, 207, 114, 0.6);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  animation: tour-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tour-pulse {
+  50% { box-shadow: 0 0 0 10px rgba(242, 207, 114, 0.08), 0 0 26px rgba(242, 207, 114, 0.8); }
+}
+@media (prefers-reduced-motion: reduce) { .tour-ring { animation: none; } }
+/* The HUD at the top sits below the card. */
+[data-tour] .prefs-strip { top: calc(var(--tour-h, 0px) + 10px); }
+[data-tour] .pond-note { top: calc(var(--tour-h, 0px) + 12px); }
+[data-tour] .bag-sheet { max-height: calc(100dvh - var(--tour-h, 0px) - 12px); }

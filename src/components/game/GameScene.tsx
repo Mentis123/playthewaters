@@ -1053,7 +1053,7 @@ export function GameScene({ started, runtime, audio, setOverlay, setRipples, rip
                     <CarriedSinker runtime={runtime} tied={sinkerTied} />
                   </>
                 ) : (
-                  <SinkerGlint />
+                  <SinkerGlint runtime={runtime} />
                 )}
               </>
             )

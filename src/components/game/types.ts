@@ -61,7 +61,8 @@ export type Runtime = {
   // A5: screen positions of the tappable shore things (written by the scene
   // every frame from the live camera; null when absent), the legend this
   // visit (shared across respawns), where it is, and the camera walk.
-  targets: { path: ScreenPoint | null; bench: ScreenPoint | null; sinker: ScreenPoint | null };
+  // glint: the unfound lure's glint, for the review tour only (no hit test).
+  targets: { path: ScreenPoint | null; bench: ScreenPoint | null; sinker: ScreenPoint | null; glint: ScreenPoint | null };
   legend: import('@/game/waters/legend').LegendState | null;
   legendPos: Vec2;
   walk: { phase: 'out' | 'in'; startAt: number; dir: -1 | 1 } | null;

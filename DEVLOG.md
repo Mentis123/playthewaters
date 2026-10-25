@@ -1016,3 +1016,31 @@ Checks: 92 unit tests (`withHashtag`). 22/22 phone-profile e2e, including the ne
 - Captures at iPhone 13 and SE sizes: the credit line clear of the title and the button.
 
 `/ab` holds the A5.1 review **and** A5's starred checks, which are still unreviewed.
+
+## The review tour (25 Oct 2026, a review tool on v1.4.1-tacklebag)
+
+*Owner: "a special version of the game for AB testing where you show me the things I need to be checking. Like an overlay." Then: "build the tour, card at the top is fine".* Design and rules: `docs/alpha/TOUR.md`.
+
+- `/ab` → **Start the tour** opens the game with a card at the top: a stop's title, one line on what to judge, Yes / No for its `/ab` check, back / Next / Skip, and Show me where the check is about finding a thing unaided. The card folds to one line.
+- A pulsing gold outline points at the thing: a button, or a shore thing tracked by the camera (the path, the bench, the old lure's glint).
+- Stops set their own scene through the player's own paths: the lure for each lure stop, a landed fish for the Keep stop, the bag open for shares and About, the legend's next surfacing. They wait while a fish is on.
+- Answers land on `/ab` (same storage); progress survives a reload; **From the top** restarts.
+- The A5.1 tour has 19 stops and asks every A5.1 and A5 check.
+- `REVIEW` moved to `src/game/tour/review.ts` (one source). `track()` also dispatches `waters:track`.
+- The bag glyph hides while the bag is open (it sat on "Back to the water" under the tour card).
+- The `/ab` rule in AGENTS.md: a review chapter writes its tour with its rubric.
+
+**Checks**
+- 104 unit tests. The new `tour.test`:
+  - every check is asked, and a planted dropped stop is caught;
+  - done conditions;
+  - unknown tours are refused;
+  - no giveaway words in the legend's stop.
+- 27/27 phone e2e, including the new `tour.spec`:
+  - no card without `?tour`;
+  - the card walks;
+  - the pointer is on the bag, and the bag sits below the card;
+  - the card folds;
+  - progress survives a reload;
+  - a Yes shows on `/ab`.
+- The whole tour was driven headless on an iPhone 13 viewport against a production build, with captures at each stop: every do stop completed, no page errors, no horizontal overflow.

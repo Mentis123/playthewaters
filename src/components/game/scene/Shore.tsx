@@ -23,7 +23,7 @@ import type { Runtime, ScreenPoint } from '@/components/game/types';
 type RuntimeRef = React.MutableRefObject<Runtime>;
 type LightRef = React.MutableRefObject<LightSample>;
 
-function useProjectInto(runtime: RuntimeRef, key: 'path' | 'bench' | 'sinker', world: THREE.Vector3 | null) {
+function useProjectInto(runtime: RuntimeRef, key: 'path' | 'bench' | 'sinker' | 'glint', world: THREE.Vector3 | null) {
   const { camera, size } = useThree();
   const scratch = useRef(new THREE.Vector3());
   const out = useRef<ScreenPoint>({ x: 0, y: 0 });
@@ -366,9 +366,11 @@ export function Bench({ runtime }: { runtime: RuntimeRef }) {
 
 // Under the home pond's near bank: a brass glint, for a moment every few
 // seconds. No marker, no hint (canon §5).
-export function SinkerGlint() {
+export function SinkerGlint({ runtime }: { runtime: RuntimeRef }) {
   const ref = useRef<THREE.Mesh>(null);
   const { x, z } = TUNING.find.sinker;
+  const world = useMemo(() => new THREE.Vector3(x, TUNING.world.waterY, z), [x, z]);
+  useProjectInto(runtime, 'glint', world);
   useFrame(() => {
     const mesh = ref.current;
     if (!mesh) return;

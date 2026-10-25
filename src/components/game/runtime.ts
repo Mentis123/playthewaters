@@ -56,7 +56,7 @@ export function createRuntime(seed: string, spawnIndex = 0, water: WaterId = 'ho
     lastNudgeAt: 0,
     lightPhase: 0,
     water,
-    targets: { path: null, bench: null, sinker: null },
+    targets: { path: null, bench: null, sinker: null, glint: null },
     legend: null,
     legendPos: { ...TUNING.legend.home },
     walk: null,
