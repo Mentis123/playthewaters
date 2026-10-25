@@ -14,10 +14,12 @@ export type Shore = {
   seenCards: WaterId[];
   // The old sinking lure is tied on (outside the gear strip).
   sinkerTied: boolean;
+  // A5.1: the bench's words have been read (they go on the bag's Found shelf).
+  seenBench: boolean;
 };
 
 export function emptyShore(): Shore {
-  return { water: 'home', visits: {}, foundSinker: false, seenCards: [], sinkerTied: false };
+  return { water: 'home', visits: {}, foundSinker: false, seenCards: [], sinkerTied: false, seenBench: false };
 }
 
 export function migrateShore(parsed: unknown): Shore {
@@ -34,7 +36,8 @@ export function migrateShore(parsed: unknown): Shore {
     visits,
     foundSinker: value.foundSinker === true,
     seenCards: Array.isArray(value.seenCards) ? value.seenCards.filter(isWaterId) : [],
-    sinkerTied: value.foundSinker === true && value.sinkerTied === true
+    sinkerTied: value.foundSinker === true && value.sinkerTied === true,
+    seenBench: value.seenBench === true
   };
 }
 

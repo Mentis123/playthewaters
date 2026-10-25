@@ -14,11 +14,7 @@ const SHARE_TEXT = 'Come fish The Waters with me.';
 
 export function QrTap() {
   const [open, setOpen] = useState(false);
-  const [qr, setQr] = useState<string | null>(null);
-  const [shareState, setShareState] = useState<'idle' | 'shared' | 'copied'>('idle');
-
   const show = useCallback(() => {
-    setShareState('idle');
     setOpen(true);
   }, []);
 
@@ -45,13 +41,34 @@ export function QrTap() {
     };
   }, [show]);
 
+
+  if (!open) return null;
+  return (
+    <div
+      className="qr-tap"
+      role="dialog"
+      aria-label="Share The Waters"
+      data-testid="qr-tap"
+      onPointerDown={(event) => event.stopPropagation()}
+      onPointerUp={(event) => event.stopPropagation()}
+      onClick={() => setOpen(false)}
+    >
+      <div onClick={(event) => event.stopPropagation()}>
+        <QrCard onClose={() => setOpen(false)} />
+      </div>
+    </div>
+  );
+}
+
+// The card itself: on the three-finger overlay, and inline in the tackle bag.
+export function QrCard({ onClose }: { onClose?: () => void }) {
+  const [qr, setQr] = useState<string | null>(null);
+  const [shareState, setShareState] = useState<'idle' | 'shared' | 'copied'>('idle');
   useEffect(() => {
-    if (!open || qr) return;
     QRCode.toDataURL(SHARE_URL, { margin: 1, width: 520, color: { dark: '#0b1114', light: '#f3ead6' } })
       .then(setQr)
       .catch(() => setQr(null));
-  }, [open, qr]);
-
+  }, []);
   const share = async () => {
     const text = withHashtag(`${SHARE_TEXT} ${SHARE_URL}`);
     try {
@@ -71,31 +88,22 @@ export function QrTap() {
     }
   };
 
-  if (!open) return null;
   return (
-    <div
-      className="qr-tap"
-      role="dialog"
-      aria-label="Share The Waters"
-      data-testid="qr-tap"
-      onPointerDown={(event) => event.stopPropagation()}
-      onPointerUp={(event) => event.stopPropagation()}
-      onClick={() => setOpen(false)}
-    >
-      <div className="qr-tap-card" onClick={(event) => event.stopPropagation()}>
-        <span className="qr-tap-kicker">Scan to play</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {qr ? <img className="qr-tap-code" src={qr} alt={`QR code for ${SHARE_URL}`} width={260} height={260} /> : <div className="qr-tap-code" />}
-        <span className="qr-tap-name">The Waters</span>
-        <span className="qr-tap-url">playthewaters.vercel.app</span>
-        <div className="qr-tap-actions">
-          <button type="button" className="result-keep" onClick={share} data-testid="qr-share">
-            {shareState === 'copied' ? 'Link copied' : shareState === 'shared' ? 'Shared' : 'Share'}
-          </button>
-          <button type="button" className="result-release" onClick={() => setOpen(false)}>
+    <div className="qr-tap-card" data-testid="qr-card">
+      <span className="qr-tap-kicker">Scan to play</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {qr ? <img className="qr-tap-code" src={qr} alt={`QR code for ${SHARE_URL}`} width={260} height={260} /> : <div className="qr-tap-code" />}
+      <span className="qr-tap-name">The Waters</span>
+      <span className="qr-tap-url">playthewaters.vercel.app</span>
+      <div className="qr-tap-actions">
+        <button type="button" className="result-keep" onClick={share} data-testid="qr-share">
+          {shareState === 'copied' ? 'Link copied' : shareState === 'shared' ? 'Shared' : 'Share'}
+        </button>
+        {onClose ? (
+          <button type="button" className="result-release" onClick={onClose}>
             Close
           </button>
-        </div>
+        ) : null}
       </div>
     </div>
   );

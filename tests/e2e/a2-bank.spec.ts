@@ -13,11 +13,12 @@ test('the leave glyph returns to the title, and the pond can be entered again', 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   await enterPond(page, '?light=day');
+  await page.getByTestId('open-bag').tap();
   await page.getByTestId('leave-pond').tap();
   await expect(page.getByRole('img', { name: 'The Waters' })).toBeVisible();
-  await expect(page.getByTestId('leave-pond')).toHaveCount(0);
+  await expect(page.getByTestId('open-bag')).toHaveCount(0);
   await page.getByTestId('tap-to-begin').tap();
-  await expect(page.getByTestId('leave-pond')).toBeVisible();
+  await expect(page.getByTestId('open-bag')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

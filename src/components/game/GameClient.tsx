@@ -25,13 +25,14 @@ import { CatchResultCard } from '@/components/game/CatchResultCard';
 import { XRAY_COLORS } from '@/components/game/scene/XRay';
 import { AUTHOR } from '@/lib/author';
 import { WallBoard } from '@/components/game/WallBoard';
+import { TackleBag } from '@/components/game/TackleBag';
 import { ART_DELIVERED } from '@/game/art/delivered';
 import { arriveAt, loadShore, saveShore, type Shore } from '@/game/persistence/shoreStore';
 import { createLegendState, legendThisVisit, type LegendState } from '@/game/waters/legend';
 import { isWaterId, WATERS, type WaterId } from '@/game/waters/waters';
 import { isLegend } from '@/game/fish/species';
 import { seededRandom } from '@/game/math/vec';
-import { arrivalLine, decodeCatchLink } from '@/game/share/catchLink';
+import { arrivalLine, decodeCatchLink, lightWord } from '@/game/share/catchLink';
 import { SPECIES_STORY_LABELS, SPECIES_IDS, type SpeciesId } from '@/game/fish/species';
 import { endVisit, formatWeight, keepFish, keeperOfVisit, loadWall, releaseFish, saveWall, touchVisit, wallLines, weightGrams, type Keeper } from '@/game/wall/wall';
 import { DebugHud } from '@/components/game/DebugHud';
@@ -121,6 +122,8 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   // short note on the pond after keep / let go.
   const visitIdRef = useRef<string>('');
   const [wallOpen, setWallOpen] = useState(false);
+  const [bagOpen, setBagOpen] = useState(false);
+  const [arrivalTitle, setArrivalTitle] = useState<{ key: number; name: string; light: string } | null>(null);
   const [wallHighlight, setWallHighlight] = useState<string | null>(null);
   const [pondNote, setPondNote] = useState<string | null>(null);
   const pondNoteTimer = useRef<number | null>(null);
@@ -247,11 +250,11 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   // the leave-scouting reset guarantee the freeze can never leak into a cast.
   const [gearHelpOpen, setGearHelpOpen] = useState(false);
   useEffect(() => {
-    runtime.current.pondFrozen = gearHelpOpen && gameState.kind === 'scouting';
+    runtime.current.pondFrozen = (gearHelpOpen || bagOpen) && gameState.kind === 'scouting';
     return () => {
       runtime.current.pondFrozen = false;
     };
-  }, [gearHelpOpen, gameState.kind]);
+  }, [bagOpen, gearHelpOpen, gameState.kind]);
   useEffect(() => {
     if (gameState.kind !== 'scouting' && gearHelpOpen) {
       setGearHelpOpen(false);
@@ -324,7 +327,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     }
 
     const preventTouch = (event: TouchEvent) => {
-      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay, .found-card')) {
+      if (event.target instanceof Element && event.target.closest('[data-testid="tap-to-begin"], [data-testid="result-card"], [data-testid="gear-select"], [data-testid="prefs-strip"], .wall-overlay, .found-card, .bag-overlay')) {
         return;
       }
 
@@ -378,6 +381,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     setStarted(true);
     arriveAtWater(waterRef.current);
     stampGear();
+    if (!arrival) showArrivalTitle(waterRef.current);
     // arriveAtWater and stampGear read refs and stable setters only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, sessionStore, setGameState]);
@@ -410,7 +414,12 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         durationMs: Math.max(0, Math.round(simNow - hookedAt)),
         peakTension,
         nearSnaps,
-        storyText: ''
+        storyText: '',
+        water: runtime.current.water,
+        seed,
+        spawnIndex: runtime.current.spawnIndex,
+        hook: runtime.current.hookPos ?? { ...runtime.current.fish.position },
+        phase: runtime.current.lightPhase
       };
       catchEntry.storyText = generateStory(catchEntry);
       storyText = catchEntry.storyText;
@@ -473,6 +482,17 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
     setFishState(nextRuntime.fish.state);
   }, [seed, setFishState, setGameState, setReeling, stampGear]);
 
+  // A5.1: the water's name and its light fade in on arrival, then the pond
+  // is clear. The light is read a moment later, once the scene has set it.
+  const arrivalTitleKey = useRef(0);
+  function showArrivalTitle(to: WaterId) {
+    window.setTimeout(() => {
+      arrivalTitleKey.current += 1;
+      setArrivalTitle({ key: arrivalTitleKey.current, name: WATERS[to].name, light: lightWord(runtime.current.lightPhase) });
+      window.setTimeout(() => setArrivalTitle(null), TUNING.walk.titleMs);
+    }, 250);
+  }
+
   // A5: arriving at a water counts a visit to it (the legend contract counts
   // visits, never the clock) and decides whether its legend is here.
   function arriveAtWater(to: WaterId) {
@@ -508,6 +528,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
       runtime.current = next;
       arriveAtWater(to);
       stampGear();
+      if (loadShore().seenCards.includes(to) || to === 'home') showArrivalTitle(to);
       setRipples([]);
       setOverlay({ linePoints: [], rodTip: { x: 0, y: 0 }, lure: { x: 0, y: 0 }, aimTarget: null });
       setWater(to);
@@ -709,6 +730,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         return;
       }
       if (near(targets.bench)) {
+        if (!shore.seenBench) updateShore((current) => ({ ...current, seenBench: true }));
         runtime.current.state = { kind: 'found', what: 'bench', shownAt: performance.now() };
         setGameState(runtime.current.state);
         return;
@@ -1325,7 +1347,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         </div>
       ) : null}
 
-      {coachHint ? (
+      {coachHint && !bagOpen && gameState.kind !== 'found' ? (
         <div className="coach-hint" role="status">
           {coachHint}
         </div>
@@ -1358,51 +1380,54 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
         <GearSelect gear={shore.sinkerTied && foundSinker ? { ...gear, lureId: 'old_sinker' } : gear} onSelect={applyGear} explainerOpen={gearHelpOpen} onExplainerOpenChange={setGearHelpOpen} />
       ) : null}
 
-      {started && gameState.kind === 'scouting' ? (
-        // Feel preferences, idle-only like the gear strip: two wordless glyphs
-        // (sound, haptics) tucked top-right. No settings page, no modal — the
-        // pond stays the interface (08_ART_DIRECTION).
+      {started && gameState.kind === 'scouting' && !walking ? (
+        // A5.1: one glyph, top right: the tackle bag (wall, logbook, trophies,
+        // found, bring someone, settings, about). The pond stays the
+        // interface; everything that is yours is one tap away.
         <div className="prefs-strip" data-testid="prefs-strip">
           <button
             type="button"
-            className={`gear-glyph prefs-glyph${prefs.audio ? ' selected' : ''}`}
-            aria-pressed={prefs.audio}
-            aria-label={prefs.audio ? 'Turn sound off' : 'Turn sound on'}
+            className="gear-glyph prefs-glyph bag-glyph"
+            aria-label="Your tackle bag"
+            data-testid="open-bag"
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => togglePref('audio')}
+            onClick={() => setBagOpen(true)}
           >
-            {soundGlyph(prefs.audio)}
+            {bagGlyph()}
           </button>
-          <button
-            type="button"
-            className={`gear-glyph prefs-glyph${prefs.haptics ? ' selected' : ''}`}
-            aria-pressed={prefs.haptics}
-            aria-label={prefs.haptics ? 'Turn vibration off' : 'Turn vibration on'}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => togglePref('haptics')}
-          >
-            {hapticsGlyph(prefs.haptics)}
-          </button>
-          <button
-            type="button"
-            className="gear-glyph prefs-glyph"
-            aria-label="The wall"
-            data-testid="open-wall"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => setWallOpen(true)}
-          >
-            {wallGlyph()}
-          </button>
-          <button
-            type="button"
-            className="gear-glyph prefs-glyph"
-            aria-label="Leave the pond"
-            data-testid="leave-pond"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={leavePond}
-          >
-            {leaveGlyph()}
-          </button>
+        </div>
+      ) : null}
+
+      {bagOpen ? (
+        <TackleBag
+          water={water}
+          where={`${WATERS[water].name} · ${lightWord(runtime.current.lightPhase)}`}
+          seed={seed}
+          foundSinker={foundSinker}
+          seenBench={shore.seenBench}
+          prefs={prefs}
+          onTogglePref={togglePref}
+          onOpenWall={() => {
+            setBagOpen(false);
+            setWallOpen(true);
+          }}
+          onOpenBench={() => {
+            setBagOpen(false);
+            runtime.current.state = { kind: 'found', what: 'bench', shownAt: performance.now() };
+            setGameState(runtime.current.state);
+          }}
+          onLeave={() => {
+            setBagOpen(false);
+            leavePond();
+          }}
+          onClose={() => setBagOpen(false)}
+        />
+      ) : null}
+
+      {arrivalTitle ? (
+        <div className="arrival-title" aria-hidden="true" data-testid="arrival-title" key={arrivalTitle.key}>
+          <span className="arrival-title-name">{arrivalTitle.name}</span>
+          <span className="arrival-title-light">{arrivalTitle.light}</span>
         </div>
       ) : null}
 
@@ -1465,7 +1490,7 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
           <button type="button" className="splash-hint" aria-label="Go to the water" onClick={(event) => { event.stopPropagation(); begin(); }}>
             Tap to fish
           </button>
-          <span className="splash-qr-note" data-testid="qr-note">Three fingers anywhere: a QR code to share the game</span>
+          <span className="splash-qr-note" data-testid="qr-note">Three fingers anywhere: a QR to share</span>
         </div>
       )}
 
@@ -1650,23 +1675,6 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
   }
 }
 
-// Wordless prefs glyphs, same abstract-mark language as the gear strip
-// (14_DO_NOT_BUILD: no skeuomorphic chrome). A slash through the mark = off.
-function soundGlyph(on: boolean) {
-  return (
-    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
-      <path d="M7 11v6h4l5 4V7l-5 4H7Z" fill="currentColor" />
-      {on ? (
-        <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M19.5 11a4.4 4.4 0 0 1 0 6" />
-          <path d="M22 8.6a8 8 0 0 1 0 10.8" opacity="0.55" />
-        </g>
-      ) : (
-        <path d="M19 11l6 6M25 11l-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      )}
-    </svg>
-  );
-}
 
 // The painting shown the first time you arrive at a water (public/art/PROMPTS.md).
 const WATER_CARD_ART: Record<WaterId, string> = {
@@ -1674,46 +1682,22 @@ const WATER_CARD_ART: Record<WaterId, string> = {
   lily: '/art/waters/02-lily-pond.webp'
 };
 
-// The wall: a board with three lines on it.
-function wallGlyph() {
-  return (
-    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <rect x="6" y="5" width="16" height="18" rx="2" />
-        <path d="M10 10.5h8M10 14h8M10 17.5h5" opacity="0.7" />
-      </g>
-    </svg>
-  );
-}
-
-// A path back up the bank: an arrow leaving the water line.
-function leaveGlyph() {
+// The tackle bag: a satchel with its flap and strap.
+function bagGlyph() {
   return (
     <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
       <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 20c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0" opacity="0.55" />
-        <path d="M14 15V6" />
-        <path d="M10 10l4-4 4 4" />
+        <path d="M9 10c0-3 2-5 5-5s5 2 5 5" opacity="0.6" />
+        <rect x="5" y="10" width="18" height="13" rx="3" />
+        <path d="M5 14.5h18" />
+        <path d="M13 14.5v2.6h2v-2.6" />
       </g>
     </svg>
   );
 }
 
-function hapticsGlyph(on: boolean) {
-  return (
-    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
-      <rect x="10" y="6" width="8" height="16" rx="2.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      {on ? (
-        <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M6.4 10.5v7" />
-          <path d="M21.6 10.5v7" />
-        </g>
-      ) : (
-        <path d="M6.5 6.5l15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      )}
-    </svg>
-  );
-}
+
+
 
 function isRodTouch(screenX: number, screenY: number, viewport: ViewportSize): boolean {
   const buttX = viewport.width * TUNING.world.rodScreenButtXRatio;

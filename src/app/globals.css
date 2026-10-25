@@ -2063,8 +2063,9 @@ code {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(12vh + 18px);
-  font-size: 0.74rem;
+  /* Just above the "Tap to fish" pill, clear of the painted sky's title. */
+  bottom: calc(max(28px, calc(env(safe-area-inset-bottom) + 20px)) + 62px);
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   color: rgba(243, 230, 212, 0.7);
   text-align: center;
@@ -2076,4 +2077,156 @@ code {
   text-decoration: underline;
   text-decoration-color: rgba(243, 230, 212, 0.35);
   text-underline-offset: 3px;
+}
+
+/* ---- A5.1 the tackle bag (docs/alpha/HOME_PLAN.md) ---- */
+.bag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(3, 7, 9, 0.5);
+  animation: bag-fade 220ms ease both;
+}
+@keyframes bag-fade { from { opacity: 0; } to { opacity: 1; } }
+.bag-sheet {
+  width: min(460px, 100%);
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 18px 18px max(22px, env(safe-area-inset-bottom));
+  border-radius: 18px 18px 0 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #2a2219 0%, #1a150f 100%);
+  border-top: 1px solid rgba(200, 168, 92, 0.4);
+  color: #efe6d2;
+  animation: bag-rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes bag-rise { from { transform: translateY(40px); } to { transform: translateY(0); } }
+.bag-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.bag-where { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.35rem; }
+.bag-close {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 168, 92, 0.5);
+  background: transparent;
+  color: #efe6d2;
+  font-size: 0.82rem;
+}
+.bag-section { padding: 14px 0 6px; border-top: 1px solid rgba(200, 168, 92, 0.16); }
+.bag-section:first-of-type { border-top: none; }
+.bag-section h3 {
+  margin: 0 0 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 168, 92, 0.9);
+}
+.bag-empty { margin: 0 0 10px; font-family: Georgia, serif; font-style: italic; color: rgba(239, 230, 210, 0.7); }
+.bag-lines { list-style: none; margin: 0 0 10px; padding: 0; }
+.bag-lines li { display: flex; justify-content: space-between; padding: 6px 0; font-family: Georgia, serif; font-size: 1.05rem; }
+.bag-lines li.is-legend, .bag-plate.is-legend .bag-plate-name { color: #9fd2c8; }
+.bag-weight { color: rgba(222, 190, 110, 1); }
+.bag-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.bag-btn {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 168, 92, 0.5);
+  background: rgba(200, 168, 92, 0.12);
+  color: #efe6d2;
+  font-size: 0.86rem;
+}
+.bag-btn[aria-pressed='false'] { opacity: 0.6; }
+.bag-btn:disabled { opacity: 0.4; }
+.bag-btn--small { min-height: 34px; padding: 0 12px; font-size: 0.78rem; }
+.bag-shelf { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; touch-action: pan-x pan-y; }
+.bag-plate {
+  flex: 0 0 150px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: radial-gradient(120% 90% at 50% 30%, rgba(40, 56, 60, 0.9), rgba(10, 14, 16, 0.95));
+  border: 1px solid rgba(200, 168, 92, 0.25);
+}
+.bag-plate img { width: 130px; height: 73px; object-fit: contain; }
+.bag-plate-blank { width: 130px; height: 73px; }
+.bag-plate-name { font-family: Georgia, serif; font-size: 0.98rem; text-align: center; }
+.bag-plate-meta { font-size: 0.72rem; color: rgba(239, 230, 210, 0.65); text-align: center; }
+.bag-log { list-style: none; margin: 0 0 8px; padding: 0; }
+.bag-log li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(200, 168, 92, 0.1);
+}
+.bag-log-what { font-family: Georgia, serif; }
+.bag-log-meta { grid-row: 2; font-size: 0.74rem; color: rgba(239, 230, 210, 0.6); }
+.bag-log li .bag-btn { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.bag-link, .bag-link-btn {
+  color: rgba(200, 168, 92, 0.92);
+  font-size: 0.84rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+.bag-found { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bag-found li { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+.bag-found-sinker {
+  flex: 0 0 44px;
+  height: 44px;
+  background: url('/assets/sprites/old_sinker.webp') center / contain no-repeat;
+}
+.bag-found-bench {
+  flex: 0 0 44px;
+  height: 28px;
+  border-radius: 4px;
+  background: url('/assets/textures/bench-wood.webp') center / cover;
+}
+.bag-section .qr-tap-card { width: 100%; margin: 6px 0 4px; }
+.bag-note { margin: 4px 0 0; font-size: 0.8rem; color: rgba(239, 230, 210, 0.7); text-align: center; }
+.bag-about p { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.45; }
+.bag-about a { color: rgba(222, 190, 110, 1); }
+.bag-about-links { display: flex; gap: 16px; }
+
+/* The water's name on arrival. */
+.arrival-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  animation: arrival-title 2.6s ease both;
+}
+.arrival-title-name {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(30px, 9vw, 46px);
+  color: #f3e6d4;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+}
+.arrival-title-light { font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(243, 230, 212, 0.75); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+@keyframes arrival-title {
+  0% { opacity: 0; transform: translateY(6px); }
+  18%, 70% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; }
 }

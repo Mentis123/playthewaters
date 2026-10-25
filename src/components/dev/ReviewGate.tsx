@@ -8,33 +8,39 @@ import { useEffect, useState } from 'react';
 // what changed, what to do, and the starred rubric items as yes/no. A4 is the
 // first such chapter (docs/alpha/A4_RUBRIC.md). Picks stay on this device.
 const REVIEW = {
-  chapter: 'A5',
-  title: 'The lily pond and the walk',
-  rubric: 'docs/alpha/A5_RUBRIC.md',
+  chapter: 'A5.1',
+  title: 'The tackle bag, the credit, the gear',
+  rubric: 'docs/alpha/HOME_PLAN.md',
   reviewing:
-    'The second water and the way to it. At the home pond\u2019s left edge a soft light shows through the trees where the bank goes on: tap it and you walk along the bank to the lily pond (and back, from its right edge). ' +
-    'The lily pond is brown and still, with pad islands that drift; fish vanish under the pads, and a cast onto a pad snags (one tap frees it). ' +
-    'Two things are hidden: something glints under the home pond\u2019s near bank, and the lily pond has an old bench. And the lily pond has a legend.',
+    'Four things since A5. (1) The title is the start: one tap and you are at the water; the Vibe Academy screen is gone and the credit is on the title ("Made by Mentis · A Birb Labs artefact"), on every share card and in About. ' +
+    '(2) The four small buttons at the top right are now one tackle bag: the wall, trophies to share, a logbook, what you have found, "Fish my pond", the QR, sound and vibration, leave, and About (your site, LinkedIn, X, Vibe Academy). ' +
+    '(3) Gear: the Sinker is now Quiet (it no longer sinks; only the lure you find does), the short rod reaches a little further and its line is no longer weaker, each lure lands with its own splash and sound, and the lure you are throwing is drawn at the aim point. ' +
+    '(4) The water\u2019s name fades in when you arrive. Every share ends with #PlayTheWaters.',
   steps: [
-    'Open the game. At the home pond, look at the left edge where the water meets the bank: a soft light through the trees. Tap it.',
-    'You walk along the bank. The first time, the lily pond\u2019s painting shows for a moment.',
-    'Watch the pads for a minute: fish slip under them and vanish. Cast onto a pad: it snags. Tap anywhere to pull it free (the fish near it scatter).',
-    'Tap the bench on the left bank. Read it.',
-    'Walk back (the light at the lily pond\u2019s right edge). Under the near bank, something brass glints every few seconds. Cast right onto it.',
-    'Once found, it rests on a stone on the bank. Tap it to tie it on; tap it again, or pick a lure in the strip, to take it off.',
-    'The legend (review shortcut below, so you need not wait for the third visit at dawn): watch for it to surface, tie on the old lure, cast beside the swirl (not on top of it) and leave it completely still.'
+    'Open the game from the link below. One tap on the title: you are at the water, and its name fades in.',
+    'Catch something and keep it. Open the bag (top right).',
+    'In the bag: share a trophy, share your wall, and "Fish my pond". Each share should end with #PlayTheWaters and open the game for whoever taps it.',
+    'Check About: your name and links go where you want them.',
+    'Cast with each lure: the popper lands loud, the quiet lure barely makes a sound, and the lure shows at the aim point while you drag.',
+    'Try the short rod: it reaches the edge of the dark and stops there.',
+    'A5 still needs your review too: walk to the lily pond (the soft light at the home pond\u2019s left edge), find the brass glint under the home bank, read the bench, and try the legend shortcut below.'
   ],
   checks: [
-    { id: 'path', text: 'At the home pond, the way to somewhere else is visible but not labelled.' },
-    { id: 'walk', text: 'Tapping the path walks you to the lily pond and back, without feeling like a loading screen.' },
-    { id: 'looks', text: 'The lily pond reads as photo 04: brown still water, pad islands, reeds, a forested far shore.' },
-    { id: 'pads', text: 'Pads hide fish, and you start reading the edges of the pads.' },
-    { id: 'snag', text: 'A cast onto a pad snags; one tap frees it; nothing is lost; nearby fish spook.' },
-    { id: 'find', text: 'The sinking lure can be found by looking, with no marker or hint.' },
-    { id: 'bench', text: 'The bench\u2019s carved line is readable and feels like a found thing, not UI.' },
-    { id: 'tell', text: 'The legend makes itself known now and then, unmistakably and unexplained.' },
-    { id: 'legend', text: 'It cannot be caught the wrong way, and a cast on top of it costs you the visit.' },
-    { id: 'budget', text: 'No stutter, heat or flicker at either water.' }
+    { id: 'start', text: 'One tap on the title and I am fishing; nothing feels missing without the old credit screen.' },
+    { id: 'credit', text: 'My credit is visible enough on the title, the share cards and in About, and the links go where I want.' },
+    { id: 'bag', text: 'The bag feels like mine: the wall, trophies, logbook and finds are where I would look for them.' },
+    { id: 'shares', text: 'Every share I tried ended with #PlayTheWaters and opened the game.' },
+    { id: 'lures', text: 'I can tell the three lures apart by how they land, without reading anything.' },
+    { id: 'rod', text: 'The short rod now feels like a real choice, not a weaker rod.' },
+    { id: 'clean', text: 'The pond looks cleaner with one button instead of four.' },
+    // A5 is not reviewed yet: its starred checks stay on the page.
+    { id: 'a5-path', text: 'A5 · At the home pond, the way to somewhere else is visible but not labelled.' },
+    { id: 'a5-walk', text: 'A5 · Tapping the path walks you to the lily pond and back, without feeling like a loading screen.' },
+    { id: 'a5-looks', text: 'A5 · The lily pond reads as photo 04: brown still water, pad islands, reeds, a forested far shore.' },
+    { id: 'a5-pads', text: 'A5 · Pads hide fish, and a cast onto a pad snags; one tap frees it.' },
+    { id: 'a5-find', text: 'A5 · The sinking lure can be found by looking, with no marker or hint.' },
+    { id: 'a5-bench', text: 'A5 · The bench\u2019s carved line is readable and feels like a found thing.' },
+    { id: 'a5-legend', text: 'A5 · The legend makes itself known now and then, and cannot be caught the wrong way.' }
   ]
 };
 

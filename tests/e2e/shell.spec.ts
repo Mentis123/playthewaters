@@ -24,7 +24,7 @@ test('M0 shell routes load', async ({ context }) => {
   const home = await openRoute(context, '/');
   const homePage = home.page;
   await expect(homePage.getByRole('img', { name: 'The Waters' })).toBeVisible();
-  await expect(homePage.getByText('Tap to continue')).toBeVisible();
+  await expect(homePage.getByText('Tap to fish')).toBeVisible();
   expect(home.errors).toEqual([]);
   await homePage.close();
 

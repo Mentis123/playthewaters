@@ -61,7 +61,7 @@ test('a broken link falls back to the title screen without an error', async ({ p
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   await page.goto('/c/bm90LWEtbGluaw');
-  await expect(page.getByText('Tap to continue')).toBeVisible();
+  await expect(page.getByText('Tap to fish')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -98,7 +98,8 @@ test('keep, a swap in the same visit, let go, and the wall', async ({ page }) =>
   expect(wall).toHaveLength(1);
 
   await page.waitForTimeout(3500);
-  await page.getByTestId('open-wall').tap();
+  await page.getByTestId('open-bag').tap();
+  await page.getByTestId('bag-open-wall').tap();
   await expect(page.getByTestId('wall-line')).toHaveCount(1);
   await page.getByTestId('wall-close').tap();
   await expect(page.getByTestId('wall-board')).toHaveCount(0);

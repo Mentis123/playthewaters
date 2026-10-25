@@ -968,3 +968,51 @@ Checks: 91 unit, 20/20 phone-profile e2e. The lily pond is 45–50 draws and abo
 Checks: 92 unit tests (`withHashtag`). 22/22 phone-profile e2e, including the new `share.spec`:
 - A real three-finger touch through CDP opens the QR, and its share text ends with the hashtag.
 - A catch share carries the `/c/` link and ends with `#PlayTheWaters`.
+
+## v1.4.1-tacklebag (2026-10-25)
+*Owner: "go go go" on `docs/alpha/HOME_PLAN.md`, `ATTRIBUTION.md` and `GEAR_REVISIT.md`. Defaults taken for the three open attribution questions (all one-line changes): the screen is pulled, "Made by Mentis", and "A Birb Labs artefact" on the title line.*
+
+**Attribution** (`src/lib/author.ts`, one source)
+- **The title is the start.** One tap and you are at the water; the full-screen Vibe Academy card is gone.
+- **"Made by Mentis · A Birb Labs artefact"** sits on the title just above "Tap to fish", with links. The link-arrival card says the same.
+- **Every outward surface carries the author:**
+  - the catch card footer: "playthewaters.vercel.app · by Mentis · #PlayTheWaters";
+  - the wall card;
+  - the link previews' footer and descriptions;
+  - `<meta name="author">`, `humans.txt`, the README and AGENTS.md.
+- The one door back is **adamrappaport.vercel.app**. LinkedIn, X and Vibe Academy are in the bag's About.
+
+**The tackle bag** (`TackleBag.tsx`)
+- One satchel glyph replaces the four top-right buttons. It opens a sheet over the paused pond with:
+  - **where you are** ("the home pond · at dusk");
+  - **the wall**: the top three lines, the whole wall, and Share my wall (a 1080×1350 board image);
+  - **trophies**: the heaviest keeper from each water and any legend, as painted plates. Each one shares as a catch link that opens that pond.
+  - **the logbook**: the last five catches, each with Share, and every catch;
+  - **found**: only what you have found (the old lure, the bench's words, which reopen);
+  - **bring someone**: "Fish my pond" (`/game?seed=…&water=…`), the QR card inline, and the three-finger note;
+  - **settings**: sound, vibration, leave, offline status and the iOS install hint (these lived on the old credit card);
+  - **About**.
+- Every share in it ends with `#PlayTheWaters` (`shares.ts`).
+- The water's name and light fade in on arrival (on the first start and after a walk).
+- The coach tip hides under the bag and the find cards.
+- Catches now carry their pond (water, seed, spawn, hook, light), so logbook and trophy shares are doors. Older catches share as a picture with the game's address.
+
+**Gear** (GEAR_REVISIT; amendment appended to `22_THE_GEAR`)
+- **Sinker → Quiet** (`sinkMult` 1.0, a nymph glyph). Only the found old sinking lure reaches the bottom.
+- `sinker` is migrated to `quiet` in saved gear, wall rows and old catch links.
+- **The short rod:** `rangeMult` 0.6 → 0.75 (to the reveal edge, z −4.1; never the deep band), `lineStrengthMult` 0.82 → 1.0.
+- **`lureShow`:** the popper lands 1.45× splash and 1.5× plop; the quiet lure 0.55/0.45. The found lure leaves rings as it sinks. The lure being thrown is drawn at the aim point.
+- **`WATERS[*].lureBias`:** the lily pond gives the quiet lure fear ×0.8 and the popper draw ×1.2; the home pond has none.
+- **Gear is measured:** `cast` events carry rod and lure. The playtest form sends "rod …; caught on: …" in the device line and asks "Which lure did you end up using most, and why?".
+
+**Checks**
+- 98 unit tests: gear (strip, only the found lure sinks, legacy ids carried forward, short-rod reach), lure bias, playtest gear and the shore.
+- 25/25 phone-profile e2e, including the new `bag.spec`:
+  - the title is the start and credits the author;
+  - the bag has every section;
+  - trophy, wall and pond shares are doors ending in `#PlayTheWaters`;
+  - the strip reads natural, popper, quiet.
+- The old specs now tap once on the title and reach the wall and leave through the bag.
+- Captures at iPhone 13 and SE sizes: the credit line clear of the title and the button.
+
+`/ab` holds the A5.1 review **and** A5's starred checks, which are still unreviewed.

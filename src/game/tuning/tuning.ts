@@ -857,7 +857,9 @@ export const TUNING = {
     // The bench (lily pond, near left bank) and where the found lure rests.
     bench: { x: -1.12, z: 2.25 },
     sinkerRest: { x: -0.15, z: 2.72 },
-    cardMs: 2600
+    cardMs: 2600,
+    // A5.1: the water's name on arrival.
+    titleMs: 2600
   },
   pads: {
     // A cast landing within this of a pad island's rim snags.

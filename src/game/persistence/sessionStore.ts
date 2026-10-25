@@ -14,7 +14,14 @@ export type Catch = {
   peakTension: number;
   nearSnaps: number;
   storyText: string;
-};
+  // A5.1: where it came from, so the logbook and the trophy shelf can share
+  // it as a link that opens that pond (absent on catches made before).
+  water?: import('@/game/waters/waters').WaterId;
+  seed?: string;
+  spawnIndex?: number;
+  hook?: { x: number; z: number };
+  phase?: number;
+}
 
 export type Failure = {
   at: number;
