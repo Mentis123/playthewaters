@@ -1561,16 +1561,17 @@ export function GameClient({ arrivalCode }: { arrivalCode?: string } = {}) {
             <span className="splash-title-name">The Waters</span>
             <span className="splash-title-tag">six waters, one shore</span>
           </div>
-          <span className="splash-credit-line" data-testid="credit-line">
-            Made by{' '}
-            <a href={AUTHOR.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-              {AUTHOR.name}
-            </a>
-            {' · '}
-            <a href={AUTHOR.labsUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-              A Birb Labs artefact
-            </a>
-          </span>
+          {/* One link, to the owner's home page (owner, 26 Oct 2026: not /links). */}
+          <a
+            className="splash-credit-line"
+            data-testid="credit-line"
+            href={AUTHOR.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            Made by <span className="splash-credit-name">{AUTHOR.name}</span> · A Birb Labs artefact
+          </a>
           <button type="button" className="splash-hint" aria-label="Go to the water" onClick={(event) => { event.stopPropagation(); begin(); }}>
             Tap to fish
           </button>

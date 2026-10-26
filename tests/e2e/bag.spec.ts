@@ -21,7 +21,9 @@ test('the title is the start, and credits the author', async ({ page }) => {
   await page.goto('/game', { waitUntil: 'domcontentloaded' });
   const credit = page.getByTestId('credit-line');
   await expect(credit).toContainText('Made by Mentis');
-  await expect(credit.getByRole('link', { name: 'Mentis' })).toHaveAttribute('href', 'https://adamrappaport.vercel.app');
+  // The whole line is one link, to the home page, never /links (owner, 26 Oct 2026).
+  await expect(credit).toHaveAttribute('href', 'https://adamrappaport.vercel.app');
+  await expect(page.locator('a[href*="/links"]')).toHaveCount(0);
   await expect(page.getByText('Build yours at Vibe Academy')).toHaveCount(0);
   await page.getByTestId('tap-to-begin').tap();
   await expect(page.getByTestId('game-route')).toHaveAttribute('data-game-state', 'scouting');
